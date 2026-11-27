@@ -1,17 +1,172 @@
 # trk! 開発引き継ぎ
 
-> **最終更新：2026-10-29（trk217・**1.1.6**＝🐔 trk's playlist を trk-apk の新基準に揃えた版。🐔 trk's playlist を **trk-apk の新基準**に揃えた＝起動時にカタログを一括で作らず、設定の「プレイリストを選択」から**選んだリストだけ**を追加する（`create:false` の起動・100曲ごとの Vol 分割・24文字の ID・消したリストもここから戻す・♻ は出さない）。trk216・**1.1.5**＝🎼 譜面生成方式の既定を **Bタイプ（方式4）** に（触った感触で B が良い、という利用者の判断。**設定で選んだ人＝`chartGenChosen` はそのまま**・アップデート後に B へ移るのは選んだ印が無い人だけ）。trk215・⭐ お気に入りの4フォルダ（⭐1軍／⭐2軍／🧊フリーズ／📤元お気に入り）を全部使えるようにした：2軍〜元お気に入り・ピン・🧊凍結・選んでいたフォルダを `settings.favs` に保存（1.1.4 までは保存していなかったので、0個の2軍を選ぶとタブごと消え、リロードで戻っていた）、⭐タブはどのフォルダかに入っていれば出し、凍結の解除は 🧊／🔒 の3秒長押し（❓謎設定「フリーズの解除をワンタップにする」＝**既定オフ**で1タップ）。2026-10-27（trk214・**1.1.4**＝1.1.3 レビュー反映：🖥 ドラッグ中はポインターを掴んで外へ出てもずらす・ピンチのあと残った1本指でそのまま動かす・配布物のリンク切れ検査。trk212・trk213・**1.1.3**：🖥 全画面の動画をホイール／ドラッグ／ピンチで拡大・縮小（100〜500%・ポインター中心・1回 2/5/10%）、⏱ 曲名タブの「ここをプレビュー開始位置にする」を設定で出す（**初期オフ**）。**1.1.3 は trk213 を配る版**。1.1.0→1.1.1→1.1.2 のレビュー反映もそれぞれのZIPに同梱済み。1.0.9〜1.1.2 の配布ZIPの形と時刻もここに集約）**。現在の仕様・守る条件・未確認事項の要約です。過去の詳細な変更履歴・検証記録は [`HANDOFF-ARCHIVE.md`](HANDOFF-ARCHIVE.md)、利用者向け仕様は [`README.md`](../README.md) と [`guide/`](guide/)、権利表記は [`NOTICE.md`](../NOTICE.md)、品質・安全確認は [`QUALITY-CHECKS.md`](QUALITY-CHECKS.md) と [`SECURITY.md`](SECURITY.md) を参照してください。
+> **最終更新：2026-11-02**（`trk` の **trk254**＝返事15（r9）をうけて 🔤 の写しを目録から生成する形に）。**上流 `trk` へのバックポートは `tools/backport-trk-scope-tag.mjs`、安定版を trk から作り直すのは `tools/make-stable.mjs` で当てられる**（このセッションからは PR 代行不可：App のアクセス範囲に `trk` が入っていない。手順と1行検査は `docs/UPSTREAM-TRK-SCOPE-TAG-2026-11-02.md`）。
+> 上流へのバックポートは **パッチ作成どまり**（Arena の GitHub App が `Trk-Nexus/trk` に触れない：push・`POST …/git/refs` とも 403。`permissions.admin=true` はユーザー自身の値）。パッチと手順は Drive に置きました → `docs/ORIGIN.md` §7.1。
+> trk251 時点：**上流 `trk` も組織 `Trk-Nexus` に入り、再び同一オリジンを共有**（`https://trk-nexus.github.io` の `/trk/` と `/trk/`）。
+> → 上流の SW が版上げ時にうちのキャッシュを消す件など、**A〜D の対処案が未決**（`docs/ORIGIN.md` §7・`docs/ORIGIN-TRK-NEXUS-2026-11-02.md` §6）。
+> trk250 時点：**リポジトリは組織 `Trk-Nexus` に移籍済み**（本番URL **`https://trk-nexus.github.io/trk/`**・旧 git URL は死亡）。
+> 0円方針のまま独自ドメインは取らず、上流 `trk`（個人）との保存領域共有を解きました＝経緯と残作業は [`ORIGIN-TRK-NEXUS-2026-11-02.md`](ORIGIN-TRK-NEXUS-2026-11-02.md)。アプリ本体は trk248（**初回案内に「保存はこの端末だけ」の1行**）、trk247（**設定の書き出し・読み込みの導線**＝⚙ → 💾 端末の保存に 📤📥・上限 20 MiB・**壊れた項目だけ除く**）、trk246（**書体の組み合わせ14組**＝見出し用の字を目録から選べる）、trk245（**密度の自動**＝窓の広さに合わせる／**曲リストの高さを画面に合わせる**）で、trk244 は**表示の密度**（PCで縮小しても文字を小さくせず詰める）、trk243 は**設定のさがす**、trk242 は**新しい版の知らせ**でした。`npm run check` は **2069 pass / 0 fail**（static 0/0）、`sw.js` の cache は **`trk-v2026.11.27-trk328`**（実体は `trkPWA-trk-v2026.11.27-trk328@trk`）。**`trk` の `main` が本番**で、利用者さんに配る安定版 `trk`（`/trk/`）は、その `main` を鏡で写した版です＝いまの対応は **trk328**（手順は [`STABLE-RELEASE-INSTRUCTIONS-TRK328-2026-11-27.md`](STABLE-RELEASE-INSTRUCTIONS-TRK328-2026-11-27.md)。**公開中の版は `/trk/` の `sw.js` の `CACHE` を見てください**）。この文書は、上流 `trk` 1.1.8（trk219）から続く仕様と条件を引き継いでいます。
 >
-> **本書の読み方**：§2＝今の仕様、§3＝壊してはいけない条件、§4＝実機で確認していないこと（ここが最重要）、§5＝ファイルの場所、§6＝自動検査で確かめたこと、§7＝最近の変更、§8＝変更時の点検、§9＝配布ZIPの形と作り方（1.0.8〜・現在 1.1.4）。
+> **2026-11-03：** trk278 まで merge 済み（`main` = `1df448a`）。trk279 で **⚙ の「段」**（見せる量を選ぶ・trk281 で 5 段へ）、trk280 で **体力の数字をそろえ・TRUCK の揺れを既定オフ・既定の棚からウィザードを外す**。trk276〜trk278 で 📚 をキーで動かせるように（アサイン・使わない・縦読み・回り込み・連読）。trk279 の記録＝ [`PLAN-TRK279-2026-11-03.md`](PLAN-TRK279-2026-11-03.md)、数えた事実＝ [`SETTINGS-AUDIT-TRK279-2026-11-03.md`](SETTINGS-AUDIT-TRK279-2026-11-03.md)、画面の物差しは [`UX-GUIDANCE-TRK274-2026-11-03.md`](UX-GUIDANCE-TRK274-2026-11-03.md)。
+>
+> 現在の仕様・守る条件・未確認事項の要約です。過去の詳細な変更履歴・検証記録は [`HANDOFF-ARCHIVE.md`](HANDOFF-ARCHIVE.md)、利用者向け仕様は [`../README.md`](../README.md) と [`guide/`](guide/)、権利表記は [`../NOTICE.md`](../NOTICE.md)、品質・安全確認は [`QUALITY-CHECKS.md`](QUALITY-CHECKS.md) と [`SECURITY.md`](SECURITY.md)。**レビューと実機確認のお願いは [`REVIEW-REQUEST-TRK258-2026-11-02.md`](REVIEW-REQUEST-TRK258-2026-11-02.md)（前回は [`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md)）**、その指摘への対応は [`REVIEW-RESPONSE-2026-10-31.md`](REVIEW-RESPONSE-2026-10-31.md)、trk223 を実際の端末で見る手順は [`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md)。
 
+## 0. この文書の使い方
+
+| 節 | 内容 | いつ読むか |
+| --- | --- | --- |
+| §0.1 | 版の要約 | 経緯をざっと知りたいとき |
+| **別紙** | **小粒の改善とやる事の一覧**（[`BACKLOG-2026-11-02.md`](BACKLOG-2026-11-02.md)・2026-11-02） | 次に何をやるか決めるとき |
+| §1 | 作業の基本 | 作業を始める前に |
+| §1.5 | **このリポジトリ（trk）の今** | まずここ |
+| §2 | 今の仕様（機能ごと） | 触る前に |
+| §3 | 維持するデータ・安全条件 | 変更の前後 |
+| §4 | **実機で確認していないこと（最重要）** | 配る前 |
+| §5 | 主なファイル | 実装を探すとき |
+| §6 | 直近の検証（自動検査で確かめたこと） | 検証を足すとき |
+| §7 | 最近の変更（新しい順） | 経緯を追うとき |
+| §8 | 変更時チェックリスト | PR を出す前 |
+| §9 | 配布物（上流 trk のZIP）の形と作り方 | 配布するとき |
+
+### 0.1 版の要約（詳細は §7・それ以前は [`HANDOFF-ARCHIVE.md`](HANDOFF-ARCHIVE.md)）
+
+| 版 | trk番号 | 中身（1行） | 日付 |
+| --- | --- | --- | --- |
+| （trk） | trk250 | **組織 `Trk-Nexus` へ移籍**（transfer 実行）。本番URLを **`https://trk-nexus.github.io/trk/`** に確定し、`index.html` の `og:url`／`og:image`・`README.md`（▶ Play×3）を更新。`manifest.webmanifest` は相対、`js/`・`css/`・`sw.js` はオリジン直書きゼロなので**無変更**。cache を `trk-v2026.11.02-trk250` に。docs（`PWA.md`・`ORIGIN.md`・`PERMISSIONS.md`・`HANDOFF-TRK-STANDALONE.md`・Phase 4 の計画書）を新オリジンに追記し、履歴文書（`REVIEW-REQUEST-*`）は古いURLのまま | 2026-11-02 |
+| （trk） | trk250 | **移籍で詰まった所と解き方**：GitHub App を組織にインストールするまで `POST /repos/…/transfer` が **403 `Resource not accessible by integration`**。UI では個人アカウントが組織の **Owner** でも、`/orgs/Trk-Nexus/members` が空に見えた（＝見えないだけ。「未所属」と読み違えた）。教訓を `docs/ORIGIN-TRK-NEXUS-2026-11-02.md` §5 に1行で |
+| （trk） | trk250 | **移籍後の実測**：組織移籍でも Actions はそのまま動く（`Deploy GitHub Pages` と `Check` が success・組織側の設定変更不要）。`GET .../pages/builds` は `status=null` のままなのが**正常**（Source=GitHub Actions では埋まらない）。ライブ `https://trk-nexus.github.io/trk/` は **trk250**（`sw.js` の cache 名で確認・🛟 に trk247 の書き出し／読み込みが出ている）。**配布ZIPも trk250 で作り直して Drive に置いた**。残は実機確認と④告知、上流 `trk` を移すかの判断 |
+| （trk） | trk251 | **上流 `trk` の組織移籍に追随**：`index.html`（Issues リンク3本）・`credits.html`・`privacy.html`・`js/library.js` の `TRK_OLD_PROJECT_URL`・`README.md`（7か所）・`CONTRIBUTING.md`・`docs/SECURITY.md`・`.github/ISSUE_TEMPLATE/config.yml`・`docs/guide/*` を `Trk-Nexus/trk` / `Trk-Nexus/trk-Avatar-Library` へ差し替え（**`music-library` は個人のままなので変更なし**）。`tools/make-icons.html` が描く URL 文字を `trk-nexus.github.io/trk` に。cache を `trk-v2026.11.02-trk251` に。docs に **`ORIGIN.md` §7**（実測表と対処案 A〜D・旧オリジン救出案）と `ORIGIN-TRK-NEXUS` §6 を追記 |
+| （trk） | trk252 | **上流とのキャッシュ相互消去を防ぐ**：`sw.js` に `CACHE_KEY_PREFIX = "trkPWA-"` を入れ、`CACHE_NAME`／`VENDOR_CACHE`／`SHARE_CACHE_NAME` を `trkPWA-…@<印>` に（`js/share-inbox.js` も同じ接頭辞へ、一致は `tests/trk165` が見る）。activate の掃除は「`trkPWA-…`」と「旧方式の `trk-…@trk`」だけを対象に（上流の無印 `trk-…` には触らない）。**旧名のキャッシュは操作なしで自動的に片付きます**（一回限りの移行ではないので `MIGRATIONS.md` の行は不要）。`docs/og.png` は背景補間で焼き込み住所を消し、`tools/make-icons.html` からもURL描画を削除。上流 `trk` 用のパッチ（sw.js の掃除＋URL24か所＋make-icons）は `06cef87` で `git apply --check` 通ることを実測 |
+| （trk） | trk252r2 | **上流に当てる道具を入れた**：`tools/backport-trk-scope-tag.mjs`（①上流 `sw.js` の activate にスコープ印の条件を足す ②URL24か所を組織 `Trk-Nexus`・新ホストへ ③`tools/make-icons.html` の焼き込み住所を削除）。上流 main `06cef87` に素で当てて上流自身の `npm run check`（**tests 747 pass / 0 fail**）と二重適用時のスキップを実測、`--check` は書き換えずに当たり方だけ出す。**アプリ本体は無変更**なので cache 名は `trk-v2026.11.02-trk252` のまま。新規 `docs/UPSTREAM-TRK-SCOPE-TAG-2026-11-02.md`（手順・権限の実測・1行検査）＋`docs/ORIGIN.md` §7.1／`docs/ORIGIN-TRK-NEXUS-2026-11-02.md` §6 の状態を更新。`tools/` は standalone ZIP に入らず handover ZIP に入る |
+| （trk） | trk253 | **2026-11-02 のレビュー（`trk-Nexus-review-2026-11-02.zip`）への対応**：①上流へ当てる道具に **④ 設定保存のマージ**を足した（上流 `js/core.js:406` は自分が知る項目だけで `localStorage` を丸ごと上書きし、`uiScale`・`uiMode`・`playerBar`・`typography`・`uiDensity` は上流の `core.js` に **1回も出ない**ので、`/trk/` で設定を1つ変えると `/trk/` の設定が消える＝**実測で再現**、④後は消えない。工場出荷リセット2か所には `{ fresh: true }`）＝上流 main `06cef87` に当てて上流自身の `npm run check`（**747 pass / 0 fail**）・二重適用スキップまで実測。②🔤「雑誌の飾り」の説明が実物（見出しは Kaisei Decol 400）と食い違っていたので「飾り明朝の題字と見出しに、しっぽり明朝の本文」へ（**目録側 `catalog/typography.json` も同じ食い違い**＝r9 で一緒に直してもらう）。③`sanitize()` の `preset` が役の名前まで通していたのを契約どおり4段階に限定（`PRESETS` を公開・検査3本追加で **19件**）。④docs の事実訂正（個人側は `SHADOW-TAIKO` の Pages が生きていて 200＝「1つも残っていない」は誤り）と、告知URLの書き分け、§3 に同居の約束を2行。回答は [`REVIEW-RESPONSE-2026-11-02.md`](REVIEW-RESPONSE-2026-11-02.md)。**②「安定版を切る」を道具にする**（レビュー推奨 A-1）：`tools/make-stable.mjs` を追加（追跡ファイル497点を上流クローンへ写し、`trk`→`trk` の住所反転、既定は差分を見るだけ）。鏡にした上流で上流側の `npm run check` を回して **1280 pass / 0 fail**、二重適用は 追加0・更新0 を実測。検査2本（`trk165`・`trk223-review`）は「相手は `/trk/`」を前提にしていたので `mine`/`theirs` の中立な名前に変えました（ミラー後も落ちない）。
+| （trk） | trk254 | **🔤 の写しを「手写し」やめて、目録から生成**（返事15 §2 の「自動では届きません」への答え・レビュー推奨 C-3）：`tools/sync-typography-catalog.mjs` が相手の `catalog/typography.json` を ①`tests/fixtures/avatar-library-typography.json` に**そのまま固定**（sha256・ref・件数は隣の `.meta.json`）②`js/typography.js` の `PAIRINGS` をそこから機械的に作り直し、を保証します。**r9 の直しを反映**：雑誌の飾りの見出しを `TrkHinaMincho` 400（`hina-mincho.stpack` をパックに追加・注記は本文と同じ書体）、電子ゲームの注記を `TrkZenKaku`、4組の説明の言い換え、14組に **`trkUse`**（trk! ではどんな曲に合うか）。trk253 でこちらが直した「雑誌の飾り」の説明は、**先方がデータ側で合わせた**ので目録どおりに戻りました。新規 `tests/trk254-typography-copy.test.mjs`（5本・固定版の sha256 照合／写し＝目録から生成／r9 の直しが載っているか／`trkUse` の規定／cache 名）。`npm run check` **1285 pass / 0 fail**。先方だけが進んでいないかは `node tools/sync-typography-catalog.mjs --against=main --check`（通信が必要）。**UI に `trkUse` はまだ出しません**（出すかは実機看到達後） |
+| （trk） | trk255 | **小粒の仕上げ（判断項目 U1〜U7）**：`docs/BACKLOG-2026-11-02.md` §4 の判断に「はい」をもらって実施。①🔤 に目録の **`trkUse`** を1行（`#typoUse`・選んでいなければ隠す） ②更新帯の「あとで」を **24時間** 覚え、設定に **「🔔 新しい版の知らせを出す」**（optout）を追加（どちらも `core.settings` の中＝新しい保存キー 0） ③**いまの版**を設定の 🔄 だけに表示（`<meta name="trk-build">`・帯には出さない） ④表示の密度を**再生バーだけ**に（`--trk-pb-dens-*`・`font-size` は変えない） ⑤設定のさがすを **`/`** で開く（入力中・IME・修飾キーは無視・検索語は保存しない） ⑥英語だった `aria-label` **13個**を4言語へ（`data-i18n-aria`）。`npm run check` **1313 pass / 0 fail**、辞書 **1118 キー ×4 一致**。記録＝[`POLISH-TRK255-2026-11-02.md`](POLISH-TRK255-2026-11-02.md) | 2026-11-02 |
+| （trk） | trk249 | **オリジンの記述を相互で縛る検査**：`tests/trk249-origin-consistency.test.mjs`（8本）。`og:url`・README の ▶ Play と badge・`docs/ORIGIN.md` の記述が**同じオリジンを指す**ことだけを見る（値は固定しないので移籍前後どちらも緑）。`manifest.webmanifest` が `./` 相対、`js/`・`css/`・`sw.js` にオリジン／github.io／CDN の直書きがゼロ、も同時に守る | 2026-11-02 |
+| （trk） | trk249 | **①オリジンの判断が下りた**：まだ配っていないので**組織 `Trk-Nexus` へ移籍してよい**（2026-11-02・所有者）。ただし**このサンドボックスからは transfer できない**（403・実測値を `docs/ORIGIN.md` §3.1 に表で記録）。必要なのは「組織へのメンバー招待」と「組織への Arena App インストール（`Administration` Read & write）」の2点 |
+| （trk） | trk248 | **初回案内に1行**（PWA Phase 4 の ②）：`#welcomeBox` の列表に `welcomeBackup`（保存はこのブラウザの中だけ・自動では移らない・移すときは ⚙ → 💾 端末の保存 の 📤📥）。**新しい dialog は作らない・保存する値も増やさない**（`settings.welcomeSeen` のまま）。案の1行目（`welcomeOffline`）は**すでに実在**していたので足していない | 2026-11-01 |
+| （trk） | trk248 | **①オリジンの進み**：組織 **`Trk-Nexus`** を利用者さんが作成（`api.github.com/orgs/Trk-Nexus` は 200・公開リポジトリ0件）。`https://trk-nexus.github.io/trk/` が狙える見込みで、**移管と Pages 有効化は未実施**（利用者さんの操作）。`.github.io` への応答はこのサンドボックスから実測不可（通信先が絞られている） |
+| （trk） | trk247 | **設定の書き出し・読み込みの実体を直す（PWA Phase 4 の ③）**：⚙ → 💾 端末の保存 に 📤（`all`／`core`＝ノートをのぞく／`notes`）・📥・結果欄（`#storageTransferState`）。読み込み上限 **2 MiB → 20 MiB**（`js/backup.js` の `MAX_LS_VALUE` と同じ目盛り。以前は自分の書き出しを読み返せなかった）。**1項目の失敗で全体を止めない**（純関数 `pickImportedPrefs`＋手書き13項目は `attempt` で1個ずつ try／全体失敗は「上限超過・JSON不可・根元がオブジェクトで無い」の3つだけ）。🛟 緊急復旧の入口も同じ手続きを共有して残す。localStorage のキーは増やしていない | 2026-11-01 |
+| （trk） | trk247 | 設計・上限の根拠・①ドメイン（組織 `trk-company` は 404＝空き見込み／オリジンが変わると保存域も変わる）＝[`PREFS-TRANSFER-TRK247-2026-11-01.md`](PREFS-TRANSFER-TRK247-2026-11-01.md)。**実ブラウザ未確認**（§5 に実機のお願い6項目）。 |
+| （trk） | trk247 | **Phase 4 の ②（`#welcomeBox` に2行）は未実施**（①オリジン未確定を理由に保留。案は [`PHASE4-ONBOARDING-BACKUP-2026-11-01.md`](PHASE4-ONBOARDING-BACKUP-2026-11-01.md) §2 のまま）。`js/backup.js` の `restoreBackup` は Import の検証関数を通しておらず、項目隔離は入れていない（未決着） |
+| （trk） | trk246 | **書体の組み合わせ14組（段階②）**：`js/typography.js` に相手の目録の写しを同梱し、`settings.typography` で保存。`body.trk-typo-on` のときだけ見出し類（`.brand h1`・`details.panel>summary`・`.panel h3`）と `.hint` に CSS 変数2本を当てる。**canvas（`ctx.font`）は触らない**・woff2 は同梱しない | 2026-11-01 |
+| （trk） | trk246 | 設計・見送り・実機確認6項目・相手への返す言葉＝[`TYPOGRAPHY-TRK246-2026-11-01.md`](TYPOGRAPHY-TRK246-2026-11-01.md)。
+| （trk） | trk246 | **返事13**（14組の受け入れ完了・契約 §6 の案で合意可・目録27家族がそちらに全部在る検証）＝[`LETTER-TRK246-REPLY-2026-11-01.md`](LETTER-TRK246-REPLY-2026-11-01.md)。
+| （trk） | trk246 | **PWA Phase 4 の ②③ 下書き**（コードは変えていない）＝[`PHASE4-ONBOARDING-BACKUP-2026-11-01.md`](PHASE4-ONBOARDING-BACKUP-2026-11-01.md)。設定の書き出し・読み込みが **🛟 緊急復旧にしか無い**のが実体。①オリジンと④告知は判断待ち。
+| （trk） | trk245 | **続きの概要も1枚に**（r6 の受け入れ手順・PWA Phase 4 の判断事項・書体14組の採用方針）＝[`PLAN-R6-PHASE4-TYPOGRAPHY-2026-11-01.md`](PLAN-R6-PHASE4-TYPOGRAPHY-2026-11-01.md)。
+| （trk） | trk245 | **密度の自動＋曲リストの高さ**：`uiDensity` に `auto`（窓の面積と幅で段を決める・**既定**）を追加。`#libList` の高さは `--trk-lib-h`（設計高さ−440px を 320〜900px に収めて `fitStage` が置く）になり、**後から効いていた `height:320px` の上書きを削除**。リサイズでも段を見直す（保存しない・棚を作り直さない） | 2026-11-01 |
+| （trk） | trk244 | **表示の密度**：拡大率の 75%・50% を「文字を小さくする」ではなく「余白・行間・列数を詰めて多く見せる」に使える（`uiScaleCompact`・既定オン）。密度は4段（ゆったり／ふつう／ぎゅっと／ぎっしり）で単独でも選べる。font-size はどこも変えない | 2026-11-01 |
+| （trk） | trk243 | **設定のさがす**：⚙ の上に「🔍 設定をさがす」。当たったパネルは開いて出し、当たらなければその場で隠す（空にすると元の開閉へ）。もともと隠れているものは出さない・保存は増やさない | 2026-11-01 |
+| （trk） | trk242 | **新しい版の知らせ**：新しい版が入ったら、画面の下に小さな帯（「いま更新する」／「あとで」）。遊んでいる途中は出さず、タイトルへ戻ったら出す。設定に「🔄 アプリの更新」。登録は `js/sw-update.js` へ | 2026-11-01 |
+| （trk） | trk241 | **スキンの棚の作り直し**：カードから ⭐／🚫、隠した数を棚の下に出して 1 タップで戻す、整理の一覧に さがす・絞る・**まとめて隠す／戻す**。使用中のスキンは隠しても棚に残す（消さない・当てられる） | 2026-11-01 |
+| （trk） | trk240 | **役割の書面**（書体・スキンはミュージアム側／アプリ本体はこちら）と `tools/check-set.mjs` の**契約**（`--json`・`version: 2`）。**殻は変えない**ので cache は trk239 のまま | 2026-11-01 |
+| （trk） | trk239 | セットの 2 分割（r6）に備え、**確認に出す数と大きさを「これから入る分」だけに**（すでに入っていて版も同じものは飛ばす）。受け入れの道具 `tools/check-set.mjs` | 2026-11-01 |
+| （trk） | trk238 | **🔤 入れている書体**：入っているパックの書体を `pack.json` から索引（保存しない・Blob を読まない）。検索・タグ・並べ替え・「使う」 | 2026-11-01 |
+| （trk） | trk236・trk237 | 目録の `fonts[].note`／`cmap`／`bytes`／`weight`／`tags` を読んで 🔎 中身に出す／**雰囲気のタグで目録の一覧を絞る** | 2026-11-01 |
+| （trk） | trk235 | **📦 セット（`.stlib` / `.zip`）を選ぶだけ**で、目録とパックをまとめて入れる（**r5 で実機の通しを確認**・16 パック） | 2026-11-01 |
+| （trk） | trk234 | 💾 容量の見える化と**まとめて消す**（選択・確認 1 回・曲リストへの合図 1 回） | 2026-11-01 |
+| （trk） | trk233 | 書体のライセンス全文（`fonts[].licenseFile`）を入れて・読んで・出す（倉庫のお願い L7 の受け皿）＋書体パック 14 種を作成 | 2026-11-01 |
+| （trk） | trk232 | 書体パックを本物に（`fonts` の検証・保存・`FontFace` で読み込み・外したら片付け）＋`release` を保って目録の版と比べ「更新あり」 | 2026-11-01 |
+| （trk） | trk231 | 倉庫まわりを「入れやすい・確かめやすい・消しやすい」に（📥 まとめて入れる・導入済みの表示・使う/消す・🔎 中身）＋開発案 | 2026-11-01 |
+| （trk） | trk230 | 倉庫の目録（`catalog/index.json`）からパックを入れる（外部へ取りに行かない・sha256 照合） | 2026-10-31 |
+| （trk） | trk229 | スキンの棚の整理（さがす・並べる・⭐・🚫・使用回数・件数の表示） | 2026-10-31 |
+| （trk） | trk228 | 書体（フォント）スキン 9 種（端末の書体だけを使い、太さ・字間・行間も変える）＋ 棚の「書体」カテゴリと見本の文字 | 2026-10-31 |
+| （trk） | trk227 | リピートの段（なし⇄1曲だけ）と、シャッフルの範囲（いまの一覧から）を ❓謎設定で選べるように | 2026-10-31 |
+| （trk） | trk226 | 下の再生バーをプレイヤーにする（触れてシーク・❓「触れても位置を移動しない」・🎲 シャッフル・🔁 リピート・⧉ 別窓の操作パネル） | 2026-10-31 |
+| （trk） | trk225 | 下の再生バーの置き場所（画面のいちばん下／操作パネルの上）と「隠さない」設定（実機の相談から） | 2026-10-31 |
+| （trk） | trk224 | trk223 レビューの F1・F2（配布ZIPの時刻を UTC で書く・文書からZIP自身のハッシュを外す） | 2026-10-31 |
+| （trk） | trk223 | trk222 レビューへの対応（エフェクトのタブ・再生バーの重なり・ZIPの vendor・キャッシュの持ち主・設定の保存） | 2026-10-31 |
+| （trk） | trk222 | 拡大率・アイコンの大きさ・PC型／スマホ型の2択・エフェクト欄のタブ分け | 2026-10-31 |
+| （trk） | trk221 | PC でもスマホ型の UX＋下の再生バー（スキンに追従） | 2026-10-31 |
+| （trk） | trk220 | iPhone のホーム画面から使う standalone PWA の仕上げ | 2026-10-30 |
+| 1.1.8 | trk219 | 出力デバイスを切り替えても再生を止めない | 2026-10-29 |
+| 1.1.7 | trk218 | 🐔 trk のリストを曲画面に出さない・👁／🗑／📋 | 2026-10-29 |
+| 1.1.6 | trk217 | 🐔 trk's playlist をカタログから選んで追加（起動時に作らない） | 2026-10-29 |
+| 1.1.5 | trk216・trk215 | 譜面生成の既定を Bタイプへ／⭐4フォルダを使えるように | 2026-10-29 |
+| 1.1.4 | trk214 | 全画面ズームの仕上げ・配布物のリンク切れ検査 | 2026-10-27 |
+| 1.1.3 | trk213・trk212 | 開始位置ボタンを初期オフ／全画面の動画をホイールで拡大 | 2026-10-27 |
+| 1.1.2 | trk211 | 🔓 の文面を「次に聞く1本」にそろえる | 2026-10-27 |
+| 1.1.1 | trk210 | 📂 共有フォルダーの × が戻る・1本ずつ許可・書斎の同名 | 2026-10-27 |
+| 1.1.0 | trk208・trk209 | 📂 フォルダー共有を何本でも・動画も・書斎の画像も | 2026-10-27 |
+| 1.0.9 | trk200〜trk207 | 音が出ない理由・📄参照の保存停止・セーフモード・配布ZIPの形 | 2026-10-27 |
 ## 1. 作業の基本
 
 - 作業前に `git status --short` と差分を見て、既存の変更を破棄・上書きしない。
 - Arenaで指定された作業ブランチを維持し、`main` へ直接 push しない。反映はPR経由。
 - バンドラーはありません。`index.html` の `<script>` 順が依存関係と実行順を決めます。
 - 変更後は `npm run check` と `git diff --check` を実行。静的・VM・スモーク検査の成功を、実音声・実機での確認済みとは扱いません。
+- **時刻はタイムゾーンに依存させない**（trk224・レビュー F1）。CI は UTC なので、UTC だけで緑でも油断できません。日時を作る・比べるコードを触ったら `TZ=Asia/Tokyo node tools/run-tests.mjs` も流してください（PowerShell は `$env:TZ="Asia/Tokyo"; node tools/run-tests.mjs`）。`toISOString()` は UTC、`getFullYear()`／`getHours()` はローカルです。
 - 公開JSを変更したら関連テスト・文書・`sw.js` のcache名更新要否を確認します。vendor pinの正は `tools/vendor-lock.json` です。
+- **画面（UX）の手当ては、Web 標準のガイドを読んでから決めます**（trk274）。`GoogleChrome/modern-web-guidance-src` の `guides/<分類>/<名前>/guide.md` と `features/*.md` を読み、**採る／採らないと理由**を [`UX-GUIDANCE-TRK274-2026-11-03.md`](UX-GUIDANCE-TRK274-2026-11-03.md) に残します。採るのは「今日のブラウザで効き、効かないブラウザでは**黙って素通りする**」ものだけ（このアプリは file: でも動く）。**写しは同梱せず、実行時に取りに行きません**。版は sha で記録します（いま読んだ版は main `dbf45b9`）。
 - `js/fx.js`／`js/fx-presets.js` の凍結は **trk114で解除**しました（2026-10-11、空さんの判断。trk109でfx.jsに足したMIDI MIXの経路も追認）。ほかのファイルと同じく、変更時はテスト・文書・実音声で確認します。fx.jsが読むための互換名（`chartMeta`・`phase`・`prefs`・`stats`・`videoReady`、読み取り専用の `_trkStudyRoomOpen`）はまだ残っていて、fx.jsを書き換えれば外せます（`docs/ADDONS.md` §0、`docs/NAMESPACE-PLAN.md`）。
+
+## 1.5 このリポジトリ（trk）の今（2026-11-27）
+
+このチェックアウトは **`trk`**＝上流 `trk`（1.1.8／trk219 から続く系統）を履歴ごと取り込み、**通信を行わない standalone PWA** として仕上げる系統です。**開発版（本番）はここ**、**安定版は `/trk/`（いまの対応は trk328）** です。配り方が上流と違う（ZIP ではなく Pages）ため、§9 は上流の話として読んでください。
+
+| 項目 | 今の状態 |
+| --- | --- |
+| 目的 | iPhone のホーム画面から開く standalone PWA。0円・不特定多数・ストアなし・バックエンドなし・広告なし・端末内データ・GPL-3.0-or-later |
+| ミッションと決定事項 | [`HANDOFF-TRK-STANDALONE.md`](HANDOFF-TRK-STANDALONE.md)、配布URLの決定は [`ORIGIN.md`](ORIGIN.md) |
+| 配り方 | GitHub Pages（`.github/workflows/pages.yml`）＋ `manifest.webmanifest` ＋ `sw.js`。配布ZIPは作りません |
+| 安定版 `/trk/` | **trk の `main` を鏡で写したもの**（上流 [`trk`](https://github.com/Trk-Nexus/trk)・`https://trk-nexus.github.io/trk/`）。いまの対応は **trk328**（cache `trk-v2026.11.27-trk328`／実体 `trkPWA-…@trk`）。作り方は [`STABLE-RELEASE-INSTRUCTIONS-TRK328-2026-11-27.md`](STABLE-RELEASE-INSTRUCTIONS-TRK328-2026-11-27.md)、手順の期待値は [`TRK-STABLE-RUNBOOK-2026-11-02.md`](TRK-STABLE-RUNBOOK-2026-11-02.md)。**公開中の版は `/trk/` の `sw.js` の `CACHE` が正**（trk219 のままなら、まだ差し替えていません） |
+| 画面の形 | `settings.uiMode`（PC型／スマホ型の2択）＋❓謎設定「画面の形は、常に選んだものを使う」。詳しくは [`UI-MODE-AND-PLAYER-BAR.md`](UI-MODE-AND-PLAYER-BAR.md) |
+| trk222〜trk227・trk244・trk246 の設定 | `uiScale`（50/75/100/125）・`fixedIconSize`・`uiModeLock`・`fxInLibrary`・`playerBar`・`playerBarPos`・`playerBarLock`（trk225 まで**新しい保存キーなし**）・`playerBarSeekLock`（trk226、既定オフ）・`playerBarRepeatOneOnly`・`playerBarShuffleInList`（trk227、どちらも既定オフ）・**`uiDensity`（trk244・trk245、既定 `auto`＝窓の広さ）と `uiScaleCompact`（trk244、既定オン）**、**`typography`（trk246、既定 `null`＝使わない）**、**`swUpdateNotice`（trk255、既定 `true`）と `swUpdateSnooze`（trk255、既定 `0`＝眠らせていない）**。trk244・trk246・trk255 のどれも `core.settings` の中なので **localStorage のキーは増えていません** |
+| スキン | **291 種（本体 49＋ミク 4＋ウィザード 62＋巻別 176）**。trk274 で Skin 側の目録（`catalog/skins.json` の 291 種）を全部受け、棚に **📚 巻** の絞り込みを足した（既定は**「定番」だけ**（trk280 でウィザードを外し、trk281 で段のカテゴリに絞る＝スタンダード 44 種・マスター 53 種・ウィザードの段 114 種）／色を目録へ差し戻した 18 種は既定の棚から外し、ALL とその巻では見えます）。trk228 で**書体スキン 9 種**と、棚の **`type`（書体）** カテゴリ・カード内の見本の文字（`あア漢 Aa 12`）を追加（[`FONT-SKINS-TRK228-2026-10-31.md`](FONT-SKINS-TRK228-2026-10-31.md)）。trk229 で棚に**さがす（4言語・カテゴリ語も）／並べる（おすすめ・名前・よく使う・最近）／⭐お気に入り／🚫隠す／使用回数と最終使用日／「表示／全体」の件数**（[`SKIN-SHELF-TRK229-2026-10-31.md`](SKIN-SHELF-TRK229-2026-10-31.md)） |
+| **trk274（merge 済み）** | **巻別スキン 291 種（13 巻）の受け皿**。U1〜U4 は **A／A／A／A**（全部内蔵・カスタム 20 とは別枠・背景を寄せて見せる・UX 控えめ 4 つ）。記録＝[`PLAN-TRK274-2026-11-03.md`](PLAN-TRK274-2026-11-03.md) §9、画面の物差し＝[`UX-GUIDANCE-TRK274-2026-11-03.md`](UX-GUIDANCE-TRK274-2026-11-03.md) |
+| **trk279・trk281（実装済み）** | **⚙ の「段」＝見せる量**。決めた形＝**案 A（シンプル／スタンダード／プロ／マスター／ウィザードの 5 段。5 つ目は trk281）＋案内は段の外**、**既定はスタンダード**。段は**値ではなく見え方**（`settings.setLevel` と `settings.setTouched` の 2 つだけ保存）。**触った行はどの段でも出る**・**探しているあいだは段を無視**・**行が全部隠れるパネルだけ隠す**。記録＝[`PLAN-TRK279-2026-11-03.md`](PLAN-TRK279-2026-11-03.md)、洗い出し＝[`SETTINGS-AUDIT-TRK279-2026-11-03.md`](SETTINGS-AUDIT-TRK279-2026-11-03.md)、数える道具＝`tools/settings-inventory.mjs`。経過＝trk281 で**段ごとのスキンのカテゴリ**（スタンダード 44 種・マスター 53 種・ウィザードの段 114 種）・**⭐ は先頭**（隠さない）、trk282 で**揺れを「道」に**（8 割は高速道路＝静止）。次は **A（検索 1 本化・全部開閉・目次）→ D（🎨 の分割）→ F（説明文の圧縮）** |
+| **trk282（実装済み・PR #87）** | **🛣 道（揺れの作り）**。TRUCK の揺れを「毎回ちがう道」に＝**山道 5%（ゆるく蛇行）／坂道 5%（のぼる）／下り坂 5%（くだる）／海岸沿い 5%（斜めから）／高速道路 80%（揺れない）**の重み付き抽選（`ROAD_WEIGHTS`・純粋関数 `pickRoad`）。既定は **`settings.swayRoad = "auto"`（おまかせ）**＝**曲の頭で 1 回だけ**引き、⚙ で 6 つから選べば固定。**角度は時間だけの純粋関数 `roadAngle`**（乱数を使わない＝毎フレーム同じ）。**高速道路はビート揺れ・ヒット揺れも止める**（「揺れない道」と言いながら揺れると酔い対策の意味が無くなるため）。`swayTruck` は**既定オンへ戻した**（8 割は静止なので酔いにくい）。trk281 の `swayTruckOff1` は**保存がある人だけ `swayRoad="highway"` へ寄せる**形に変更（オフ固定にしない）。⚙ の「道の種類」は**スタンダードの段でも出す**（酔いやすい人が探せるように。ほかの揺れの設定はプロのまま） |
+| **trk283（実装済み・PR #87）** | **⌨ ターミナルの入口まわり**。①**段の差**＝`cliPanel` を **5（ウィザード）** へ（マスターでは隠す＝マスターとウィザードが同じに見えない）。ウィザードの段は **CLI と wizard スキン**が既定オン（wizard スキンは trk281 から）。②**開いたときのスキン**＝`cliSkinPickOn`＋`cliSkinPick` で**端末のスキンを個別に選べる**（既定オフ＝「ターミナルの見た目」に任せる）。`locked` は当てない・当てた（当てられない）ことを状態行に出す。③**文字が打てる状態かのチェック**＝`typableState()`（使える／見えている／フォーカス）を検めて、`cliTypingCheck`（**badge 既定**／status／quiet）で知らせ方を選ぶ。フォーカスが逃げたら自動で戻す（`ensureFocus`）。④**呼び出しキー**＝`cliKey`（既定 `・**Ctrl／⌘ と一緒**・同じキーで開閉・⚙ で割り当て・Esc で取り消し・遊ぶキーと重なるキーは受けない）。⑤**実行したら閉じる**＝`cliAutoClose`（既定オン）。何かをするコマンドだけ `action` が立ち、閉じたあと 1 行をトーストで残す。⑥**短い呼び名のコマンド**＝`next`／`back`／`re`（最初から使える） |
+| **trk284（実装済み・PR #87）** | **⌨ ターミナルの仕上げ**。①**置き場所**＝⌨ パネルを**設定のいちばん上**へ（画面・再生バーより上・全幅）。②**入力の取りこぼし**を洗って直す＝**IME の変換中は Enter／Tab／矢印を使わない**（`compositionBlocked`・`state.composing`）、**Tab は打っている文字があり Shift でないときだけ補完**（フォーカスを閉じ込めない・`tabShouldComplete`）、**全角の呪文と数字も通す**（`normalizeCommand`・NFKC）、**出力を読み返す／辞書を書く邪魔をしない**（`#cliLog`・`#cliSpellPanel` ではフォーカスを奪い返さない）。③**辞書登録（呪文）の GUI** を端末のいちばん下に（折りたたみ・一覧＋追加＋削除・最初から入っているものは消せない・上限 24 本・`spellDraftProblem` で検査・4 言語） |
+| **trk285（実装済み・PR #87）** | **⌨ 入力の合図（プロンプト）と入力の奪い方**。既定を **Linux 系の `<スキン名(English)> ~ %`** に（例：`The Art of War ~ %`／`Key of Solomon ~ %`・**スキン名は label.en 固定**）。形は **linux（既定）／bash `<name>:~$`／root `<name>:~#`／fish `<name> ~>`／PowerShell `PS <name>>`／シンプル `>`／スキンに任せる** の 7 択（`settings.cliPromptStyle`・純粋関数 `promptText(style, name)`）。⚙ に「いまの見え方：{text}」の下見を出す。**開いているあいだは画面のどこにフォーカスがあっても入力を奪う**（1 文字目も入力欄へ・IME の変換中と修飾キー付きは奪わない・端末の入力欄と辞書 `#cliForm`・`#cliSpellPanel` は邪魔しない） |
+| **trk286（実装済み・PR #87）** | **⌨ ターミナルを下から持ち上がる板（ボトムシート）に**。①**<dialog>＋showModal()** に替え、`role="dialog"`・`aria-modal`・フォーカスの閉じ込め・Esc・フォーカスの戻しは**ブラウザーに任せる**（自前の `instOverlay` をやめた）。背景クリックは `closedby="any"`（無いブラウザーは pointer の位置で判定）。②**出し入れは下から押し上げ**＝`@starting-style`＋`transition-behavior:allow-discrete`＋`overlay`、`::backdrop` も同じ。③**高さは 3 段**（`settings.cliSheetSize`：half 52%／**tall 70%（既定）**／full 92%）＝⚙ で選べて覚える。④**スキンは端末の中だけ**（`applySheetSkin()` が板の CSS 変数と `--ui-accent-ink` を差し替えるだけ。画面全体は `applySkin` しない＝後ろの曲リストがちらつかない）。⑤**既定は実行しても閉じない**（`cliAutoClose` を既定オン → **オフ**へ。閉じたい人だけ入れる）。⑥**`help` は 5 本＋案内・`help all` で全部**（24 本）・`help <語>` は 1 本。⑦文言は **"🪄 Terminal Key Setting"** 風に（4 言語） |
+| **trk328 追補（統合版 `/trk/` を作る指示書と Avatar 側の照合結果）** | 実行する人向けの手順書 [`STABLE-RELEASE-INSTRUCTIONS-TRK328-2026-11-27.md`](STABLE-RELEASE-INSTRUCTIONS-TRK328-2026-11-27.md) を追加。**予行（/tmp で実測）**：`make-stable --apply` で **追加 303・更新 56・同一 344・削除 0**（`git status` 359 件）、当てた `trk` で `npm run check` **2069 pass / 0 fail**・static **0/0**、`CACHE` は `trk-v2026.11.27-trk328`。`--cache=` で上流の番号（1.2.0）にすると `tests/trk259-review.test.mjs` が 1 件落ちることも実測（`CACHE` と `trk-build` の不一致）→ **既定の trk328 を推奨**と明記。**Avatar 側の照合（相手の `0027628`）**：`TRK_PWA_REF` = `d5de065…`・`PINS` 4/4 一致・`check-pwa-receivers` **7/7**・`check-pwa-skin-compat` **✅ 238 種／13 巻**・`re-modern-work-preflight` **6/6**・`npm run check` 合格・`package.json` は `2026.11.27-trk328`。 |
+| **trk328（安定版を出す前の 2 つの修正：生成の道具の差し戻し・フェードの後始末）** | 外部レビュー（2026-11-27）の **M1**＝`tools/import-skin-catalog.mjs` が生成物に居ない差し戻し ID まで `SKIN_HOLDBACK` に書いていた（wizard の生成物に gold-chip が入り、Avatar の `check-pwa-skin-compat` が赤・`--check` も通らない）のを、**そのファイルに居る ID だけ**を足す形に修正。Avatar の目録（sha256 `8f1e9fa7…`）で `skins-wizard.js` 62 種・`skins-volumes.js` 176 種／13 巻が `--check` 一致、Avatar の互換検査 **✅ 238 種／13 巻・差し戻し 3 種 33 組**。**M3**＝フェード（trk327・既定オフ）の途中で巻き戻すと音量が下がったまま（0.8→0.48）だったのを、「終わりの N 秒」の外へ戻ったら `baseVolume()` に戻す形に修正（ミュート中は触らない・`musicVolume` は変えない）。推奨の 1 行＝フェードの説明に**iPhone・iPad では効かない**（4 言語）／更新の知らせに**もう一度開き直す**（4 言語）。手順書 `TRK-STABLE-RUNBOOK` の期待値を実測（703 ファイル・追加 303／更新 56／同一 344・反転 95 ファイル 517 語・**2069 pass**）に更新。見送り＝取り込み理由文の 4 言語化・「全部消す」の戻り先（理由は [`STABLE-REVIEW-TRK328-2026-11-27.md`](STABLE-REVIEW-TRK328-2026-11-27.md) §4）。Avatar 側へ頼むこと＝別紙 [`AVATAR-HANDOFF-TRK328-2026-11-27.md`](AVATAR-HANDOFF-TRK328-2026-11-27.md)。試験 `tests/trk328-stable-fixes.test.mjs` 8 件。cache は `trk-v2026.11.27-trk328@<スコープ>`（`/trk/` なら `@trk`）。実機は未確認。 |
+| **trk327（メディアプレイヤーの点検表 P1：ロック画面・読み込みの可視化・キュー編集・曲間のつなぎ）** | 点検表 [`MEDIA-PLAYER-REVIEW-2026-11-27.md`](MEDIA-PLAYER-REVIEW-2026-11-27.md)（PR #113）の P1 を実装。**ロック画面**：`navigator.mediaSession.playbackState` を実際の再生（none／paused／playing）に合わせ、絵を 192／512 の 2 サイズに。**読み込み**：`waiting`→「読み込み中」、`canplay`／`playing`→消す、`stalled` は 3 秒で「止まっています」、`error`→理由＋**⟳ もう一度**（`retryPlayback()`）。無期限の読み込みを出し続けない。**キュー**：`settings.mediaQueueNext`（key だけ・最大 100・重複なし・`core.cleanMediaQueue()`）に持つ Spotify 風の「次に再生」。行に ⏭／＋、手動キューに ✕、キューの上に「次に再生（手動）」を出し、`nextMediaSong()` が先に消化して消す。**キューからプレイリスト**：💾 を押したときだけ `library.createPlaylistFromSongs(name, keys)`（40 文字・重複畳み・500 曲・保存失敗は巻き戻し）。**続きから再生**：位置と巻き戻しの秒数を 1 行で知らせる。**曲間のつなぎ（どちらも既定オフ）**：ギャップレスは次の曲を `muted` の別要素で先読み（`selectSong()` が待ってから `src` を入れるため**完全な無音連結は保証しない**と文言にも明記）／フェードは `video.volume` だけで 0〜12 秒（**曲を重ねない**）。非目標（配信・キャスト・アカウント同期）は「やらない理由」として記録し、**クラウド版を作るときの候補**として書き残した。文言 27 キー × 4 言語。試験 `tests/trk327-media-queue.test.mjs` 43 件。詳細は [`MEDIA-PLAYER-TRK327-2026-11-27.md`](MEDIA-PLAYER-TRK327-2026-11-27.md)。cache は `trk-v2026.11.27-trk327@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk326（Avatar 倉庫の受け子 7 件：R-VOL-1〜R-WIZ-1）** | trk-Avatar-Library の受け渡し（2026-11-27・`3246524`）の要望受け子 7 件を実装し、倉庫の検査 CLI が **7/7 `implemented`**（`ok: true`）。**R-VOL-1**：`js/library-receiver.js`（新規・通信しない純関数）で巻／単体スキン JSON（`trk-avatar-library-skins` v1）を検証（14 色の許可パターン・4 言語・ID 44 文字・1 ファイル 1 MiB・合計 300 種）し、IndexedDB（`shadow_taiko_skin_imports`）へ内蔵・カスタム 20 件枠と別に保存、棚の「📚 取り込んだ巻」に出す。重複はプレビューのあとスキップ／上書き／キャンセル。`readability: "intentional-low"` は 4 言語の理由とセットのときだけ通し、カードに警告と理由を出す。**R-REM-1／2**：`js/title-font.js` の `applyForWork`（全体設定 > 作品の指定・ファイルが揃わなければ当てない）と `restoreWorks`／`importWorksBackup`（`trk-title-font-works-backup` v1・`state: "invalid"` は書き戻さない）、`js/remodern-ui.js` が作品の題字の書体を一緒に当てる。re-modern 作品の一覧の退避（`trk-re-modern-works-backup` v1）も同時に。**R-REM-3**：書斎・基地は独立オプトイン（`settings.remodernOptIn`・既定オフ）。**R-TYP-1**：`trk-typography-pairing` v1 を `settings.typography`（`pairing: "custom"`）に取り込み、不足する `.stpack` の名前を `typoState` に出す（自動取得なし）。**R-SKIN-1**：`tools/skin-holdback.mjs` に差し戻しを単一定義（意図的低可読と調整待ちを区別）し、`legacyColors` → `legacyUi` を生成、`settings.skinLegacy` の一覧でこの端末だけ旧配色に切り替え。**R-WIZ-1**：`js/cli.js` の `importAdvancePrefs`（禁止文字の厳格拒否・辞書 500 語）と `js/pack-catalog.js` の `readLibraryManifest`（未知の `futureSlots` は読み飛ばす）。文言は 4 言語（46 キー追加）。試験 `tests/trk326-*.test.mjs` 4 本（52 件）。`npm run check` **2018 pass / 0 fail**。実ブラウザ・実機の操作は未確認。cache は `trk-v2026.11.27-trk326@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk325（全画面 ⏪⏩ 曲送り・セーフモードボタン既定オフ・設定を隠す）** | ①全画面ビューア（`js/video-max.js`）の ⏪ / ⏩ ボタンを「10秒戻す／進む」から「前の曲／次の曲」へ変更（メディアプレイヤーモード中は `TrkMediaPlayer.step`、それ以外は `Trk.library` の前後曲選択。4 言語ラベル `videoMaxPrev` / `videoMaxNext`）。②右下のセーフモード浮きボタン（`#floatingSafeBtn`）を既定非表示（`hidden`）にし、設定の「🛟 緊急復旧」内に「🛟 セーフモードのボタンを表示する」（`settings.showFloatingSafeBtn`・既定オフ）を追加。③「🛟 緊急復旧」の上段にチェックリスト式の「🙈 設定を隠す」（`#hideSettingsPanel`・`settings.hiddenSettingPanels`）を追加し、普段触らない設定パネルを個別に隠せるように（自身と緊急復旧は除外、全段からアクセス可）。`npm run check` **1966 pass / 0 fail**。cache は `trk-v2026.11.27-trk325@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk324（作品ごとの書体の保存：Avatar 40 の確認と PWA レビュー 01 への対応）** | **保存のキー**：読めない作品キー（長すぎる・空・`__proto__`）を捨てず、別の作品を書くときも残す。**未知の値**：既存の項目の未知フィールドは、連携のオン・オフや候補の変更でも残す（`mergeEntry`）。**削除**：確認画面で見た保存（`seenRaw`）と同じときだけ消す。変わっていたら `changed`（「確認の後に保存が変わった」）。**文言**：`tfHowTo`（4 言語）を「中身が同じなら名前が違ってもよい」に合わせた。invalid（読めない形式）の削除は別の確認文（退避を勧める）。読めない項目の数を「ほかに読めない項目 N 件」と表示。zh・ko の 7 件の自然さの提案（レビュー 01 §4）を採用。**話者レビューは未実施**。試験 `tests/trk324-title-font-keep.test.mjs` 10 件。画面の描画（ボタン）は headless 未確認（レビュー側で確認済み）。cache は `trk-v2026.11.04-trk324@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk323（題字の書体の zh・ko 文言：PWA 返答 39 の草案を適用）** | `js/i18n.js` の `zh`・`ko` に、題字の書体の `tf*` を入れた（ja と同じ 59 キー）。元は Avatar 39 の `title-font-locales.proposal.json`（zh・ko 各 46 キー）。trk322 で追加した 13 キー（作品の指定の状態・退避・削除、削除確認の「選ばれているが表示されていない」）は**PWA 側の訳で、話者未確認**。形の試験 `tests/trk323-title-font-locales.test.mjs` 3 件（キーの一致・変数の組・空でないこと）。**話者レビューまで**「確定」とは扱わない。繁体字など地域別の locale は別判断。cache は `trk-v2026.11.04-trk323@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk322（作品ごとの書体の保存を一度だけ読む：Avatar 39）** | **読取例外で既存の指定を失う問題の修正**：`js/title-font.js` の判定・件数・書き込みを `snapshotWorks()` の 1 回の読み取りに統一。状態は absent／ok／invalid（JSON でない・空文字）／unreadable（読取例外）。書き込みは absent と ok のときだけ。件数は読めなければ null。**退避**：読めたときだけ生の値を封筒（`trk-title-font-works-backup` v1）にしてダウンロード（`backupWorks`）。**削除**：作品の指定だけを消す（`removeWorksSettings`。書体ファイル・題字の選択は消さない。読めなければ消さない）。確認文は「適用中」のときだけ「元の表示に戻る」、選ばれているが適用中でないときは「表示されていません・選択も解除」。試験 `tests/trk322-title-font-works-snapshot.test.mjs` 16 件、`tests/trk318-title-font-race.test.mjs` 21 件。**未実装**：復元（取り込み）、zh・ko の文言（話者未確認の草案のまま。英語へフォールバック）、字形照合の画面表示、Web Locks・複数タブの対応、作品連携の画面。実ブラウザ・実機は未確認。cache は `trk-v2026.11.04-trk322@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk321（題字の書体の削除案内の確認：Avatar 38）** | **A**：確認文を、いま使っている書体かどうかで分ける（使用中なら「元の表示に戻ります」、そうでなければ「いまの題字は変わりません」）。`removeConfirmText`。**B**：保存を読めないとき、作品の件数を 0 と断定せず「確認できません」と書く（`linkedWorkCount` は null）。**C**：ファイルは消えたが選択の解除に失敗したら `partial` を返し、「ファイルは削除、選択は残る、「使わない」で解除」と伝える（従来の「今の表示は変わりません」を使わない）。試験 `tests/trk318-title-font-race.test.mjs` E・D（計 21 件）。実ブラウザ・画面操作は未確認。cache は `trk-v2026.11.04-trk321@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk320（題字の書体：削除の説明・検討 37）** | 削除の確認文に、その書体を指定している**作品の件数**と「指定は残り、導入し直すまで表示されない」を表示（`linkedWorkCount`・`tfRemoveConfirmWorks`、ja・en）。件数を数えるだけで保存は変えない。検討文書 `docs/REMODERN-PWA-CONSIDERATION-37-2026-11-08.md`（01 の提案と現状、制約、実装順序、受け入れ条件、未検証）。試験 `tests/trk318-title-font-race.test.mjs` D（2 件追加）。適用プレビュー・待機の中止・壊れた保存の案内・保存後の適用失敗は未了。cache は `trk-v2026.11.04-trk320@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk319（題字の書体：削除の競合・他タブの直列化・壊れた保存の拒否：Avatar 36）** | **削除**：準備中の同じ候補の選択を、削除の開始時に取り消す（`choiceSeq`・`choosingId`）。削除した書体が、遅れて完了した選択で復活しない。**導入**：候補の更新でも、準備中の同じ候補の選択を取り消す。**直列化**：選択・削除・導入を Web Locks（`trk-title-font`）で一つずつ行う（使えないときはそのまま）。**準備の上限**：書体の読み込みは 15 秒で打ち切る（ロックを止めないため）。**壊れた保存**：作品の保存が JSON として読めない・オブジェクトでないときは、書き込みを拒否する（上書きしない）。試験 `tests/trk318-title-font-race.test.mjs` 15 件（修正前は 6 件失敗）。未了：保存後の適用失敗・結果不明、オフライン・旧版からの更新、作品連携の画面、zh/ko、実機・他ブラウザ・支援技術。cache は `trk-v2026.11.04-trk319@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk318（題字の書体の競合と旧形式：Avatar 35 の A・B）** | **A**：準備の途中で後から「使わない」や別の選択が始まったら、古い準備の結果は保存も適用もしない（選択の世代 `choiceSeq` を準備の前後で確かめる。理由 `superseded`）。**B**：旧形式の作品の指定 `{作品ID: 候補ID}` は連携オフのまま読み、別の作品を保存しても消さない。知らない候補・壊れた値も書き換えるまで保持（`readWorksRaw`）。試験 `tests/trk318-title-font-race.test.mjs`（修正前は 6 件失敗）。複数タブの直列化・作品連携の画面・zh/ko は未了。cache は `trk-v2026.11.04-trk318@<スコープ>`（`/trk/` なら `@trk`）。 |
+| **trk317（作品ファイルの名前検査の絞り込み）** | 作品に入れてよい文書を **`LICENSE`・`README` の名前で `.txt`／`.md` のものだけ**に絞った（`^(LICENSE\|README)(\.(txt\|md))?$`）。`README.js`・`LICENSE.woff2` などは受け付けない。中身の扱いは変えていない（pack.json 以外は読まず、保存もしない）。Avatar 34 の提案を承認。版：trk317（trk-build と CACHE は下の Service Worker の行を参照）。 |
+| **trk316（題字と書体の接続：Avatar の一括提案と統合レビューへの対応）** | **全体の設定を作品連携より優先**（作品の連携は既定オフ・明示的にオン）。候補は**準備（全ファイルの読み込み）が済んでから保存**し、失敗したら保存も適用もせず以前の表示のまま（読めない・読み込み失敗・保存失敗を区別）。作品から参照するのは PWA の候補 ID（`galmuri`／`dotneo`／`press`）だけ。`.stpack` の形式は変えていない。返答：`docs/REMODERN-PWA-REPLY-REVIEW-INTEGRATION-2026-11-07.md`。版：`trk-build=trk316`／`CACHE=\"trk-v2026.11.04-trk316@<スコープ>\"`。 |
+| **trk315（題字の書体：利用者が導入する書体ファイル）** | 題字（`.brand h1`）と作品名一覧に、利用者が導入した書体（Galmuri11・DotGothic16＋NeoDunggeunmo・Press Start 2P）を当てる。固定版のハッシュ一致のみ導入・全ファイルがそろって読めたときだけ適用・解除で元に戻る。書体本体は同梱しない。ライセンス全文は `fonts/licenses/`（モバイル版と先読みに入れた）。別タブへの反映・削除の一括トランザクション・サイズ上限。Avatar 一括回答への対応は `docs/REMODERN-PWA-REPLY-TRK315-CONSOLIDATED-2026-11-07.md`。版：`trk-build=trk315`／`CACHE=\"trk-v2026.11.04-trk315@<スコープ>\"`。 |
+| **trk314（題字の背景：グラデーションの停止点と間の色まで判定）** | 題字の背景の判定を、単色から **層の候補**へ広げた（`js/remodern-paint.js`・`effectiveBgs`）。①祖先の層を外側から重ね、各層の候補（単色・グラデーションの停止点の重なり）を作る ②候補の全部と、候補どうしの間の色（1/8 刻み）で対比を測り、1 つでも 4.5:1 に届かなければ当てない ③画像（`url`）・判定できない関数（`image-set` など）・`mix-blend`・`filter`・`backdrop-filter`・透明度は判定しない（null）④候補が 64 を超えるときも判定しない。Avatar の回答（第 5 節）の経路 1 に沿う。**近似**：グラデーションの位置ごとの色は見ず、停止点と間の色で囲う（安全側）。検査：`tests/trk314-remodern-title-gradient.test.mjs`（8 件）、smoke `remodern-paint-smoke`（期待どおり：文字色は当たり、「!」は当たらず、解除で空）、`remodern-paint-skin-smoke`（明るいスキンで文字色が既定へ戻る）、`remodern-dev-paint-smoke` 14 OK。smoke 2 本は trk309 の決定（未登録の作品は開発用の切り替えが入っている間だけ当てる）に合わせて `remodernDevPaint = true` を入れた。Avatar の返事（2026-11-07）を受けた修正：①同じ要素の層を、下の層から順番どおりに合成する（131 の例）②候補が 17 以上でも、間の色の検査を省かない ③計算値の末尾の `none` は層ではないので読み飛ばす（既定の画面で当たらなくなった不具合）。 修正③（Avatar の追加指摘）：間の色の刻みを 1/8 から **1/64** に上げた（白→#42e9eb→#dd05bd の例で、黒文字の最悪の点 4.47:1 を 1/8 では取りこぼした）。検査は候補の間で早く抜ける形にし、最悪でも数 ms（ヘッドレス Chromium ではなく、素の Node での計測）。テスト 12 件（新しい例を含む）。**それでも近似**：刻みの間の極値は保証しない。 修正④（Avatar の追補）：`background-blend-mode` が normal 以外（multiply など）なら判定しない（null）。計算していない混ぜ方で黒文字が当たっていた（実描画 約 106、3.88:1）。テスト 13 件。修正⑤（実画素との比較で判明）：近似は実画素より最大 0.1 ほど楽観的だったため、刻みの間の点は 4.5 + 0.1 の余裕で判定する（候補そのものは 4.5）。実画素との比較：当たった 175 件で、実画素の対比 4.5 未満は 0 件（最も低い当たりは 4.579）。テスト 14 件。版：`trk-build=trk314`／`CACHE=\"trk-v2026.11.04-trk314@<スコープ>\"`。 |
+| **trk313（題字の背景に実画像があるときの安全側）** | 題字の色を測る背景（`effectiveBg`）の祖先に **実画像（`url(...)`）**があれば色を当てない（`js/remodern-paint.js`）。Avatar の M3 検証記録 §2 の安全側に従う。装飾の `radial-gradient`（例：`.screen` の淡い光）は画像ではないため従来どおり背景色で測る（これを外すと既定の画面でも題字に色が当たらなくなるため）。検査：`tests/trk313-remodern-title-image.test.mjs`、smoke `tools/smoke/remodern-dev-paint-smoke.mjs` 14 OK（背景色のみ当たる／実画像で当たらない）。動画・canvas の重なりは検出できない（制約）。版：`trk-build=trk313`／`CACHE="trk-v2026.11.04-trk313@<スコープ>"`。 |
+| **trk312（書斎の読書テーマ 30 種の読みやすさ・optgroup の不具合）** | ①**書斎の読書テーマ 30 種を実機相当（ヘッドレス Chromium）で測った**（`tools/smoke/study-theme-contrast-smoke.mjs`・README §9）。読書面の文字と背景の、最も弱い対比で判定（グラデーションは停止点すべて）。結果：**sepia（古書）が 4.34:1 で 4.5 未満** → 文字色 `--study-theme-ink`・編集欄の文字色を `#49311f`→`#3d2817` に濃くして **30 種すべて 4.5:1 以上**（最弱は sepia の 5:1）。②**不具合を直す**：`js/core.js` の `applyLanguage` が `optgroup` の `textContent` を書き、📚 書斎の**テーマの選択肢が消えていた**（30 種の選択肢が 0 件）。見出しは `label` に書くよう直した。`js/study-room.js` の `studyTranslateNodes` と同じ扱い。版：`trk-build=trk312`／`CACHE="trk-v2026.11.04-trk312@<スコープ>"`。 |
+| **trk311（trk310 の Avatar 再検証の修正：保存失敗の知らせ）** | Avatar の PR head 検証（`9f54ed7`）で見つかった点を直す。**印が隠れている状態で保存に失敗すると、文言も console の警告も出なかった**。今は失敗のたびに `console.warn` を必ず出し、印（隠れていても）と設定の「🎨 スキン」の状態の行に文言（`remodernDevSaveFail`）を出す（`js/remodern-ui.js` の `setDevPaint`）。切り替えの戻し・印・オフのボタンは trk310 のまま。テスト `tests/trk310-remodern-dev-bar.test.mjs`（+1 件）。版：`trk-build=trk311`／`CACHE="trk-v2026.11.04-trk311@<スコープ>"`。 |
+| **trk310（Avatar の回答を反映：開発用の切り替えの保存・印）** | Avatar 側の回答（`AVATAR-ANSWER-PWA-DEV-SWITCH-2026-11-07`）を反映。①`setUnverifiedPaint` は保存に失敗したら元に戻し、戻った状態を返す（`saveUserPrefs() === false` を見る）。②切り替えが入っている間は、画面の下に**固定の印**（文字・「試験をオフにする」ボタン・role=status）を出す（`js/remodern-ui.js` の `renderDevBar`・`css/style.css`）。③切り替えは `remodernDevPaint` だけを変える。置き場所は Avatar の判断どおり、今は画面の常時表示はなく、コンソール（`window.TrkReModernDev`）から使う。テスト `tests/trk310-remodern-dev-bar.test.mjs`。版：`trk-build=trk310`／`CACHE="trk-v2026.11.04-trk310@<スコープ>"`。 |
+| **trk309（受け子：未確認の作品に色を当てる開発用の切り替え）** | 未確認の作品に色を当てるかは、**既定で当てない**（`R.mayPaint(status, devOn)`・`js/remodern-regions.js`）。開発用の切り替えは `settings.remodernDevPaint`（既定 false）。画面には出さず、`window.TrkReModernDev.setUnverifiedPaint(true|false)` で入れる（置き場所は Avatar 側に相談中）。対象は題字（`js/remodern-ui.js` の paintTitle）。書斎・基地の外枠は**まだ色を当てない**ため、判定だけ用意してある。テスト `tests/trk309-remodern-dev-paint.test.mjs`。版：`trk-build=trk309`／`CACHE="trk-v2026.11.04-trk309@<スコープ>"`。 |
+| **決定（依頼者・trk308 のあと）** | 登録簿に無い（未確認の）作品の色は、題字にも書斎・基地にも**当てない**。Avatar 側で種類が増えたら、「色を当てる／当てない」を切り替える**開発用の設定**を作るかを検討する（未着手）。実機・支援技術の確認、書体（権利確認待ち）、書斎・基地の外枠（全テーマ確認待ち）は未了。 |
+| **trk308（実装済み・書斎・基地への適用と「戻す」）** | 設定「🎨 スキン」の 3 行と書斎ダイアログに、**影響範囲の表示・「適用」・「戻す」**を置く。選んだだけでは変わらず、「適用」で初めて変える（適用の前の状態を `settings.remodernLast` に覚える）。「戻す」は、適用後に利用者が変えていなければ直前へ戻し、変わっていれば上書きせず知らせる。`js/remodern-regions.js` の `sanitizeSnapshot`（壊れた記録は読まない）・`js/core.js`（読み込み）・`js/remodern-ui.js`（表示と操作）・`index.html`・`js/i18n.js`（12 キー・4 言語）・`sw.js`。書斎・基地の外枠の色は**まだ当てない**（全テーマの読みやすさを確かめてから）。テスト `tests/trk308-remodern-apply.test.mjs`。版：`trk-build=trk308`／`CACHE="trk-v2026.11.04-trk308@<スコープ>"`。 |
+| **trk307（登録簿との照合・R3 ②③）** | Avatar の `catalog/re-modern/index.json` を**そのまま写した** `data/re-modern-registry.json`（出典 commit・sha256 と更新手順は `data/re-modern-registry.meta.json`）。`js/remodern-registry.js` が読み、壊れた・読めない・版違い・ID 不正・重複は全部**未確認**。登録簿に無い作品は一覧に「（未確認）」、題字には当てない。空の登録簿では全作品が未確認。ID の一致は登録の有無だけで、ファイルの同一性は証明しない。SW の先読みに写しを入れた。`js/remodern-ui.js`・`js/i18n.js`（未確認の 2 キー・4 言語）・`index.html`・`sw.js`。テスト `tests/trk307-remodern-registry.test.mjs`。版：`trk-build=trk307`／`CACHE="trk-v2026.11.04-trk307@<スコープ>"`。
+| **trk306（スキン変更で題字の色を判定し直す）** | Avatar 側の試験（B の既知の問題）の修正。通常のスキンを変えたら `core.on("skin")` で題字の対比を判定し直す。作品を選んだあとにスキンを変えても、読めない色は残らない。`js/remodern-ui.js`（repaintTitle）・テスト `tests/trk306-title-repaint.test.mjs`。版：`trk-build=trk306`／`CACHE="trk-v2026.11.04-trk306@<スコープ>"`。
+| **trk305（M3：作品の色を共通の題字へ）** | `js/remodern-paint.js` を新設。共通の領域が「独立」で作品があるとき、`.brand h1`（trk!）の文字色（colors.text）と「!」（colors.accent）だけに当てる。背景との対比が 4.5:1 に届かない色は使わない。書斎・基地はまだ当てない。`js/remodern-ui.js`（paintTitle）・`js/i18n.js`（設定の作品欄の文言・4 言語）・`index.html`（版と読み込み）・`sw.js`。テスト `tests/trk305-remodern-paint.test.mjs`。版：`trk-build=trk305`／`CACHE="trk-v2026.11.04-trk305@<スコープ>"`。
+| **trk304（レビューの確認・パッチ適用）** | 知らせの「✓」を外す（レビュー 05 のパッチ）。`.status` の文字は本文の色のまま。記号は失敗・警告にも付いてしまうため付けない。`css/style.css`・`tests/trk301-remodern-review.test.mjs` を更新。版：`trk-build=trk304`／`CACHE="trk-v2026.11.04-trk304@<スコープ>"`。
+| **trk303（文書）** | **ブラウザー確認（smoke）の立て方を書面にした**：`tools/smoke/README.md`（準備・起動・実行・つまずき）と `tools/smoke/remodern-dialog-smoke.mjs`（書斎・基地のダイアログを開いて閉じる）。`npm run check` には入れていない（Chromium が要るため）。アプリは変えていない（版は trk302 のまま）。
+| **trk302（実装済み・レビューの判断の反映）** | 依頼者の判断（2026-11-06）：**M4＝作品の色は Avatar の 14 個**（stage・ink・text・muted・bg・panel・field・button・accent・onAccent・gold・border・don・ka。`js/remodern-work.js` の `COLOR_KEYS`）／**R1＝見出しの枠は作品があるときだけ**（`js/typography.js` の `HEADING_FROM_WORK = false`。作品の見出しを当てる処理が入るまで見出しは従来どおり）／**R6＝知らせは本文の色＋「✓」**（`.status`）。未了：作品の色を skin 取り込みと同じ寄せ方・検査で通す（M4 の続き）、作品の値を画面に当てる処理（M3）、ブラウザー確認（trk301 の smoke は `/tmp` で実施）。版：`trk-build=trk302`／`CACHE="trk-v2026.11.04-trk302@<スコープ>"`。見張り：`tests/trk301-remodern-review.test.mjs`（+3 件）、`tests/trk299-heading-slot.test.mjs`・`tests/trk300-remodern-work.test.mjs` を更新。
+| **trk301（実装済み・レビュー対応）** | **trk-Nexus-review-trk300-remodern-2026-11-06 の指摘を直す**。①必須：ダイアログを body 直下へ（設定の display:none に入れると、見えない modal で画面全体が押せなくなった）・地と文字をスキンの色に。②基地のボタンは一度だけ作られるので、出し入れは render が hidden で行い、文言は data-i18n。③作品名から書字方向の制御文字を除去（`js/remodern-work.js`）。④sha256 は作品ファイル全体（`.stpack`）。⑤読めない理由は `console.warn`（利用者には一文のまま）。⑥作品はまだ画面に反映されないことを 4 言語で明記（当てる処理は未実装）。⑦`typography.js` の古いコメントを直す。未決（判断を依頼中）：作品の色を 14 個に揃えるか（M4）・trk299 の見出しを作品があるときだけにするか（R1）・保存の知らせの色（R6）。版：`trk-build=trk301`／`CACHE="trk-v2026.11.04-trk301@<スコープ>"`。見張り：`tests/trk301-remodern-review.test.mjs`。
+| **trk300（実装済み・段階 2 項目 4＝作品ファイルの読み込み）** | **作品ファイル（`.stpack` の拡張・E2）を読む**。pack.json に `remodern`（version 1）の欄があるものだけが作品。検査は `js/remodern-work.js`（許可リスト・知らない項目は落とす・ZIP の中身は pack.json と LICENSE/README だけ）。読み込み口は設定「🎨 スキン」の「作品ファイルを読む」（`js/remodern-ui.js`）。保存は `settings.remodernWorks`（最大 20 件・パックの DB には入れない）。既存の経路の番人：`js/custom.js` が `remodern` の欄つきを `packIsRemodernWork` で拒否（スキンのパックとして入らない）。版：`trk-build=trk300`／`CACHE="trk-v2026.11.04-trk300@<スコープ>"`。見張り：`tests/trk300-remodern-work.test.mjs`（6 件）。
+| **trk299（実装済み・段階 2 項目 3＝見出しの枠）** | **見出し用の枠（heading）を、共通 UI の見出しにだけ当てる**（E3）。対象は `details.panel>summary`・`.panel h3`（見出し）。題字 `.brand h1` は display のまま。書体のある組だけ `body.trk-typo-heading` を張る（無い組・未選定は従来どおり）。道具は `js/typography.js`（`cssVars` に heading を任意で入れる・`apply` が `--trk-typo-heading` を毎回設定）、CSS は `css/style.css` の末尾。版：`trk-build=trk299`／`CACHE="trk-v2026.11.04-trk299@<スコープ>"`。見張り：`tests/trk299-heading-slot.test.mjs`（4 件）。
+| **trk298（実装済み・trk-re-modern の段階 2 項目 2＝書斎・基地の置き場所）** | **書斎・基地のヘッダーに「🎨 スキン」（文字つき）を置く**。既定はオフ（設定「書斎・基地にスキンのボタンを出す」で切替・`core.settings.remodernIcons`）。押すと、その領域だけの `<dialog>`（閉じるボタンあり・1 回の変更は 1 領域）。書斎は `index.html` の `studyRemodernBtn`、基地は `js/media-player-mode.js` の `remodernOpenMedia`。判断は modern-web-guidance のツールバー・ダイアログ・形態対応のガイドに従う（文字つき・aria/title・`:focus-visible`・閉じるボタン・隣の操作を覆わない）。版：`trk-build=trk298`／`CACHE="trk-v2026.11.04-trk298"`。見張り：`tests/trk298-remodern-buttons.test.mjs`。
+| **trk297（実装済み・trk-re-modern の領域ごとの選択 1 件目）** | **設定「🎨 スキン」に領域ごとの 3 行**（共通・📚 書斎・🎥 基地）。既定はどれも現状維持（D4）。道具は `js/remodern-regions.js`（検証・1 行だけ変える・戻す競合の検出）、UI は `js/remodern-ui.js`。作品の一覧はまだ空（次の段階で読み込む）。cache は **`trk-v2026.11.04-trk298@<スコープ>`**（実体は `trkPWA-trk-v2026.11.04-trk298@<スコープ>`）。テスト：`tests/trk296-remodern-regions.test.mjs`・`tests/trk297-remodern-ui.test.mjs`。設計：`docs/REMODERN-DESIGN-DRAFT-2026-11-06.md`。
+| **trk295（実装済み・インストール案内）** | **設定に「📲 trkをインストール」と「毎回許可の選び方」を置く**。①**📲 trkをインストール**（`js/app-install.js`・設定の「更新」の次）：Chrome 系は `beforeinstallprompt` の確認をボタンのタップ中に出す。iPhone・iPad は既存の「ホーム画面への追加」の案内（`#iosInstallBtn`）を開く。インストール済みは「インストール済みです」だけ。確認が出せない端末はブラウザーのメニューからの入れ方を出す。②**📖「毎回許可」の選び方**（📤 の許可のボタンの下）：3 択の意味・「許可しない」からの直し方・インストール後は許可が残ること。③ cache は（当時の cache 名）。テスト：`tests/trk295-install-guide.test.mjs`。
+| **trk294（実装済み・許可の仕組み）** | **楽曲フォルダーの許可を、ブラウザーに求め直せるようにする**。①**「許可しない」を選んだあとの出口**：拒否されたときは、「いま読み取る」「再接続」を押しても黙って失敗せず、**直し方（サイトの設定で許可に戻す）**を出す。②**許可のワンボタン**（設定の 📤 の中・**初期オフ**）：オンにすると、覚えたフォルダーがあるときだけ「🔓 共有の許可をブラウザに求める」が出る。押すと、まだ許可が要る 1 本だけを requestPermission（1 タップ＝1 本）。拒否のときは再依頼せず直し方だけ。③「毎回許可」はブラウザーの確認でしか選べない（アプリからは強制できない）。インストール済みのアプリは許可が残る（Chrome の仕様）。テスト `tests/trk294-perm-ask.test.mjs` |
+| **trk293（実装済み・Avatar の最終レビュー対応）** | **Avatar の `Avatar-Library-consult-trk290-2026-11-06` の最終版（正本 `catalog/skins.json` sha256 `8f1e9fa7…`・291 種・13 巻・Wizard 62）を取り込み直し**。①**目録の配色 4 種**（chocolate・hot-cocoa・ancient-bronze・tequila-sunrise）と **文字の濃さ 3 種**（creme-brulee・melon-pan・pancake）を反映。②**house-edge の宣言**（`readability: "intentional-low"`＋4 言語の理由）を生成器が写し、画面はその理由文を出す（**合格証でも免除でもない**：差し戻しの判定は色の差で決まり、宣言では外れない）。③**差し戻し 7→3**（巻別のみ。`orichalcum`・`gold-chip`・`house-edge`。Wizard 0）。既定の棚 284→288。④**保留（Avatar 側）**：gold-chip・orichalcum の配色（`05-…保留中の提案`）、同色 19 種（`06-…未適用の提案`）、旧配色への切り替え（legacy）は**適用していない**。版 **trk293**（当時の cache 名は trk293 版）。テスト `tests/trk293-readability.test.mjs` |
+| **trk292（実装済み・Avatar のレビュー対応）** | **Avatar の trk291 お返事（PR #37）へのレビュー（`avatar-trk291-review-2026-11-06.zip`）**。①**案 A：地（--ui-bg）は飾りの面**＝⌨ の板と入力欄を `--ui-panel`・`--ui-field` に（`css/style.css`）。取り込み・検査は読む面（パネル・入力欄・ボタン）だけで合格を取る（`tools/import-skin-catalog.mjs`・`tools/check-skin-contrast.mjs`）。`tests/bg-decor.test.mjs` が「地を背景に使うのは `.screen` だけ」を守る。②**目録（Avatar の 6e064f0b）から `js/skins-wizard.js`・`js/skins-volumes.js` を作り直した**。差し戻しは **18 → 7**（Wizard 0・巻別 7）：wizard-hermetic ほか 8 種が棚に戻った。③`SKIN_HOLDBACK` の和集合化は**保留**（生成物を読む検査が配列リテラルの形を前提にしているため。Wizard の差し戻しが 0 になったので、いまは後勝ちで困らない）。④**未決（ask で確認中）**：読みにくさが趣向のスキン（`readability: "intentional-low"`）、旧配色の切り替え（`legacy`）、同色 16 組の作り直し（案 A／案 B）。cache は `（当時の cache 名）`。 |
+| **trk288（実装済み・レビュー対応）** | **⌨ ターミナルのレビュー（trk287）への対応**。①**起動時の例外を直した**＝`catch.js` の `Trk.modes` の一覧に別ファイルの `ROAD_IDS`・`ROAD_WEIGHTS` が入っていて `ReferenceError` で `Trk.modes` が空になっていた → `truck.js` で公開。`tests/trk288-boot.test.mjs` が一覧の名前の解決を全ファイルで見張る。②**C1**＝✕・唱える・⚙ の部品の上では Space・Enter を奪わない（`CLI_CONTROL_SEL`）。③**C2**＝低い画面で入力欄が切れない（入力の行は `flex:none`・ログだけが縮む・520px 以下で案内と辞書を畳む・`visualViewport` で板の上限と底を合わせる `fitToViewport()`）。④**C3**＝予約キーの判定を逆に（遊ぶキーとの重なりは許す・ブラウザー・OS が先に取るキーは拒む `cliKeyReserved`）。呼び出しキーの既定は、trk291 で **オフ**（`cliKey: ""`。⚙ で決める。Backspace でオフ・⌨ ボタンは残す）。trk288 の既定は Ctrl+.（Period）だった・`cliShift` で Shift 付きも登録できる。⑤**R1**＝`cast night` が辞書の名前を唱える。⑥**R2**＝入力の入れ方（`cliInsert`：native＝既定・ブラウザーに任せる／exec＝execCommand で Ctrl+Z に残す）。ほかの処理が止めた 1 文字だけ bubble の段で端末が入れる。⑦**R5**＝逃げ先を keep。**R7**＝音を出さないスキンの注記。⑧**R8（一部）**＝純粋な計算を `js/cli-pure.js` へ（`window.Trk.cliPure`）。板と ⚙ の分割は次回。⑨**Q8**＝辞書の名前はどの言語の文字でも（`SPELL_ID_RE`・NFKC・24 字）。cache は `（当時の cache 名）`（trk289 の上に trk290 で推奨 1・4・5 を足し、trk291 で呼び出しキーの既定をオフにした）。**実機で見る項目は `docs/REVIEW-RESPONSE-TRK287-2026-11-04.md` §7**（この環境に実ブラウザーが無く、レイアウトと打鍵は静的・vm の見張りだけ） |
+| **trk287（実装済み）** | **⌨ ターミナルの入力で文字が落ちる件と、修飾キー（Super）の選択**。①**入力を端末が握る**＝trk285 は「フォーカスが入力欄の外のときだけ」拾っていたので、ブラウザーやほかの処理が `preventDefault()` した文字（報告の **p・:**）が落ちることがあった。trk287 からは**入力欄にフォーカスがあっても、1 文字は `insertTextAt()` で自分で入れる**（`e.preventDefault()`＋`stopPropagation()`）ので、どこで止められても落ちない。**P（一時停止）・/（設定の検索）・`（リトライ）**など外の操作には渡さない。辞書の入力欄・Tab（フォーカス移動）・出力の矢印（読み返し）・IME の変換中はそのまま。②**修飾キーを選べる**＝`settings.cliMod`（**`ctrlOrMeta` 既定**＝Ctrl か ⌘／Win／`meta`＝**Win／⌘（Super）だけ**／`ctrl`／`alt`）。⚙ の ⌨ パネルに `#cliModSel`（4 択）と説明（Windows は Win+D などを OS が先に取る）。表示は `Win／⌘ + K` のように選んだ形で出し、保存の文言も `{mod}` を使う |
+| **trk276〜278（merge 済み）** | **📚 をキーで動かす**。ご要望＝上下を含む 4 方向の**キーアサイン**・**使わない**設定・**縦読み**。決めた形＝フォーカスだけ動く（Enter で決定）／読み方向「横書き・縦書き」／4 方向を個別に／📚 のパネルの中に置く。trk277 で**端の回り込み**（端で止まる／反対側へ回り込む）と**言葉の整理**（見出しを先に置く）。trk278 で**連読**（次の本へ続ける）と**「先頭に戻りました」**の読み上げ。記録＝[`PLAN-TRK276-2026-11-03.md`](PLAN-TRK276-2026-11-03.md)、返事＝[`LETTER-TRK276-2026-11-03.md`](LETTER-TRK276-2026-11-03.md)・[`LETTER-TRK277-2026-11-03.md`](LETTER-TRK277-2026-11-03.md)、実機＝[`VIEWER-TRK276-2026-11-03.md`](VIEWER-TRK276-2026-11-03.md) |
+| **trk275（merge 済み）** | **trk274 へのレビュー対応**。必須 **M1**（`Esc` で 📚 パネルが残る）・**M2**（巻の外の「使用中・⭐・🕒・🚫・検索」が消える）・**M3**（既定カードの数が 291）を直し、推奨 **R1〜R9** を反映（R3・R8・R9 は文書）。Q2 は「**寄せ幅の上限**」＝面の ΔE(OKLab) が 0.15 を超えるものは**目録へ差し戻し**（18 種）。返事＝[`LETTER-TRK275-2026-11-03.md`](LETTER-TRK275-2026-11-03.md) |
+| テスト | `npm run check` **1762 pass / 0 fail**（trk289 時点。版ごとの件数は §7）、`node tools/check-repo.mjs` 0 failure / 0 warning。**`TZ=Asia/Tokyo` でも同じ**（CI も両方で流します） |
+| Service Worker | cache は trk-v2026.11.27-trk328@<スコープ>（trk328・安定版を出す前の 2 つの修正（生成の道具の差し戻し・フェードの後始末）と推奨の 1 行。以前は trk-v2026.11.27-trk327（trk327・メディアプレイヤーの点検表 P1（ロック画面の再生状態と絵・読み込み中／詰まり／失敗と再試行・キュー編集とキューからプレイリスト・続きの知らせ・曲間のつなぎは既定オフ）。以前は trk-v2026.11.27-trk326（trk326・Avatar 倉庫の受け子 7 件（R-VOL-1〜R-WIZ-1）。以前は trk-v2026.11.27-trk325（trk325・全画面⏪⏩ 曲送り・セーフモードボタン既定オフ・設定を隠す。以前は trk-v2026.11.04-trk324（trk324・保存のキー保持・未知の値・削除の変更検出・tfHowTo。以前は trk-v2026.11.04-trk323（trk323・zh／ko の題字の文言。以前は trk-v2026.11.04-trk322（trk322・作品の保存の単一読取。以前は trk-v2026.11.04-trk321（trk321・削除案内の使用中・不明・部分失敗。以前は trk-v2026.11.04-trk320）（当時の cache 名）。install で `index.html` と、それが読み込む CSS・JS・アイコンを先に取ります（[`PWA.md`](PWA.md) §9.1）。同じオリジンに2つ置いても、片方の更新がもう片方のキャッシュを消しません |
+| まだ足りないもの | **実機・実ブラウザでの見た目**（この作業環境にブラウザも端末もない）。trk246 の確認項目は [`TYPOGRAPHY-TRK246-2026-11-01.md`](TYPOGRAPHY-TRK246-2026-11-01.md) §5、trk244・trk245 の確認項目は [`DENSITY-TRK244-2026-11-01.md`](DENSITY-TRK244-2026-11-01.md) §6 と [`DENSITY-WINDOW-TRK245-2026-11-01.md`](DENSITY-WINDOW-TRK245-2026-11-01.md) §5、trk229 の確認項目は [`SKIN-SHELF-TRK229-2026-10-31.md`](SKIN-SHELF-TRK229-2026-10-31.md) §6、trk228 の確認項目は [`FONT-SKINS-TRK228-2026-10-31.md`](FONT-SKINS-TRK228-2026-10-31.md) §7、trk227 の確認項目は [`PLAYER-BAR-TRK227-2026-10-31.md`](PLAYER-BAR-TRK227-2026-10-31.md) §5、trk226 は [`PLAYER-BAR-TRK226-2026-10-31.md`](PLAYER-BAR-TRK226-2026-10-31.md) §6、trk225 は [`PLAYER-BAR-TRK225-2026-10-31.md`](PLAYER-BAR-TRK225-2026-10-31.md) §5、trk223 の確認項目は [`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md)、trk220〜trk222 は [`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md) |
+| 移行 | **組織 `Trk-Nexus` へ移籍済み**（trk250〜trk252）。Pages は稼働中（開発版 <https://trk-nexus.github.io/trk/>）。個人側の同名リポジトリは**空のまま**（墓標 README は所有者待ち・[`BACKLOG-2026-11-02.md`](BACKLOG-2026-11-02.md) §6 X4） |
+
+**この系統で変えてはいけないこと**：§3 の条件に加えて、**実行時に外部へ通信しない**（CDN・外部API・解析タグを足さない）、**端末内データだけ**、**GPL-3.0-or-later のクレジットを消さない**、**保存キーを変えるときは移行を書く**（[`MIGRATIONS.md`](MIGRATIONS.md)）。
 
 ## 2. 現在の実装状態
 
@@ -336,10 +491,23 @@ Windows の「サウンド」などで**音の出力先（スピーカー／ヘ�
 - Touhouのタイトル索引・MIDI演奏機能と、Touhouゲームの音源・実サンプル・抽出データを混同しないこと。実サンプルを追加する場合は、ファイル単位の権利根拠と再頒布許諾を確認するまで同梱しません。
 - Import時は既知キー・型・enumを代入前に検証し、拒否した設定と理由を表示します。MIDIプロフィールIDも実在一覧に対して検証します。
 - 新規UI文言は日本語・英語・中国語・韓国語をそろえます。中国語・韓国語を母語話者が確認したとは限りません。
+- **同居する安定版 `trk` との約束（2026-11-02・レビュー推奨 A-2）**：同じオリジンなので `localStorage` / `IndexedDB` を読み合います。開発版（trk）の保存は **「足すだけ」**——知らない項目は残す・既存項目の意味を変えない・キーを増やさない（`saveUserPrefs()` は `Object.assign({}, storedPrefsRaw(), prefsForSave())`。置き換えは工場出荷リセットの `{ fresh: true }` だけ）。
+- **`IDB_VERSION` は安定版へ出すまで上げない**（2026-11-02 時点で trk・上流とも **`2`**）。開発版だけ大きい版で開くと、安定版が `VersionError` で開けなくなるためです。上げるのは「安定版にも同じ版がある」状態になってから。
 
 ## 4. 未完了の確認
 
-一覧（状態は 2026-10-27 時点）。詳細は下の「4.1 詳細」にあります。既存項目の番号は維持しています。
+一覧（trk218 までの状態は 2026-10-29、trk220〜trk223 は 2026-10-31 時点）。詳細は下の「4.1 詳細」にあります。既存項目の番号は維持しています。
+
+**まず見てほしい4件（2026-10-31）**：このリポジトリで足した trk220〜trk223 は、**自動検査はすべて緑・実機は未確認**です。確認の手順は [`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md) にチェックリストでまとめました。
+
+- **#61 trk222**：拡大率（50/75/100/125%）・アイコンの大きさ固定・PC型／スマホ型の2択・エフェクト欄のタブ分け。とくに **CSS の `zoom`（再生バーの拡大）はブラウザ差**が出やすい箇所です。
+- **#62 trk221**：PC でのスマホ型 UX・下の再生バー（スキン追従・音量・ゲーム中の引っ込み）。
+- **#63 trk220**：iPhone のホーム画面から起動・オフライン・縦向きの案内・設定の欄の記憶。
+- **#65 trk225**：下の再生バーの置き場所（既定を「画面のいちばん下」に）と「隠さない」設定。計算・偽 DOM・CSS の規則では確かめたが、**実機の見た目は未確認**。手順は [`PLAYER-BAR-TRK225-2026-10-31.md`](PLAYER-BAR-TRK225-2026-10-31.md)。
+- **#66 trk235**：📦 セット（`.stlib`）を選ぶだけで入る。**r5（30.8 MB・16 パック）で実機の通しを確認済み（2026-11-01・16 パックとも投入）**。残るのは入れた書体が実際に当たるか・太さの切り替わり・ライセンス全文・16 行の一覧・`gallery/fonts.html` の操作で、手順と記録は [`CATALOG-SET-TRK235-2026-11-01.md`](CATALOG-SET-TRK235-2026-11-01.md) §6-2 に残しています。
+- **#68 trk239**：r6 の 2 分割に備えて、**「これから入る分」だけを数える**（`setPending`）。自動検査は緑（1112 pass）、**実機は未確認**（r6 が未受領のため）。手順書は [`SET-SPLIT-TRK239-2026-11-01.md`](SET-SPLIT-TRK239-2026-11-01.md)。r6 が届いたら `node tools/check-set.mjs <セット> --hash` → 実機で 2 つ続けて。
+- **#67 trk236〜trk238**：目録の「ひとこと・対応字数・タグ」を読む・タグで絞る・**🔤 入れている書体**。自動検査は緑（1101 pass）、**実機は未確認**。手順は [`FONT-META-INDEX-TRK236-238-2026-11-01.md`](FONT-META-INDEX-TRK236-238-2026-11-01.md) §3・§5。見てほしいのは、🔎 中身にひとことが出るか／タグのボタンで一覧が絞れるか／🔤 索引に 16 パックぶんの書体が並び「使う」で切り替わるか。
+- **#64 trk223**：trk222 レビューへの対応。エフェクトのタブの ▶ TV と欄の並び、拡大率 4 段でのカードと再生バーの間隔（125%）、背景と MMD/VRM の位置、ようこそを閉じたあとの再生バー。計算・vm では確かめたが、**実機の見た目は未確認**。対応の一覧は [`REVIEW-RESPONSE-2026-10-31.md`](REVIEW-RESPONSE-2026-10-31.md)、実機での手順は [`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md)（**まず §2 の4点**）。
 
 | # | 項目 | 状態 | 次の一手 |
 |---|---|---|---|
@@ -403,6 +571,10 @@ Windows の「サウンド」などで**音の出力先（スピーカー／ヘ�
 | 58 | 1.1.7 の配布ZIP（trk218 入り・2026-10-29） | ZIP の形・`unzip -t`・sha256・全エントリ同時刻（`2026-10-29 13:00` UTC）・`--check`・ローカル配信は確認済み（§6）。**実ブラウザで 👁／🗑／📋 を触っての確認は未了**（§4-57） |
 | 59 | trk219：🔈 出力デバイスの切り替えで再生を止めない | `tests/trk219-audio-output-keep.test.mjs` の17件＋`npm run check` 746 pass で確認済み（偽の再生要素・時計・AudioContext で実動）。**実機で出力デバイスを切り替えての確認は未了**（§4-59 の手順で確認する） |
 | 60 | 1.1.8 の配布ZIP（trk219 入り・2026-10-29） | ZIP の形・`unzip -t`・sha256・全エントリ同時刻（`2026-10-29 14:00` UTC）・`--check`・ローカル配信・差分を当てて完全一致は確認済み（§6）。**実機で出力デバイスを切り替えての確認は未了**（§4-59） |
+| 61 | trk222：🔍 拡大率・アイコンの大きさ・PC型／スマホ型の2択・エフェクト欄のタブ分け | `tests/trk222-ui-zoom.test.mjs`（13件）＋jsdom の通し確認（37項目）＋`npm run check` **835 pass**。1280×800 等の 6画面×4拡大率でのはみ出しなしも確認。**実ブラウザ・実機は未確認** | [`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md) §2-3 の順に実機で確認。とくに 125% の文字の大きさ、再生バーの `zoom`（Safari／Firefox）、縦型モニタでの見え方 |
+| 62 | trk221：📱 PC でもスマホ型の UX＋下の再生バー | `tests/trk221-ui-mode.test.mjs`（11件）・`tests/trk221-player-bar.test.mjs`（17件）＋jsdom の通し確認。**実機は未確認**（スキンごとの色・タッチの当たり・音の大きさ） | §2-2 の順に実機で確認。各スキンでバーの色が読めるか、下部ナビと重ならないか、ゲーム中・再生画面・書斎で引っ込むか |
+| 63 | trk220：📲 iPhone のホーム画面から使う standalone PWA | `tests/trk220-*.test.mjs`（47件）＋manifest／meta／SW の静的検査。**実機は未確認**（インストール・オフライン起動・セーフエリア） | §2-1 の順に実機で確認。ホーム画面から起動して URL バーが出ないこと、機内モードでも起動すること、ノッチ・ホームバーと重ならないこと |
+| 64 | trk223：🧭 trk222 レビューへの対応（①〜⑫） | `tests/trk223-review.test.mjs`（33件）＋`npm run check` **874 pass**（trk224 時点）。CSS は規則（カスケード）で、再生バーは 4段の拡大率で数値で確認。`sw.js` の掃除と設定のマージは vm。ZIP は vendor 100 件の照合。**実機の見た目は未確認** | [`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md) の §2（①エフェクトのタブ・②125% の重なり・⑥拡大率と背景/MMD・⑦ようこそを閉じたあとのバー）から。④⑤ は `/trk/` 移設後に §4 |
 
 #### 実ブラウザsmoke／CIの容量（trk162調査）
 
@@ -500,7 +672,7 @@ Windows の「サウンド」などで**音の出力先（スピーカー／ヘ�
 | 📦 まるごとバックアップ・ZIP CRC・復元 | `js/backup.js`（歌詞・字幕キーの許可、アドオン概要の確認、復元アドオンの無効化）、`js/zip-io.js`、`js/custom.js`（.stpackのストリーム読書き・`packIdentityFromManifest`）、`tests/backup-codec.test.mjs`、`tests/backup-restore.test.mjs`、`tests/pack-identity.test.mjs`、`tests/pack-zip-stream.test.mjs`、`tests/zip-io.test.mjs`、`tools/check-security.mjs` |
 | CBZ／ZIP書斎のページ展開上限 | `js/study-room.js`（`studyAlbumLimits`・`studyImportArchiveBook`）、`tests/storage-limits.test.mjs` |
 | Endfield楽曲台帳・曲名fixture・検査 | `docs/ARKNIGHTS-ENDFIELD-MUSIC.md`、`tools/endfield-zeroth-directive-tracklist.json`、`tools/endfield-msr-albums-tracklist.json`、`tools/check-repo.mjs` |
-| Service Worker | `sw.js`（現行cache名：`trk-v2026.10.29-trk219`＝trk219。**配布ZIP（1.1.7）は `trk218`**、配布済みの 1.1.6 は `trk217`、1.1.5 は `trk216`、1.1.4 は `trk214`。1.1.2 は `trk211`、1.1.1 は `trk210`、1.1.0 は `trk208`、1.0.9 は `trk207`。アプリ本体が変わらない版では cache 名を上げない） |
+| Service Worker | `sw.js`（**このリポジトリの現行cache名：`trk-v2026.11.01-trk246`＝trk246。名前に `@<スコープ>` が付きます（`/trk/` なら `@trk`）**。上流の配布版は `trk-v2026.10.29-trk219`＝trk219。**配布ZIP（1.1.7）は `trk218`**、配布済みの 1.1.6 は `trk217`、1.1.5 は `trk216`、1.1.4 は `trk214`。1.1.2 は `trk211`、1.1.1 は `trk210`、1.1.0 は `trk208`、1.0.9 は `trk207`。アプリ本体が変わらない版では cache 名を上げない） |
 | 🚪 メディアプレイヤーの抜け方（trk206） | `js/media-player-mode.js`（`mediaExitPlan`・`closeMedia`）、`js/library.js`（`previewContinue`）、`js/core.js`（`mediaReloadOnExit`）、`js/i18n-options.js`＋`index.html`（❓謎設定）、`tests/trk206-media-exit.test.mjs` |
 | 📦 配布ZIPの組み立て（1.0.8〜・現在 1.1.7） | `tools/prepare-release.mjs`（`npm run release`。`index.html`＋`README.txt`＋`trk-files/` に組み、形を検査してZIPにする）、`release/README.txt`（配布用のかんたん起動。`--readme` を省くとこれが入る。**版と `README-1.x.y.md` の名前は `--version` とそろえる**）、`tests/release-layout.test.mjs`（形・時刻・README の版） |
 | 📂 フォルダー共有の共通部品（trk208） | `js/shared-folders.js`（`window.TrkSharedFolders`＝`plan`／`uniqueLabel`／`mergeScans`／`walk`／`pathParts`／`readFileAt`。DOM・IndexedDB・書き込みなし）、`js/library.js`（登録簿 `"folders"`・`addSharedFolder`／`readSharedFolders`／`restoreSharedFolders`／`folderAutoKickShared`／`removeSharedFolder`／`renderSharedFolderList`）、`index.html`（`#libShareVideoBtn`・`#libSharedFolderList`）、`tests/trk208-shared-folders.test.mjs` |
@@ -511,9 +683,60 @@ Windows の「サウンド」などで**音の出力先（スピーカー／ヘ�
 | 🐔 カタログのリスト選択（trk217・未配布） | `js/library.js`（`trkPickEntries`／`trkPickHas`／`trkPickAdd`／`trkPickRender`・`TRK_SHELVES`／`TRK_SERIES_FOLDER`・`trkSelectedFoldersOnly`・`ensureTrkDistributionPlaylists({ create:false })`）、`index.html`（`#trkPickSelect`／`#trkPickAdd`／`#trkPickHint`／`#trkPickStatus`）、`sw.js`（`trk217`）、`tests/trk217-playlist-catalog.test.mjs`、`docs/PLAYLIST-CATALOG-REVIEW.md`（trk-apk との突き合わせ） |
 | 🔈 出力デバイスの切り替えで止まらない（trk219） | `js/audio-keep.js`（`keepPlan`・`recover`・1秒の見張り・`#video` の `play()`／`pause()` を包む）、`js/fx.js`（`wakeAudioHard(force)`・`TrkFX.context()`／`TrkFX.wake(force)`）、`index.html`（`media.js` の次の1行）、`tests/trk219-audio-output-keep.test.mjs`、`docs/guide/sound.md`・`docs/guide/en.md` |
 | ⏱ 曲名タブの開始位置ボタン（trk213） | `js/core.js`（`previewStartShow`・`resetVideoPrefs`）、`js/library.js`（`previewSetShown`・`syncPreviewSetBtn`・`renderBanner`／`updateSpBuilder`）、`js/spectrum.js`（`buildBox` の `specPreviewSet`・TEXT 8キー）、`tests/trk213-preview-set-toggle.test.mjs` |
+| 📱 スマホ型の画面シェル（trk220） | `js/mobile-shell.js`（下部ナビ・1画面1役割・`applyMode`）、`css/mobile-shell.css`、`js/mobile-settings-panels.js`（設定の欄の記憶）、`tests/trk220-*.test.mjs` |
+| 🍎 iPhone の standalone PWA（trk220） | `manifest.webmanifest`（`id`・`standalone`・`display_override`・アイコン）、`index.html`（`apple-mobile-web-app-*`・`apple-touch-icon`）、`js/ios-pwa.js`、`sw.js`（install の事前キャッシュ）、[`PWA.md`](PWA.md) |
+| 🖥📱 画面の形の2択（trk221・trk222） | `js/mobile-shell.js`（`uiMode()`・`setUiMode`・`toggle`／`sync`・`sessionMode`）、`index.html`（`#uiMode`・`#uiModeLock`）、`js/core.js`（`uiMode`・`uiModeLock`）、`tests/trk221-ui-mode.test.mjs` |
+| ▶ 下の再生バー（trk221） | `js/player-bar.js`（本物の再生要素を触るだけ・独自の再生状態を持たない）、`css/player-bar.css`（高さは `getBoundingClientRect` で測る）、`tests/trk221-player-bar.test.mjs` |
+| 🔍 拡大率・アイコンの大きさ（trk222） | `js/core.js`（`UI_SCALES`・`uiScaleValue`・`applyUiScale`・`fitStage`）、`js/ui-prefs.js`（設定の配線）、`css/style.css`（`--trk-ui-zoom`・`--trk-icon-zoom`）、`css/player-bar.css`、`tests/trk222-ui-zoom.test.mjs` |
+| 🎛 スマホ型のエフェクト欄のタブ分け（trk222） | `js/mobile-shell.js`（`fxSync`＝body の印だけ）、`css/mobile-shell.css`（`body[data-trk-view]`＋`body.trk-fx-in-library` で見せ分け。**DOM は動かさない**）、`js/core.js`（`fxInLibrary`） |
+| 🧭 trk223：レビュー対応（配布ZIPの作り方） | `tools/pack-standalone.mjs`（**`git ls-files` から集める**・`vendor-lock.json` 全件と `index.html` の参照を照合・`--check-only` で一覧だけ確認）、`release/README-standalone.txt`（ZIP同梱の読み方） |
+| 🔤 目録から写しを作る（trk254） | `tools/sync-typography-catalog.mjs`（`--from=`（ローカルの clone）か `--against=<ref>`（GitHub 経由）で相手の `catalog/typography.json` を取り込み、`tests/fixtures/` に固定版＋メタ（sha256・ref）を置き、`js/typography.js` の `PAIRINGS` を作り直す。`--check` はズレの報告だけで書き換えない。ズレは `tests/trk254-typography-copy.test.mjs` が常時見る） |
+| 🔁 安定版を trk から作る（trk253） | `tools/make-stable.mjs`（**追跡ファイルを全部**上流クローンへ写し、`trk`→`trk` の住所反転をかけた差分を出す／`--apply` で書き込み＋`git add -A`、`--prune` で上流専用ファイルも削除、`--cache=` で版名、既定は**見るだけ**）。**push・PR はしない**。上流 main をミラーにした状態で上流側の `npm run check` = **1280 pass / 0 fail** を実測 |
+| 🧭 trk223：キャッシュの持ち主と先読み | `sw.js`（`scopeTagOf`・`CACHE_NAME`／`VENDOR_CACHE`／`SHARE_CACHE_NAME`・`cacheIsOurs`・`matchOwned`・`fetchWithTimeout`・`PRECACHE_EXTRA`）、`js/share-inbox.js`（`shareScopeTag`・`shareScopePath`・`SHARE_CACHE_NAME`） |
+| 🧭 trk223：設定の保存（マージ） | `js/core.js`（`storedPrefsRaw`・`saveUserPrefs({fresh})`・`resetAllPrefs` の2経路は `fresh`）、`js/mobile-shell.js`（`uiMode()` が `uiModeLock === false` なら保存値を使わない・`syncUiControls` は実効値） |
+| 🧭 trk224：ZIPの時刻をタイムゾーンに依存させない（F1） | `js/zip-io.js`（`zipDosDateTime` が UTC の getter を使う・理由をコメントに明記。`mtime` を渡すのは配布ZIPの組み立てだけ）、`tests/trk224-timezone.test.mjs`（5つの TZ の子プロセスで実際にZIPを組み、バイトと DOS 欄を比較）、`.github/workflows/check.yml`（`TZ=Asia/Tokyo` でも `run-tests` を流す） |
+| ▶🎲 バーの置き場所と「隠さない」（trk225） | `js/player-bar.js`（`barOffset`・`barPos`・`barLocked`・`measure()`）、`css/player-bar.css`（`body.trk-playerbar-at-bottom .trk-mobile-nav { bottom: var(--trk-playerbar-h) }`）、`js/core.js`（`playerBarPos`・`playerBarLock`）、`tests/trk225-player-bar-settings.test.mjs`、[`PLAYER-BAR-TRK225-2026-10-31.md`](PLAYER-BAR-TRK225-2026-10-31.md) |
+| 🎵 バーをプレイヤーにする（trk226） | `js/player-bar.js`（`seekEnabled`・`shufflePick`・`nextRepeat`・`panelAllowed`・`snapshot`・`seekToRatio`・`playPause`・🎲🔁⧉ のボタン）、**`js/player-panel.js`（新規）**（Document PiP／小窓の鏡パネル・`Trk.playerPanel`）、`js/media-player-mode.js`（`announceMediaOptions`／`pullMediaOptions`）、`js/library.js`（`previewRestartFor`）、`js/core.js`（`playerBarSeekLock`）、`css/player-bar.css`、`tests/trk226-player-bar-player.test.mjs`、[`PLAYER-BAR-TRK226-2026-10-31.md`](PLAYER-BAR-TRK226-2026-10-31.md) |
+| ❓ リピートの段・シャッフルの範囲（trk227） | `js/player-bar.js`（`repeatChoices`・`repeatOneOnly`・`shuffleInList`・`nextRepeat(value, oneOnly)`）、`js/library.js`（`shufflePool`＝表示順の一覧か全曲）、`js/media-player-mode.js`（`repeatOptions`・`fillRepeatOptions`・`shuffleCandidates`）、`js/ui-prefs.js`・`index.html`（2つの欄）、`tests/trk227-repeat-shuffle-options.test.mjs`、[`PLAYER-BAR-TRK227-2026-10-31.md`](PLAYER-BAR-TRK227-2026-10-31.md) |
+| 🔤 書体のライセンス全文（trk233） | `js/custom.js`（`fonts[].licenseFile` の検証・`LICENSE_EXT`・`PACK_LIMIT.license`＝256KB・`manifestPaths` の重複除去と `license` 種別・一覧の「📄 ライセンス全文を読む」）、`js/pack-catalog.js`（目録の `fonts[].licenseFile` を落とさない・🔎 中身に全文のファイル名）、`css/style.css`（`.packLicenseText`）、`js/i18n.js`（4キー×4言語）、`tests/trk233-font-license.test.mjs`（11件）、書体パック 14 種の記録 [`FONT-PACKS-TRK233-2026-11-01.md`](FONT-PACKS-TRK233-2026-11-01.md) |
+| 🔤 書体パックを本物に（trk232） | `js/custom.js`（`fonts`／`release` の検証、`FONT_EXT`／`FONT_FAMILY`／`PACK_LIMIT.font`、`manifestPaths` に `font`、`registerPackFonts`／`clearPackFonts`／`window.Trk.packFont`、一覧の「書体 n」・同梱書体の表示）、`js/core.js`（`applySkin` が `--font` の先頭に足す）、`js/pack-catalog.js`（`versionDiffers`・「更新あり」・入れ直す入口）、`js/i18n.js`（7キー×4言語）、`tests/trk232-pack-fonts.test.mjs`（23件）、[`LIBRARY-UX-PLAN-2026-11-01.md`](LIBRARY-UX-PLAN-2026-11-01.md) §4 |
+| 📥 倉庫まわりを「入れやすい・確かめやすい・消しやすい」に（trk231） | `js/pack-catalog.js`（`importBundle`・状態バッジ・使う/消す・🔎 中身・`samePackAs`）、`js/custom.js`（`listInstalledPacks`／`deletePackById` の公開、ドロップの受け渡し）、`index.html`（`#catalogBundle`）、`js/i18n.js`（19キー×4言語）、`tests/trk231-catalog-bundle.test.mjs`（12件）、開発案 [`LIBRARY-UX-PLAN-2026-11-01.md`](LIBRARY-UX-PLAN-2026-11-01.md) |
+| 📚 倉庫の目録から入れる（trk230） | `js/pack-catalog.js`（新規・`sanitizeCatalog`／`checkAgainstEntry`／`sha256Hex` と画面）、`index.html`（`#packCatalogPanel`・`<script src="js/pack-catalog.js">`）、`js/i18n.js`（16キー×4言語）、`tests/trk230-catalog-import.test.mjs`（15件）、[`LIBRARY-TRK230-2026-10-31.md`](LIBRARY-TRK230-2026-10-31.md) |
+| 🧺 スキンの棚の整理（trk229） | `js/core.js`（`skinSearchText`／`skinMatchesQuery`／`skinShelfEntries`／`toggleSkinList`／`wireSkinFind`／`buildSkinManage`／`cleanSkinIdList`／`cleanSkinMap`、`buildSkinGrid` の作り直し、`applySkin` の使用回数）、`index.html`（`#skinSearch`・`#skinSort`・`#skinNoMatch`・`#skinManage`）、`css/style.css`（`#skinFind`・`.skinRow`）、`js/i18n.js`（20キー×4言語）、`tests/trk229-skin-shelf-organize.test.mjs`（18件）、[`SKIN-SHELF-TRK229-2026-10-31.md`](SKIN-SHELF-TRK229-2026-10-31.md) |
+| 🔤 書体（フォント）スキン 9 種（trk228） | `js/data.js`（`SKINS` に `cat:["type",…]` の 9 種・`font`・`type`）、`js/core.js`（`SKIN_CATS` の `type`・`skinCardType`・`skinSpecNode`・`applySkin` の `--font-*`）、`css/style.css`（`--font-title`／`--font-weight`／`--font-lh` と `.skinSpec`）、`js/i18n.js`（`catType` 4言語）、`tests/type-skins.test.mjs`、[`FONT-SKINS-TRK228-2026-10-31.md`](FONT-SKINS-TRK228-2026-10-31.md) |
+| 🧭 trk223：テストの道具 | `tests/helpers/css-rules.mjs`（CSS を規則として当てる）、`tests/helpers/player-bar-harness.mjs`（偽 DOM）、`tests/trk223-review.test.mjs`（33件） |
+| 📝 レビューと実機確認の依頼（2026-10-31） | [`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md)（trk220〜trk222：レビューしてほしいコード・実機で見てほしいこと・判断してほしいこと）、[`REVIEW-RESPONSE-2026-10-31.md`](REVIEW-RESPONSE-2026-10-31.md)（指摘ごとの対応）、[`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md)（trk223 を実機で見る手順） |
 | 全体・安全検査 | `tools/check-repo.mjs`、`tools/check-security.mjs`、`tools/check-a11y.mjs`、`tools/check-lite.mjs` |
 
 ## 6. 直近の検証
+
+**trk220〜trk223（2026-10-30〜31・このリポジトリ）の確認**
+
+| 検査 | 結果 | 範囲・注意 |
+|---|---|---|
+| `npm run check` | **1243 pass / 0 fail**（trk246 時点） | 版ごとの追加件数は §7 の各見出しに記す（trk244 の密度で **20件**・trk245 の窓の自動と高さで **13件**・trk246 の書体の組み合わせで **16件**）。Static 0 failure・0 warning・Security 64/0。`TZ=Asia/Tokyo`・`TZ=America/Los_Angeles` でも同じ（F1 の再発防止） |
+| 書体（フォント）スキン（trk228） | **OK（9件）** | `tests/type-skins.test.mjs`。9 種の登録・カテゴリ `type`・見本の文字（和文＋欧文）・**外部URL／`@font-face` を含まない**こと・太さ／字間／行間／大文字化の値・`catType` の 4 言語・棚カードへの書体の受け渡し・`applySkin` の `--font-*`・既存 44 種に `type` が付かないこと。配色は `tests/skin-contrast.test.mjs` が 53 種すべてで AA を検査 |
+| リピートの段・シャッフルの範囲（trk227） | **OK（17件）** | `tests/trk227-repeat-shuffle-options.test.mjs`。`nextRepeat` の段（3段／2段・全曲は「なし」へ）、オンで 🔁 が1曲⇄なしを往復し全曲にならないこと、シャッフル中の ⏭ が一覧の中だけから選ぶこと（オフなら外も選ぶ）、`shufflePool` の写し、再生画面の選択肢が2つになること、4言語 × 4キー |
+| 下の再生バーを触ってシーク（trk226） | **OK（27件）** | `tests/trk226-player-bar-player.test.mjs`。触れる条件（画面・読み込み・長さ・謎設定）の純粋関数、謎設定オンで `currentTime` が動かないこと、`previewRestartFor`、`shufflePick` の乱数の位置、🎲🔁 の設定共有と合図、別窓の組み立て（11部品）と描き直し・小窓が二重に開かないこと・PC型だけ ⧉ を出すこと |
+| `node tools/check-repo.mjs` | **0 failure / 0 warning** | 文書・`sw.js` の cache 名・読み込み順・名前空間の検査を含む |
+| 書体の組み合わせ14組（trk246） | **OK（目録の写し・sanitize・CSS 変数2本・配線・4言語・16件）** | `tests/trk246-typography.test.mjs`。14組ぞろい・id 一意・**本文まわり3家族まで**（相手の `check-typography` と同じ目盛り）／未知の項目と範囲外を捨てる／壊れた書体名は目録の値へ戻る／`body.trk-typo-on` のときだけ当たる／未選定は変数もクラスも置かない／パック未導入でも文字列が壊れない／`applySkin` の `--font` の後／**`ctx.font` を触らない**／読み込み順（`data.js` の後・`core.js` の前）／4言語／cache 名 |
+| 密度の自動と曲リストの高さ（trk245） | **OK（純関数・CSSの約束・配線・4言語・13件）** | `tests/trk245-density-window.test.mjs`。しきい値（2560×1440→ゆったり／1920×1080・1440×900・1366×768→ふつう＝従来どおり／1200×700・1000×600→ぎゅっと／800×500→ぎっしり）／**幅 900px 未満だけ1段詰める**（高さでは判断しない）／壊れた値は ふつう／優先順位（75%・50% の詰め → auto → 選んだ段）／`libListHeight` の床320・上限900・異常値／`fitStage` が `--trk-lib-h` とクラスをそろえる／リサイズで**保存しない**／`#libList{height:…}` の上書き復活よけ／4言語 |
+| 表示の密度（trk244） | **OK（純関数・CSSの約束・配線・4言語・20件）** | `tests/trk244-density.test.mjs`。段の計算（50→ぎっしり・75→ぎゅっと・100/125→ふつう・壊れた値→ふつう）／**125% は trk222 の拡大を消さない**／詰めオンで `--trk-ui-zoom:1`＋`trk-scale-compact`／密度の規則に `font-size` が無い／`#libList` の 640px を動かさない／スマホ型は下限を上げる／`applyUiScale` は棚を作り直さない／保存キーは `uiDensity`・`uiScaleCompact` の2つだけ／4言語 |
+| 設定のさがす（trk243） | **OK（純関数・配線・4言語・22件）** | `tests/trk243-settings-find.test.mjs`。語の分け方（全角空白も）・AND・部分一致（大小無視）／当たったものだけ＋件数／**もともと隠れているものは出さない**／当たったパネルは開く・当たらなければ `hidden`／空に戻すと**元の開閉**／**保存キーを作らない**／設定を開くたびまっさら／`Esc`／4 言語 |
+| 新しい版の知らせ（trk242） | **OK（純関数・配線・4言語・23件）** | `tests/trk242-update-notice.test.mjs`。初回は出さない／待っている・入れ替わったときは出す／「あとで」はその画面では出さない／遊んでいる途中は後回し（`title` だけその場）／確かめるのは 30 分に 1 回まで・見えていないときは確かめない／結果は failed・ready・latest／登録は `sw-update.js` にあり `main.js` には無い／開き直すのは 1 か所／**保存キーを作らない**／`file:` では登録しない／4 言語 |
+| スキンの棚の出し入れ（trk241） | **OK（純関数・配線・4言語・28件）** | `tests/trk241-skin-shelf-hide.test.mjs`。最後の 1 種は隠せない（`reason:"last"`）／使用中は隠しても棚に残る／隠しても `applySkin` は変わらない／整理の絞り込み（⭐・🚫・まだ使っていない）と検索の重ね／まとめて隠して戻すと元どおり／棚が空にならない／**新しい保存キーが無い**／カードの ☆・🚫 が当てるのと別のボタン／4 言語 |
+| 役割の書面と道具の契約（trk240） | **OK（9件）** | `tests/trk240-roles.test.mjs`。`tools/check-set.mjs` を実際に走らせて 0（入れられる）／1（大きさ違い・入っていない）／2（ZIP でない・ファイルが無い）を確認、`--json` が 1 行で `ok`・`problems`・`pending`（count／bytes／skip）を人が読む文と同じ数字で返す、契約の 4 つが道具と書面の両方にある、書面の分担と 3 原則、`sw.js` の cache が trk239 のまま |
+| セット 2 分割の数え方（trk239） | **OK（純関数・配線・4言語・11件）** | `tests/trk239-set-skip.test.mjs`。はじめてセット（絞った目録）＝4 本・見つからない 0、書体セットを続けて選ぶ＝飛ばす 3 本・**これから入る 4 本（大きさは水増ししない）**、同じセットを 2 回＝pending 0、版が違えば飛ばさない、絞っていない目録でも止まらない、`set.json` 無しでも 2 つを見分けられる、4 言語。合成した 2 つのセットで `tools/check-set.mjs` が 0 |
+| 書体のひとこと・タグ・索引（trk236〜238） | **OK（純関数・配線・4言語・25件）** | `tests/trk236-238-font-meta-index.test.mjs`。目録の `note`(60)/`cmap`/`bytes`/`weight`/`tags`(8×16) を読み落とさない・無い項目は足さない・タグの件数と絞り込み（書体の無いパックでも落ちない）・索引の行（入っている側が正・目録で補う・`family|weight` が一意）・検索（日本語部分一致＋空白 AND）・並べ替え（書体名／パック名／大きさ）・索引は保存しない・4 言語。**実物の目録（倉庫 `848343c`）でも確認**：16 パック・落とした 0・22 書体すべてに 5 項目・タグ 16 語・`明朝` で 6 書体 |
+| セット（`.stlib`）の受け入れ（trk235） | **OK（画面を除く・23件）** | `tests/trk235-catalog-set.test.mjs`。倉庫の r4 を組み直して（Release と同一バイト）開く＝16 パック・見つからない 0、**16 本すべて sha256 一致**、1 本差し替え＝15 一致／1 不一致で止まる、目録にない `.stpack` は入れない、目録を壊す＝`catalogBad`、`set.json` が壊れていても目録だけで動く、1 段包まれたセットも読む、1 GiB／1 本 500 MB の上限、4 言語の文言 |
+| jsdom で実 `index.html` を通しで操作（trk221） | **OK** | PC→スマホ型の切り替え・保存・設定の欄の追随、曲を選んだときの再生バー表示、音量の反映、プレイ中に隠れる、PC型へ戻したときの後片付け、往復、設定中は下余白0 |
+| jsdom で実 `index.html` を通しで操作（trk222） | **OK（37項目）** | 既定値（100%／on／アイコン固定オン／謎設定オン）、125%・75%・50% の設計サイズと倍率、アイコン固定のオン／オフ、知らない値は100%、プレイ中は等倍、縦型 1080×1920 でのはみ出しなし、スマホ型はステージを拡大しない、エフェクト／ライブラリのタブで `display` が設計どおり、2択ボタンの往復と保存の有無 |
+| 画面サイズ×拡大率のはみ出し | **OK（24/24）** | 1920×1080・1440×900・1366×768・1080×1920・2560×1440・800×600 の6通り × 50・75・100・125% の4通り。ステージが画面からはみ出さない |
+| CSS を規則として検査（trk223） | **OK** | `tests/helpers/css-rules.mjs` が `@media` を除いた規則を要素に当て、カスケードで勝つ `display` / `max-height` / `padding-bottom` を出す。エフェクトのタブの ▶ TV、`.songCol` の `flex`＋`gap:14px`、カードの `max-height:100%` を確認 |
+| 再生バーとカードの重なり（trk223） | **OK（4/4）** | 1440×900・バー実寸 60px で、拡大率 50／75／100／125% のカードの下端 738.8／732.9／727.5／721.9px が、バーの上端 750px より上 |
+| 手渡し用ZIP（trk223・trk224） | **OK** | `tools/pack-standalone.mjs` が `git ls-files` から集め、`vendor-lock.json` の全 100 件（`three-mmd-loader@0.8.4/dist/` の 91 件を含む）と `index.html` の参照を照合。`unzip -t` 破損なし。**ファイル数と `sha256` は同梱の外側（`README-まず読む-*.txt`）に書く**（ZIPの中の文書に自分のハッシュを書くと、固めた瞬間に古くなる＝レビュー F2） |
+| タイムゾーンを変えた検査（trk224・F1） | **OK（5/5）** | `tests/trk224-timezone.test.mjs` が TZ=UTC／Asia/Tokyo／America/Los_Angeles／Pacific/Kiritimati／Asia/Kolkata で実際にZIPを組み、**バイト（sha256）と DOS の時刻欄が同じ**ことを確認。`TZ=Asia/Tokyo npm run check` も 874 pass / 0 fail |
+| 実ブラウザ・実機で触る | **未確認** | この作業環境にブラウザも端末もない。とくに再生バーの拡大に使う CSS の `zoom` はブラウザ差が出やすい。trk223 の手順は [`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md)、trk220〜trk222 は [`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md) §2 |
 
 **trk219（2026-10-29）の確認**
 
@@ -662,6 +885,498 @@ Windows の「サウンド」などで**音の出力先（スピーカー／ヘ�
 
 ## 7. 最近の変更
 
+- **⌨ trk288：レビュー（trk287）への対応（2026-11-04）**：起動時の例外（`ROAD_IDS` の公開）・ボタンを奪わない（C1）・低い画面（C2）・予約キーの判定を逆に＋既定 Ctrl+.・Shift（C3）・`cast` が辞書の名前を唱える（R1）・入力の入れ方 native／exec（R2）・R5・R7・`cli-pure.js` への分割（R8 一部）・辞書の名前は多言語（Q8）。`npm run check` **1747 pass / 0 fail**。詳細は [`REVIEW-RESPONSE-TRK287-2026-11-04.md`](REVIEW-RESPONSE-TRK287-2026-11-04.md)。
+- **⌨ trk287：ターミナルの入力で p と : が落ちる件・修飾キー（Win／⌘）を選べる（2026-11-04）**
+  - **ご相談**：①ターミナルで **`p` と `:` が入力できない** ②**スーパーキー（Win + なにか）**でも登録できるとよい。
+  - **原因と直し**（`js/cli.js`）：trk285 の入力の奪い方は「フォーカスが入力欄の外のときだけ 1 文字を足す」で、**入力欄にフォーカスがあるときはブラウザーの既定の挿入に任せていた**。そのため、ほかの処理が `preventDefault()` した文字（`p`＝`KeyP` はアプリの一時停止キー、`:` は Shift 付きの記号）が**そのまま落ちる**ことがあった。trk287 からは**入力欄でも自分で入れる**＝`isTypeable()` で 1 文字を見て、`insertTextAt(value, ch, selectionStart, selectionEnd)`（純粋関数）で**カーソルの位置に挿入**し、`preventDefault()`＋`stopPropagation()` で外の操作に渡さない。`: ` の全角（`：`）も NFKC で通る。**辞書の入力欄・Tab・出力の矢印・IME の変換中**は今までどおり譲る。
+  - **スーパーキー**：`settings.cliMod` を足し、**Ctrl か ⌘／Win（既定）／Win／⌘（Super）だけ／Ctrl だけ／Alt だけ**の 4 択に。⚙ の ⌨ パネルに `#cliModSel`＋説明（**Windows は Win+D や Win+L を OS が先に取る**ので、Win+Enter や Win+` のような空いている組み合わせを使う）。表示と保存の文言は選んだ形（`Win／⌘ + K`）で出します。
+  - 見張り：`tests/trk287-cli-input.test.mjs` **14 件**（挿入の純粋関数・範囲がおかしくても壊れない・p と : がそのまま入る・`: ` の時刻・入力欄でも自分で入れる・外の操作に渡さない・辞書／Tab／出力／IME は譲る・修飾キー 4 択と判定・⚙ の選択・公開名・4 言語）。
+  - `npm run check` **1714 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk287`。
+  - **実機で見てほしい点**：①ターミナルで `play` `spell` `seek 1:30` が**そのまま打てる**か（p と : が落ちないか）②`/` を押しても設定の検索へ飛ばないか ③Win／⌘ を選んで **Win+Enter**（または空いている組み合わせ）で開閉できるか ④IME の変換中に二重に入らないか。'
+- **⌨ trk286：ターミナルを下から持ち上がる板に・スキンは端末の中だけ・既定は閉じない（2026-11-04）**
+  - **ご相談**：①曲名より下から押し上げる形（ボトムシート）で起動 ②スキンの適用が上手く行っている感触が無い ③キーの文言を "Terminal Key Setting" のようにウィザード風に ④`/help` で操作一覧がずらーっと出る形 ⑤既定は実行後も勝手に閉じない ⑥PC 版前提だが、スマホでもウィザードを出しているときは常時表示でよい・大きさの変更も可。
+  - **形**（`js/cli.js`・`css/style.css`）：自前の `div.instOverlay` ＋ `role="dialog"` ＋ Esc ハンドラをやめ、**ネイティブの `<dialog>` ＋ `showModal()`** に（modern-web-guidance の `ui-components/dialog`）。`aria-labelledby` だけ自分で付け、フォーカスの閉じ込め・Esc・フォーカスの戻しはブラウザーに任せます。閉じたあとの片づけは `close` イベント 1 か所（`finishClose()`）。背景クリックは `closedby="any"`、未対応のブラウザーは `pointerdown`／`pointerup` の位置で判定。
+  - **下から押し上げる**：`dialog.cliDialog{position:fixed;inset:auto 0 0 0}` で下端に置き、`@starting-style` ＋ `transition-behavior:allow-discrete` ＋ `transition-property` に `display`／`overlay` を入れて、閉じた状態（`translateY(100%)`・`opacity:0`）からせり上がります（`ui-behaviors/animate-to-from-top-layer`）。`::backdrop` も同じ組で暗くなります。`prefers-reduced-motion` では動かしません。上端につまみ（`.cliSheetHandle`）・下端に `env(safe-area-inset-bottom)`。
+  - **大きさ**：`settings.cliSheetSize`（`half` 52dvh／**`tall` 70dvh（既定）**／`full` 92dvh）。⚙ の ⌨ パネルに「ターミナルの高さ」の 3 択（`#cliSheetSize`）を足し、選ぶと保存して、開いていればすぐ合わせます（`syncSheet()`）。
+  - **スキンは端末の中だけ**：開くときに `applySheetSkin()` が板の `style` に `--ui-panel` などの CSS 変数と `--ui-accent-ink` を入れるだけにしました（`core.applySkin()` は呼ばない）。後ろの曲リスト・背景の色は変わらないので、開閉のたびに画面全体が塗り替わる「ちらつき」と「当たったのか分からない」が解消します。当てたスキンは状態行に 1 行（`cliSheetSkin`）で出し、合図の `<スキン名(English)>` も板のスキンを見ます（`state.sheetSkin`）。
+  - **既定は閉じない**：`cliAutoClose` の既定を **オン → オフ**へ（`prefs.cliAutoClose === true` のときだけ閉じる）。開いて唱えて、そのまま何度でも唱えられます。閉じるのは Esc・同じキー・背景・✕。文言も「唱えたら閉じる（既定はオフ：開いたまま何度でも）」に。
+  - **help**：`help` は**よく使う 5 本**（play／next／back／list／help）＋「help all … 全部の呪文（24 本）を出す」の案内。`help all` で全部、`help <語>`（`man` も同じ）で 1 本。
+  - **文言**：キーの見出しを **"🪄 Terminal Key Setting（Ctrl／⌘ ＋ このキー）"** に（4 言語）。ヒントも「呪文を呼ぶ鍵」と、何をするキーかを先に言う形へ。
+  - **追いかけ（同じ版）**：①**端末の見た目の既定を「いまのスキンのまま」**へ（`settings.cliSkin` の既定を `auto` → **`keep`**。開いても後ろと同じ見た目で下から出る。別のスキンを選んだ人だけ、中だけ変わる）。②**呼び出しキーの割り当てが決まらない**原因を直した＝**修飾キーだけ（Ctrl／Shift／Alt／⌘・CapsLock）を押すと `cliKey = "ControlLeft"` になって「Ctrl+Ctrl」で呼べなくなる**ので受けない（`cliKeyUsable`：Esc・Tab・修飾キー単独・`validCode` 外は断る）。**Tab も受けない**（フォーカス移動を奪うため）。**📚 の音量キー**も重なりの検査に入れ、**押し直し・ほかを触る・Esc** で待ちをやめる（`pointerdown` で取り消し）。決まった／駄目だったは `#cliKeyStatus`（`aria-live`）と `aria-pressed` でその場に出す。
+  - 見張り：`tests/trk286-sheet.test.mjs` **20 件**（dialog 化・showModal・Esc を拾わない・close で片づけ・背景クリック／下から押し上げの CSS・3 段の高さと保存・⚙ の選択・つまみ／安全領域／動きを減らす人・端末の中だけのスキン・合図の名前・既定で閉じない・help の短縮・4 言語）。
+  - `npm run check` **1700 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk287`。
+  - **実機で見てほしい点**：①呼ぶと**下からスッと**出て、Esc・背景クリック・同じキーで戻るか ②**後ろの曲リストの色が変わらない**こと（端末の中だけスキンが当たる）③高さ 3 段の切り替えと、次に開いたときの記憶 ④唱えても**閉じない**こと（閉じたい人は ⚙ でオン）⑤`help` が短く、`help all` で全部出るか ⑥スマホでキーボードが出たときに板が潰れないか。
+- **⌨ trk285：入力の合図を `<スキン名(English)> ~ %` に・開いている間は入力を奪う（2026-11-04）**
+  - **ご相談**：ターミナルの下の入力欄が入力を吸ってしまう。**Linux 系の `<SkinName> ~ %`** で、強制的に入力を奪って受け付ける形に。よく見る端末の形も選べるように。`<SkinName>` は **English 表記**（例：`The Art of War ~ %`）。
+  - **合図**（`js/cli.js`）：純粋関数 `promptText(style, name)` と `PROMPT_STYLES`。既定は `linux` ＝ **`<スキン名(English)> ~ %`**。ほかに `bash` `<name>:~$`／`root` `<name>:~#`／`fish` `<name> ~>`／`ps` `PS <name>>`／`plain` `>`／`skin`（スキンの `--cli-prompt` に任せる）。
+  - **スキン名**：`skinEnglishName()` が `label.en` を優先（無ければ `ja` → id）。**日本語 UI でも English のまま**（`The Art of War`・`Key of Solomon` など）。スキンを変えたら合図も作り直します（`core.on("skin")`）。
+  - **見え方**：`<span class="cliPromptChar">` は文字を入れたとき `data-text="1"` で CSS の `::before` を消し、空白を保って出します（狭い画面は 40% で省略）。**読み上げ**は入力欄の `aria-label` の頭に合図を入れます。
+  - **入力を奪う**：開いているあいだの `keydown`（capture）で、フォーカスがどこにあっても**打った 1 文字を入力欄へ足して**カーソルを末尾へ。IME の変換中・修飾キー付き（呼び出しキー）は奪わず、**端末の入力欄（`#cliForm`）と辞書（`#cliSpellPanel`）は邪魔しません**。
+  - **⚙**：⌨ パネルに「入力の合図（プロンプト）」の 7 択と、**「いまの見え方：{text}」**の下見（`#cliPromptPreview`）。文言は 4 言語。
+  - 見張り：`tests/trk285-prompt.test.mjs` **8 件**（既定の形・7 択・English 名・既定と保存・⚙ の下見・入力を奪う条件・文字で出す/読み上げ・4 言語）。
+  - `npm run check` **1680 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk285`。
+  - **実機で見てほしい点**：①`The Art of War ~ %` のような合図が、スキン名の English で出るか ②出力を読み返している最中に打っても、その 1 文字目が入力欄に入るか ③辞書の入力欄では奪わないこと ④狭い画面で合図が入力欄を潰さないか。
+- **⌨ trk284：ターミナルの置き場所・入力の取りこぼし・辞書登録の GUI（2026-11-04）**
+  - **ご相談**：①ウィザードの段のとき、⌨ のタブは**設定の一番上**（画面・再生バーより上）でよい ②**CLI への入力が上手に行かない場合**がありそうなので、洗って確かめる ③端末のいちばん下に**辞書登録の GUI**（整理に使いたいとき見つけやすい）。
+  - **置き場所**：`index.html` の `#cliPanel` を**設定の先頭**（検索欄の下・`<div class="grid">` の前）へ移しました＝全幅で、画面（`uiPanel`）と再生バーの上。
+  - **入力で見つけたこと・直したこと**（洗った結果）：
+    - **IME の変換中**に Enter を押すと、書きかけ（例：「ぷれい」）を唱えてエラーになっていた → `compositionBlocked(isComposing, keyCode)` を足し、`compositionstart/end` で `state.composing` を持って **submit と keydown の両方**で弾く。Tab・矢印も変換中は使わない。
+    - **Tab がフォーカスを閉じ込めていた**（入力欄から Tab で出られない）→ 補完は「**打っている文字がある・Shift でない・補完が有効**」のときだけ（`tabShouldComplete`）。空のときと Shift+Tab はフォーカス移動に譲る。
+    - **全角で打ってしまう**（`ｐｌａｙ`・`５０`・`１：３０`）→ `normalizeCommand`（NFKC＋小文字）と、`parseClock`・`clampPercent` の NFKC で通す。`echo` の本文は打ったまま返します（呪文の語だけ寄せる）。
+    - **出力を読み返す／辞書を書く**ときに、フォーカスを入力欄へ奪い返していた → `#cliLog`・`#cliSpellPanel` と入力欄・ボタン・セレクトでは奪わない。
+  - **辞書登録（呪文）の GUI**（`js/cli.js`）:端末のいちばん下に `<details id="cliSpellPanel">`＝📖 辞書。**一覧**（名前・中身・削除）＋**追加**（名前・中身・「＋ 辞書に登録」）＋状態行。**最初から入っている 3 本は消せない**（ボタンを無効に）・**上限 24 本**・検査は純粋関数 `spellDraftProblem(id, body, {builtin, count, max})`（`""`／`id`／`body`／`builtin`／`full`）。`form` の入れ子は作りません（端末の form を壊さない）。唱えて増減したとき・言語を変えたとき・開いたときに描き直します。
+  - 見張り：`tests/trk284-cli-dict.test.mjs` **8 件**（置き場所の順・IME・Tab・全角・フォーカス・下書きの検査・GUI の形・4 言語）。
+  - `npm run check` **1672 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk284`。
+  - **実機で見てほしい点**：①ウィザードで ⌨ が設定の先頭にあるか ②日本語入力の変換中に Enter を押しても、書きかけが唱えられないか ③空の入力欄で Tab を押すと、閉じるボタンへ移れるか ④辞書の追加・削除（スマホのキーボードで入力欄が隠れないか）。
+- **⌨ trk283：ターミナルの入口まわり（スキン・入力・段・キー・自動で閉じる）（2026-11-04）**
+  - **ご相談**：①開いたときのスキンの適用 ②文字が打てる状態かのチェック ③マスターとウィザードに差が無いので**マスターは CLI を既定オフ・ウィザードで CLI と wizard スキンを既定オン** ④**呼び出し・閉じるのキーも割り当てたい**。
+  - **段**：`js/settings-level.js` の `PANEL_TIER` で `cliPanel` を **4 → 5**。マスターでは ⌨ パネルを隠し、**ウィザードの段だけ**出す（「そこまで使いたい人はウィザードを名乗る」）。ウィザードは CLI＋wizard スキンが既定オン。
+  - **スキン**：`settings.cliSkinPickOn`（既定オフ）＋`settings.cliSkinPick`（既定 `""`）を足し、⚙ のチェック＋一覧から**端末のスキンを個別に**選べる。`pickCliSkin(skins, mode, pick)` は **`locked` を飛ばし**、`pick` を優先（`keep` が最優先）。開いたときに当てた（当てられない）ことを状態行に出す。
+  - **入力**：`typableState()`（`disabled`/`readOnly`・見えている・フォーカス）を検め、`settings.cliTypingCheck`（**`badge` 既定**／`status`／`quiet`）で見せ方を選ぶ。バッジは `aria-live="polite"`。`focusin` で外れたら戻し、`ensureFocus()` で描画直後を 2 回まで拾い直す。
+  - **キー**：`settings.cliKey`（既定 `Backquote`・`validCode`）。**Ctrl／⌘ と一緒**に押し、**同じキーで開閉**。⚙ の「呼び出しキー」で割り当て（Esc で取り消し・遊ぶキー／メニュー／プレイヤーと重なるキーは受けない）。**Esc は端末の中では今までどおり閉じる**。
+  - **自動で閉じる**：`settings.cliAutoClose`（既定オン）。`execute()` が `action`（何かをした）を返し、閉じたあと**同じ 1 行をトースト**で残す。`help`/`list`/`pwd` のような読むだけのコマンドは閉じない（`action:false`）。
+  - **コマンド**：`next`（次の曲）／`back`（前の曲）／`re`（いまの曲を最初から）を追加（`play next` などの短い呼び名）。
+  - 見張り：`tests/trk283-cli.test.mjs` **9 件**（段・短い呼び名・`action` の印・自動で閉じる・キー・入力チェック・スキン・4 言語）。
+  - `npm run check` **1664 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk283`。
+  - **実機で見てほしい点**：①ウィザードの段で ⌨ パネルが見え、マスターでは消えること ②開いた直後に**そのまま打てる**か（バッジが「入力可」か）③呼び出しキーを変えて、同じキーで開閉できるか ④実行後に閉じる／開いたままの切り替え。
+- **🛣 trk282：道（山道・坂道・下り坂・海岸沿い・高速道路）を引き、⚙ で固定できるようにする（2026-11-04）**
+  - **ご相談**：ノーツの振り方の視覚として「道」を既定にしたい。**山道 5%／坂道 5%／下り坂 5%／海岸沿い 5%／高速道路 80%** を抽選し、**固定もできる**ように。
+  - **決めた形**：`settings.swayRoad`（6 択・既定 `"auto"`＝おまかせ）。抽選は `ROAD_WEIGHTS`（合計 100）と**純粋関数 `pickRoad(rand)`**。`resetRoad()` は**曲の頭で 1 回だけ**（`resetRun` の `resetTruck(); resetLives(); resetOrbit();` の隣）。固定しているときは引いても使いません。
+  - **角度**：`roadAngle(road, p)` は**時間だけで決まる純粋関数**（山道 `sin(1.6t)*1.5 + sin(3.7t+1.1)*0.5`／坂道 `-1.8 + sin(0.9t)*0.3`／下り坂 `+1.8 + …`／海岸沿い `0.9 + sin(1.1t)*0.9`／高速道路 `0`）。`laneTilt` は TRUCK のとき道を土台にし、**高速道路はビート揺れ・ヒット揺れも止めます**。
+  - **揺れの既定**：`swayTruck` を**オンへ戻した**（8 割は静止の道なので酔いにくい）。`prefers-reduced-motion` と `swayTruck` オフは今までどおり最優先。
+  - **移行**：`swayTruckOff1`（trk281）の意味を「オフ固定」から**「静かな道へ寄せる」**に変更＝**保存がある人だけ `swayRoad="highway"`**、初めての人（保存が空）は「おまかせ」のまま。登録簿は [`MIGRATIONS.md`](MIGRATIONS.md)（削除予定 2027-04-30 は変えません）。
+  - **⚙**：🌀 レーンの揺れの中に「🛣 道の種類（トラック）」＝`<select id="swayRoad">` 6 択＋説明。**スタンダードの段でも出す**（酔いやすい人が探せるように。`js/settings-level.js` の `ID_TIER` に `swayRoad: 2`）。文言は 4 言語（`swayRoadLabel`／`swayRoadAuto`／`swayRoadHighway`／`swayRoadMountain`／`swayRoadUp`／`swayRoadDown`／`swayRoadCoast`／`swayRoadHint`）。
+  - 見張り：`tests/trk282-road.test.mjs` **9 件**（重み・1000 回の分布・境目・純粋性・向きと大きさ・おまかせと固定・保存・`resetRun`・画面と 4 言語・酔い対策）。trk280 / trk281 の揺れの検査は新しい既定へ更新。
+  - `npm run check` **1655 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk282`。
+  - **実機で見てほしい点（PR #87 に書きます）**：①山道・坂道・下り坂・海岸沿いの**傾きの大きさ（1〜2 度）が伝わるか** ②「高速道路」で**本当に止まって見えるか** ③曲の頭で道が変わる瞬間が**唐突でないか** ④⚙ の「道の種類」が**スタンダードの段で見つけられるか**。
+- **⚖ trk281：段でスキンの棚を絞る・⭐ を先頭へ・揺れを全員オフへ（2026-11-04）**
+  - **ご相談の残り**：段（プリセット）ごとに、スキンの棚へ出すカテゴリを決める／⭐ の扱い／TRUCK の揺れの移行。
+  - **段は 5 つ**（`js/core.js` の `SET_LEVELS`・`js/settings-level.js`）：シンプル／スタンダード（既定）／プロ／マスター／**ウィザード（5 つ目・いちばん上）**。「次の段」はマスター→ウィザード。文言 `setLevelWizard` は 4 言語。
+  - **段ごとのカテゴリ**（`SKIN_LEVEL_CATS`・純粋関数 `skinLevelAllows`）：1・2＝`basic`/`type`/`dark`/`light`/`grad`（**ミクの 4 種は basic に同梱**）／プロ＝＋`fun`／マスター＝＋`access`/`life`／ウィザード＝＋`wizard`。**ウィザードの段だけ**、既定の棚に `wizard` の巻が戻ります（trk280 で外した「定番＋ウィザード」）。
+  - **既定の棚の枚数**：シンプル／スタンダード／プロ＝**44**・マスター＝**53**・ウィザード＝**114**（差し戻しの 1 種を除く）。**巻を選んだとき・ALL のときは段で絞りません**（選んだものは全部見せる）。**いま使っているスキン**は段の絞りより優先。
+  - **⭐**（`js/core.js` の棚）：隠さず、**先頭に固める**（並べ方が「おすすめ」のときだけ。名前順・よく使う順を選んだらその並びを尊重）。
+  - **揺れの移行**：`swayTruckOff1`（`js/truck.js`）＝**一回だけ全員オフ**。保存済みの「オン」もオフへ寄せ、以後は本人の設定で選べます。**工場出荷でも印は戻さない**（二度と掛からない）。登録簿は [`MIGRATIONS.md`](MIGRATIONS.md)（削除予定 2027-04-30）。
+  - 見張り：`tests/trk281-skin-level.test.mjs` **6 件**（段の表・枚数・巻を選んだとき・⭐ の先頭・画面のボタン・揺れの移行）。段の数を数えている `tests/trk279-level.test.mjs` と、棚の枚数を数えている既存テスト（trk229/trk274/trk280）も 5 段・新しい枚数へ更新。
+  - `npm run check` **1646 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.04-trk281`。
+  - **お預け**：TRUCK の視覚プリセット（山道 5%／坂道 5%／下り坂 5%／海岸沿い 5%／高速道路 80%＝揺れない の重み付き乱択）。
+- **⚖ trk280：体力の数字をそろえ、TRUCK の揺れを既定オフ、既定の棚からウィザードを外す（2026-11-03）**
+  - **ご相談**：TRUCK の初期体力 3 が厳しすぎる（中級以降が遊びにくい）／TRUCK のレーンの揺れは酔うので既定オフ／ウィザードは「初見の驚き」に取っておき、既定の棚から外す。
+  - **体力（全モード共通・`js/modes.js`）**：スタンダード＝**開始 20・上限 30・10 コンボごとに 1 回復**／ナイト＝**開始 30・上限 30・回復なし**／チキン＝1（即死）／インフィニット＝体力なし。**ノーツ数・モードによる傾斜は廃止**（短い曲ほど不利・モードごとのばらつきを無くす）。
+  - **揺れ（`js/truck.js`）**：`swayTruck` を **既定オフ**（`prefs.swayTruck === true` のときだけ揺れる）。ビート揺れ・ヒット揺れの設定はそのまま。
+  - **棚（`js/core.js`）**：既定の巻＝**「定番」だけ（53 種）**。ウィザード 62 種は 📚 の巻で `wizard` を選んだとき・ALL で見えます（目録が読めないときもカテゴリで外す）。
+  - 言葉：`livesHint`（4 言語）を新しい数字に。`skinVolDefault`／`skinVolUnknown` も「定番」へ。
+  - 見張り：`tests/trk280-tune.test.mjs` **7 件**。`npm run check` **1640 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk280`。
+  - **お預け（ご相談中）**：~~段ごとのスキンのカテゴリ絞り込み・⭐ 優先の効き方~~（trk281 で実装）・TRUCK の視覚プリセット（山道／坂道／海岸沿い／高速道路）。
+- **⚖ trk279：⚙ の「段」＝見せる量を 4 段で選ぶ（2026-11-03）**：記録＝[`PLAN-TRK279-2026-11-03.md`](PLAN-TRK279-2026-11-03.md)
+  - **ご相談**：modern-web-guidance の目線で「足りない／過剰」を洗い出し、プリセット（シンプル／スタンダード／プロ／マスター／ウィザード）で**見せる量**を減らせないか。
+  - **数えた**（`tools/settings-inventory.mjs`）：設定の値 **213**・パネル **19 枚**・操作子 **194 個**・説明 **132 か所**（日本語 6,826 字）。🎨 見た目 1 枚に **86 個**。洗い出しは [`SETTINGS-AUDIT-TRK279-2026-11-03.md`](SETTINGS-AUDIT-TRK279-2026-11-03.md)（足りない 7・過剰 6）。
+  - **決めた形**：**案 A＝4 段＋案内は段の外**（「ウィザード」はスキンの巻名とぶつかるため段の名前に使わない）、**既定はスタンダード**。
+  - **規則**：**段は値ではない**（保存は `settings.setLevel` と `settings.setTouched` の 2 つだけ・localStorage のキーは増やさない）／**触った行はどの段でも出す**／**探しているあいだは段を無視**／**行が全部隠れるパネルだけ隠す**（🎨 はスキンが残るので消えない）／切り替えは `aria-live` で読み上げ。
+  - 見張り：`tests/trk279-level.test.mjs` **9 件**。`npm run check` **1633 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk279`。
+  - **次**：A（検索欄 1 本化・全部開く／閉じる・sticky＋目次）→ D（🎨 の分割）→ F（説明文の圧縮。最後なので、より良い方法も併せて検討）。
+- **📖 trk278：端の次を「次の本」へつなぐ連読と、回り込んだときの一言（2026-11-03）**：返事＝[`LETTER-TRK278-2026-11-03.md`](LETTER-TRK278-2026-11-03.md)
+  - **ご要望**：①回り込んだら「**先頭に戻りました**」と言う ②回り込むと同じ動作で、**次の本に直接行き**、前の本と次の本を連結して**連読**できる設定。
+  - `settings.skinVolWrap` を **stop／wrap／chain** に（既定 stop・前の版の `on` は wrap として読む＝保存の互換）。`chain`＝**読み軸の向きだけ**、次の本の先頭／前の本の末尾へ。**パネルは開いたまま**・端は反対側へつなぐ（最後の本の次は最初の本）。既定と ALL は本が決まらないので回り込みへ。
+  - 回り込み・連読のときは状態の行（aria-live）に **「先頭に戻りました」「末尾に戻りました」「📚 {name} の先頭に移りました（{n} 種）」**（4 言語）。
+  - **返事と配布物**：返事＝[`LETTER-TRK278-2026-11-03.md`](LETTER-TRK278-2026-11-03.md)（前回の全体像＝[`LETTER-TRK277-2026-11-03.md`](LETTER-TRK277-2026-11-03.md)）。`TRK_PWA_REF` は **`6e470355491a2b9b9ba6664130c06caf5b918734`**（40 桁）。Drive の新フォルダ `trk-PWA-trk278-連読-2026-11-03`＝`169_am-aSC4a1HE8GRYY1cPl3yIQ8Kwfd`（親＝`1ppyvt9ML9LpBJQJ1a938AmDRtdRYugZc`）に 6 本：ZIP `17BAyYUkgL8S1hgDmr19TZXgekrsTFkUm`（**368 エントリ・7,783,666 B・sha256 `d0a2e504b3e13f8b28b78a6d6af7c45aef301af600628cbaffa9ed23db7dc7d7`**・md5 `f0b7cccc5e62d4440db447468ac79942`・`unzip -t` 破損なし・Drive 側の sha256 と一致）／`SHA256SUMS-trk278.txt` `1f8hLocUYvW-HEC1jLcbou7uTUtRTJqUB`／`00-まず読む.txt` `1ULDEZahJ-Mijx9CPR5j3_ppZknsMArld`／`LETTER-TRK278` `13DD-gi6Sr4I_Y_r7fB4h97cubXk0XSH7`／`LETTER-TRK277` `1ERVJIKVp2ckfGSGf9FySNciwyzU1DHlK`／`VIEWER-TRK276`（K-6 追加版）`1wBhcNWLZ5VdhR87lyFjhXmjivrwkS-SR`。ZIP は `node tools/pack-standalone.mjs --out=/tmp/dist278 --name=trk-PWA-trk278 --date=2026-11-03T22:00:00Z`（366 ファイルを集め 368 エントリ・vendor 100 件そろい）。
+  - 見張り：`tests/trk278-chain.test.mjs` **8 件**。`npm run check` **1624 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk278`。実機は `VIEWER-TRK276` の **K-6**。
+
+- **🔁 trk277：📚 の「端から反対側へ回り込む」と、言葉の整理（2026-11-03）**：返事＝[`LETTER-TRK277-2026-11-03.md`](LETTER-TRK277-2026-11-03.md)
+  - **ご要望**：①端の回り込みも設定項目に ②**伝わりやすい言語化**で案内する。
+  - `settings.skinVolWrap`（`off`＝端で止まる・既定／`on`＝反対側へ回り込む）。**読み方向と 4 方向すべて**で効きます（横書き＝右端の次は左端・下端の次は上端／縦書き＝最後の列の末尾の次は最初の列の先頭）。端で**同じ所に留まる**動きも無くしました。
+  - **言葉**：📚 の中を「見出し → 選択肢」の順に整理（**読み方向（どちらの向きに読み進めますか）**／**端まで行ったとき**→「端で止まる」「反対側へ回り込む」）。説明文に「回り込むと、右端の次は左端・下端の次は上端へ移ります」と**起きること**を書きました。4 言語そろい。
+  - **返事と配布物**：返事＝[`LETTER-TRK277-2026-11-03.md`](LETTER-TRK277-2026-11-03.md)・[`LETTER-TRK276-2026-11-03.md`](LETTER-TRK276-2026-11-03.md)（前回の全体像）。`TRK_PWA_REF` は **`271dfa6158e6a680940a6965992ae22e32a13978`**（40 桁）。Drive の新フォルダ `trk-PWA-trk277-回り込み-2026-11-03`＝`1dPB0jWLpVpShUk6lqyePesJaor2P2lEx`（親＝`1ppyvt9ML9LpBJQJ1a938AmDRtdRYugZc`）に 6 本：ZIP `1NXJcMSXCOpwCNRtuXw6IHkFdI3mbhFKw`（**367 エントリ・7,779,767 B・sha256 `ae76f93dc8a16b1dcbc8d50de0609c6d87de814dc20caa2faa76f740f57b18d9`**・`unzip -t` 破損なし・Drive 側の sha256 と一致）／`SHA256SUMS-trk277.txt` `15sWiBf0oMaxdowapMHJauo0QxU20bAdv`／`00-まず読む.txt` `18jFVIzG2oSk2YM3VhezXMJqSd40nRuj9`／`LETTER-TRK277` `1yFohwSZ5AImE9vUPJdMILBj5MziL16f7`／`LETTER-TRK276` `13ujPqmGsVB_qxQFhO057UM8mC5JcziuJ`／`VIEWER-TRK276`（K-5 追加版）`1PrtoODA6hju81naISXoPvhAQ5qL2LdMk`。ZIP は `node tools/pack-standalone.mjs --out=/tmp/dist277 --name=trk-PWA-trk277 --date=2026-11-03T21:00:00Z`（365 ファイルを集め 367 エントリ・vendor 100 件そろい）。
+  - 見張り：`tests/trk277-wrap.test.mjs` **7 件**。`npm run check` **1616 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk277`。実機は `VIEWER-TRK276` の **K-5**。
+
+- **⌨ trk276：📚（巻から選ぶ）をキーで動かす — アサイン・使わない・縦読み（2026-11-03）**：記録＝[`PLAN-TRK276-2026-11-03.md`](PLAN-TRK276-2026-11-03.md)、返事＝[`LETTER-TRK276-2026-11-03.md`](LETTER-TRK276-2026-11-03.md)、実機＝[`VIEWER-TRK276-2026-11-03.md`](VIEWER-TRK276-2026-11-03.md)
+  - **ご要望**：①📚 の矢印キー移動を、上下も含めて**キーアサイン**でき、**使わない**設定も選べる ②**縦読みの本を読む人**にとって良い UX に。
+  - **決めた形（U1〜U4）**：**フォーカスだけ動く＋Enter／Space で決定**（矢印のたびに棚 291 種を作り直さない）／**読み方向「横書き・縦書き」**（既定は横書き）／**4 方向を個別にアサイン**（既定 ←→↑↓）／**📚 のパネルの中**にまとめる。
+  - **動き**：`volLayout()`／`volMove()` が**カードの実位置から行と列を数える**ので、幅で列数が変わっても同じ規則。横書き＝← → が読み順・↑ ↓ は同じ列の前後の行／縦書き＝↑ ↓ が読み順（列の端は次の列の先頭）・← → は同じ行の前後の列。**端では止まる**。**roving tabindex** で選ばれている 1 枚だけ Tab が止まる。
+  - **キー**：押すと「キーを押す…」で待ち、次のキーを取る（**Esc は取り消し**・重なったら**入れ替え**・capture で受けるので設定を閉じる `Esc` より先）。**使わない**では `keydown` をそのまま返す（`remote` プリセットの ←→ と分かれる）。決めるとパネルが閉じ、**📚 ボタンへフォーカスが戻る**。
+  - **保存**：`settings.skinVolNav`／`skinVolDir`／`skinVolKeyL/R/U/D`（`volKeyBoot()` で型と重複を検める）。**新しい保存キー 0**・工場出荷で既定に戻る。
+  - **返事と配布物**：返事＝[`LETTER-TRK276-2026-11-03.md`](LETTER-TRK276-2026-11-03.md)、実機＝[`VIEWER-TRK276-2026-11-03.md`](VIEWER-TRK276-2026-11-03.md)（K-1〜K-4）。`TRK_PWA_REF` は **`a331f7e871133b24c24536081261da7886991a37`**（40 桁）。Drive の新フォルダ `trk-PWA-trk276-キー操作-2026-11-03`＝`1YiPssHeXDpX7LXjm42BpyLBZq2828gc8`（親＝`1ppyvt9ML9LpBJQJ1a938AmDRtdRYugZc`）に 6 本：ZIP `1rqLoNQzgiyspHMamR1Lfv-EeO-oOr2he`（**366 エントリ・7,776,515 B・sha256 `16fbdeda6ee15bc0aad52517ee574bfd11006e25e1004d2fc09fd8631a0d4fe0`**・`unzip -t` 破損なし・Drive 側の sha256 と一致）／`SHA256SUMS-trk276.txt` `1oRL2WTBJYewSowFjcc1VP62JElj--Ijx`／`00-まず読む.txt` `1VLUKPZasFRMmpnTFy88PcQWvIKuhsmMm`／`LETTER-TRK276` `1afMfxcucQNRPsjOOTHhxFylkK17EuCQo`／`VIEWER-TRK276` `1-EvIeUvGh6HGhGomDkvXECRAxIfc6PUE`／`PLAN-TRK276` `1ONiBeBFrsOiRgYvWqP1Bgd7Qko-f7hJk`。ZIP は `node tools/pack-standalone.mjs --out=/tmp/dist276 --name=trk-PWA-trk276 --date=2026-11-03T20:00:00Z`（364 ファイルを集め 366 エントリ・vendor 100 件そろい）。
+  - 見張り：`tests/trk276-keys.test.mjs` **13 件**。`npm run check` **1609 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk276`。
+
+- **🔁 trk275：trk274 のレビュー（必須 M1〜M3・推奨 R1〜R9・Q1〜Q4）を反映（2026-11-03）**：返事＝[`LETTER-TRK275-2026-11-03.md`](LETTER-TRK275-2026-11-03.md)、レビューの原文＝[`REVIEW-REQUEST-TRK274-2026-11-03.md`](REVIEW-REQUEST-TRK274-2026-11-03.md)
+  - **M1（Esc）**：`js/main.js` の「戻る」が先に `preventDefault()` していたため、📚 の popover が light-dismiss を取り消されて開いたまま残った（V-2 NG）。分岐に `&& !document.querySelector(":popover-open")` を足し、開いているときはキーを popover に譲る。
+  - **M2（巻の外で消える）**：`skinShelfEntries()` で (a) 使用中は巻の外でも残す (b) `only` が fav／recent／hidden のときは巻で絞らない (c) 検索語があるときは巻で絞らない。番人 **3 本**（`tests/trk274-volumes.test.mjs`）。
+  - **M3（件数）**：📚 の既定カードが目録全体の 291 を出していたのを、**棚と同じ数え方**（`skinVolCount()`）に。**114／291／各巻 16**。
+  - **Q2（寄せ幅の上限）**：面（地・パネル・入力欄）の **OKLab ΔE が 0.15 を超えたら目録へ差し戻す**（`SURFACE_LIMIT`）。色は目録のまま内蔵し `holdback:true`＋`SKIN_HOLDBACK` に載せ、**既定の棚から外す**（ALL とその巻では見える。カードに ⚠ の札）。差し戻し **18 種**（Wizard 1＋巻別 17・200 組）。うすい文字の同化は**読めることを優先**して最小の一歩だけ離し、届かない分は数を報告（22 種）。
+  - **R1**：`contain-intrinsic-size` を **auto 72px**（実測 58〜79px）に。テストは数字ではなく**範囲と 1 か所**を見る。**R2**：道具の穴 4 つ（角度なし gradient・必須の面・`S[` の数・読めない id）を塞ぎ、差し戻しは **⚠ として一覧**（落とさない）。**R4**：巻の題名を **13 巻＋3 キー×4 言語**に（`skinVolTitle()`）。**R5**：📚 に `aria-labelledby`、一覧を **radiogroup／radio＋aria-checked**。**R6**：未解禁の 🎓 も `.skinCell` で包み、**数と描画の単位を統一**。**R7**：wizard の前に区切り 1 行。**R3・R8・R9** は**文書**（A-4 の vm の文言・`LETTER-TRK273` §7 に 1 行・V は 8 件／F-1〜F-4・G-1）。
+  - **返事と配布物**：返事＝`docs/LETTER-TRK275-2026-11-03.md`（`TRK_PWA_REF` は **`5dcfa4e0719c39b4ef9aa9796eccce504132c025`**・40 桁）。Drive の新フォルダ `trk-PWA-trk275-レビュー対応-2026-11-03`＝`1NtcEHYdUVQWMOsmQboztFE6Iu-L51tcH`（親＝`1ppyvt9ML9LpBJQJ1a938AmDRtdRYugZc`）に 6 本：ZIP `1dnZVjVXlarbSlHgS0sWv1_9ZHwmd6fZs`（**363 エントリ・7,766,349 B・sha256 `b211ece5b7b79aaab7ff8f4926c0f84b71bf35e6df6b0608a9c32b40ccb131ea`**・`unzip -t` 破損なし・Drive 側の sha256 と一致）／`SHA256SUMS-trk275.txt` `1TPbnztqLwuyxstvOtwZKdGeW2ZYFN9Nk`／`00-まず読む.txt` `1saUT41k15tb8SWjqVrdbvr_fNqegCb1g`／`LETTER-TRK275` `1alBL_OZ52rIm71lFMsKu-AwQHmg0_Ipi`／`REVIEW-REQUEST-TRK274`（訂正版）`11geByySWbNdlk3DMI9NfJnW_yU2qYGZg`／`VIEWER-TRK274`（訂正版）`1emrF8L8gI0llhgixtJEo2GXIuCiYB-kR`。ZIP は `node tools/pack-standalone.mjs --out=/tmp/dist --name=trk-PWA-trk275 --date=2026-11-03T18:00:00Z`（361 ファイルを集め 363 エントリ・vendor 100 件そろい）。
+  - 見張り：`tests/trk275-review.test.mjs` **13 件**（M1・M3・R1・R4〜R7・Q3・R2 の 4 つ・版）＋ M2 の 3 本＋差し戻しの 1 本。`npm run check` **1596 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk275`。**新しい保存キー 0**。
+
+- **📚 trk274：巻別スキン 291 種の受け皿と、画面の手当て 4 つ（2026-11-03）**：記録＝[`PLAN-TRK274-2026-11-03.md`](PLAN-TRK274-2026-11-03.md)・画面の物差し＝[`UX-GUIDANCE-TRK274-2026-11-03.md`](UX-GUIDANCE-TRK274-2026-11-03.md)
+  - **受け取ったもの**：Skin 側の目録 `catalog/skins.json` **291 種（13 巻）**。うち**新顔 214 種**（Wizard 38＋vol.1〜10・glitch 176）。こちらの定番 53 種（本体 49＋ミク 4）は目録の `other` にそのまま入っていたので、**書き戻さず**に残した。
+  - **道具の穴を塞いだ**（`tools/import-skin-catalog.mjs` v4）：①**グラデーションの地**（68 種）を 1 色に潰さず読む ②`stage` のグラデーション（72 種）も受ける ③**camelCase の id**（37 種）を通す ④`--exclude-cat`・`--only-new`・`--volumes`（巻の目録）を実装。実測＝`vol-01` **16/16**・`vol-02` **16/16**（v3 は 0/16・6/16）。
+  - **色の寄せ方を一本化**：目録の文字が白側か黒側かで**向きを決め**、届かないぶんは**面（パネル・入力欄・ボタン・地・舞台）**を反対側へ動かす。暗い地＋暗い文字で「黒地に黒」を作っていた組み合わせが無くなった。`data.js` の `accentInk` も通るまで寄せる（amber などの小さなアクセント文字）。
+  - **既存 24 種は 22 種そのまま**。変えたのは 2 種だけで、どちらも**元データが読めなかった**もの＝`wizard-hermetic` の舞台（3.19:1 → 合格）と `wizard-void` の文字（黒地に黒 1.00:1 → 白）。
+  - **棚**：`core.settings.skinShelfVol`（**新しい保存キーは増やしていない**）。既定は「定番＋ウィザード」115 種、`<select id="skinVol">` と `popover` の 📚 パネルで巻を選ぶ。`SKIN_VOLUMES`（13 巻・291 種を重複なく）は生成物に同梱。
+  - **画面の手当て（U4-A の 4 つ）**：G-1 `popover`（モーダルにしない・効かないブラウザでは隠す）／G-2 `@starting-style`＋`transition-behavior: allow-discrete`／G-3 `aria-live` の読み上げ（`#skinVolStatus`）／G-4 `content-visibility: auto`＋`contain-intrinsic-size`（棚の 1 か所だけ）。
+  - **返事と実機の 1 枚**：`docs/SKIN-RETURN-TRK274-2026-11-03.md`（受け取った目録の sha256・相談 6 つへのお返事・決めた 4 つ・寄せた数＝Wizard 38 種／巻別 161 種）と `docs/VIEWER-TRK274-2026-11-03.md`（実機で見てほしい 7 つ・画面の手当て 4 つ）。`TRK_PWA_REF` は `672ee4774dc4ae72b377b8412eed9ce654e69103`（trk274 のコード）。**`/trk/` は trk219 のまま**・LETTER-TRK273 の A〜D は保留。
+  - **検める道具（E-6）**：`tools/check-skin-contrast.mjs` を新設し `npm run check` に追加（生成物の `.js` を**実行せず**読み、文字 4.5:1・エラー 3:1・小さなアクセントの入れ子まで見る）。`npm run check` **1578 pass / 0 fail**・`check-repo` 0 failure / 0 warning・cache は `trk-v2026.11.03-trk274`。
+  - **配布物（Drive・7 本）**：フォルダ `trk-PWA-trk274-巻別スキン291種-2026-11-03`＝`1EyOg5OMCfOiGp87J1nj349pxzW5l6u9l`（親＝倉庫 `1ppyvt9ML9LpBJQJ1a938AmDRtdRYugZc`）。ZIP `1TiaeWFmTprE3m-uWmMrlzQogbdUJUmKt`（**361 エントリ・7,745,289 B・sha256 `f1338ffb9b58d51e1d9f499bd3d1b01e435d3cb5e8447a07bd3a2017147b9958`**・全エントリ 2026-11-03 12:00 UTC・`unzip -t` 破損なし・**落とし直して `cmp` バイト一致**）／`SHA256SUMS-trk274.txt` `1qz5hlCZtmgCOAN5CjerqQuJhY5ZQP95F`／`00-まず読む.txt` `1QwQ0ZECABQy5usBQenWTMMIZ5fmTLsy5`／`SKIN-RETURN-TRK274` `19FkE75V5yxvGt2Z02wEsMVYAkZ1_dXhC`／`VIEWER-TRK274` `1Eq8squRkgqjb1kkU6xwT_Ott0xdqOtmV`／`PLAN-TRK274` `1-yhI28vrybLNP4r7GFU6VCQJw1lCycUM`／`UX-GUIDANCE-TRK274` `1CPSeBeQ9vEoVzktbFJ374JWgZMusWEdF`。ZIP は `node tools/pack-standalone.mjs --out=/tmp/dist --name=trk-PWA-trk274 --date=2026-11-03T12:00:00Z`（359 ファイルを集め 361 エントリ・vendor 100 件そろい）。
+  - **レビューの依頼（2026-11-03）**：`docs/REVIEW-REQUEST-TRK274-2026-11-03.md` を新設（**統合したこと**＝§1・**コードレビュー 11 か所**＝§2＋Q1〜Q4・**実測**＝§3・**実機 V-1〜V-8＋持ち越し 27 件＋期待を書き換えた 5 件**＝§4・**チェックリストに残っていること R-1〜R-11**＝§5・差し戻しの線引き＝§7・記入の型＝§8）。Drive の同じフォルダに 8 本目として置き（`REVIEW-REQUEST-TRK274` `1boPIiNUKcSYwCDii6-Q2yLBG93moLVn3`・27,306 B・sha256 `efcc047b942acde995d689e7769f2ec15c2c6e40e696addacda2ef9f59eb0c2f`・**落とし直して `cmp` バイト一致**）、`00-まず読む.txt` を「8 本・まずレビュー依頼」に差し替え（旧 `1QwQ0ZECABQy5usBQenWTMMIZ5fmTLsy5` は**ゴミ箱へ**・新 `1sg7OqjuYA1qjjrZzpZvSvRhwTlxSX_0S`・3,536 → **4,946 B**・sha256 `777539f2d638e4921a1bfc8220c19e8424a14a4f7de5f9ed68295364818c753b`）。PR **#83**（merge `248a3d2`）。
+  - **次に待つもの**：レビュー（`REVIEW-REQUEST-TRK274` の Q1〜Q4・実機 V-1〜V-8）と、Skin 側の相談 6 つへのお返事（`SKIN-RETURN` §4）・`LETTER-TRK273` の A〜D。**`/trk/` は trk219 のまま**。
+
+- **📄 trk273：レビュー（M1〜M3・R1〜R3）を反映して、送る前の文面を整える（2026-11-03）**：記録＝[`VIEWER-TRK273-2026-11-03.md`](VIEWER-TRK273-2026-11-03.md)、洗い出し＝[`PLAN-TRK273-2026-11-03.md`](PLAN-TRK273-2026-11-03.md)、Skin 側へ送る文面＝[`LETTER-TRK273-2026-11-03.md`](LETTER-TRK273-2026-11-03.md)。**アプリ本体（`js/*`・`css/*`）は 0 バイト**＝道具・文書・README の回。trk272 のレビュー（M1〜M3・R1〜R3）への手当て。
+  - **M2（いちばん重い指摘）**：`tools/lib/skin-catalog.mjs` が `.js` を **`node:vm` で評価**していた。vm は安全のための仕組みではなく、ホストの `Object` を渡していたので `Object.constructor("return process")()` → `getBuiltinModule("fs")` で**書き込みまで届く**（レビューで実演・こちらでも再現）。**評価をやめ**、`.js` を**文字として読み**、`= [` の配列リテラル／`S["id"] = {…}` のオブジェクトリテラルだけを**自前の読み取り**で JSON にして `JSON.parse` する形に変えた。コメント・末尾カンマ・`'…'`・引用符なしの鍵は読める／式・関数・テンプレート文字列は**読めないと断る**。ペイロードが**動かない**ことをテストで固定（`/tmp` にファイルが出来ない）。
+  - **M3**：README の「この版で入っているもの」が手書きで **15 行**・内容も履歴と違っていた（`trk255` の説明が別の回）。**`docs/HANDOFF.md` §7 の見出しから作る**方式に変えた＝`tools/readme-versions.mjs`（`--write`／`--check`）＋ `tests/readme-versions.test.mjs`（**1 行も違わない**ことを `npm run check` で見張る）。README はいま **19 行（trk255〜trk273）**。
+  - **M1**：許諾の文面の `/trk/` の現状が違っていた（「trk246 相当」「61 種」）。実際は **trk219**（公開 `sw.js` と `Trk-Nexus/trk` の `main` の両方で `trk-v2026.10.29-trk219`）・スキン **44 種**（本体 40＋ミク 4・Wizard 0）。書体 14 組・画中画・端末も `/trk/` には無い。差は **trk220〜trk273 の 54 回分**と書き直した（`LETTER` §2・`PLAN-TRK272` §1.3）。
+  - **R1**：`TRK_PWA_REF` を **3 つに分けた**＝①そちらの CI が固定している `6f60e234…`（trk269）②上げる先の候補 `dc100dd3…`（trk272 本体）③いまの開発版 main。**R2**：`/trk/` に当てる版は**持ち主（空さん）**の判断、Skin 側には**目録の版としての異議**だけ聞く形に整理。**R3**：`/trk/` を trk219 のまま止めている間の**既知の害**（同一オリジンで上流 `saveUserPrefs` の白リストが開発版の設定を消しうる）を 1 節追加。
+  - **文面の差し替え**：`docs/LETTER-TRK272-2026-11-03.md` は**未送付**なので削除し、`LETTER-TRK273-2026-11-03.md` を正とした（冒頭に「trk272 版を差し替える」と明記）。実機の 1 枚は版だけ trk273 に。
+  - **道具の断り文**：`import-skin-catalog` が「取り込むスキンがありません」の一言だけだったのを、**理由ごとに言い分ける**ようにした（目録が空／`cat` に当該カテゴリが無い／**生成物の `.js` を渡された**＝`colors` を持たない、の 3 つ）。README の道具の行も `node tools/import-skin-catalog.mjs <目録.json> --check` に直した。
+  - 見張り：`tests/readme-versions.test.mjs` **6 件**・`tests/trk271-skin-catalog-formats.test.mjs` **15 件**（+4）。`npm run check` **1558 pass / 0 fail**・`check-repo` 0 failure。cache は **`trk-v2026.11.03-trk273`**。**新しい保存キー 0**。
+  - **配布物（Drive・7 本）**：フォルダ `trk-PWA-trk273-レビュー反映と許諾の文面-2026-11-03`＝`1jKsR3uT2Dg-HcqQYhNQaCOWXK9PxnooS`（親＝倉庫 `1ppyvt9ML9LpBJQJ1a938AmDRtdRYugZc`）。ZIP `1hRhx_R91Iuft0YLFdOTM-gxEJsULj88x`（356 ファイル・7,662,075 B・sha256 `cc0ed710…4872da3`）／`SHA256SUMS` `1FZinkvPtiZ01WMTbU0qDN8-qNbgBTRJ2`／`DEVICE-CHECK` `1QAnX2zmwNWe21lnUnVub-efyzcByYwD-`／`LETTER(273)` `1J36CzQYJJmPOP4ot-PVTA0-AVjbMf_1F`／`VIEWER` `1d6o8LxFcBL9QuijKRqSRlhYioETf1yXn`／`PLAN` `1JLyjXh31onWAK72EroseKCD0Z8MlOTv_`／`00-まず読む.txt` `19VUNJ5x1TrEDrH13DBoU65nHZ5UZY9ow`。`00-まず読む.txt` に「**trk273 が正・trk272 の LETTER は使わない**」と明記。trk272 の束は履歴として残置。
+  - **`/trk/` に当てる版は保留**のまま（trk219・LETTER のお返事待ち）。
+
+- **📄 trk272：README を今の姿に・実機の項目を 1 枚に・`/trk/` の許諾の文面（2026-11-03）**：記録＝[`VIEWER-TRK272-2026-11-03.md`](VIEWER-TRK272-2026-11-03.md)、洗い出し＝[`PLAN-TRK272-2026-11-03.md`](PLAN-TRK272-2026-11-03.md)、実機の記入式＝[`DEVICE-CHECK-TRK265-271-2026-11-03.md`](DEVICE-CHECK-TRK265-271-2026-11-03.md)、Skin 側への許諾のお願い＝[`LETTER-TRK273-2026-11-03.md`](LETTER-TRK273-2026-11-03.md)（trk273 で差し替え）。**アプリ本体（`js/*`・`css/*`）は 0 バイト**＝文書と README だけの回。
+  - **ZIP 同梱の README を丸ごと書き直した**（`release/README-standalone.txt`）：見出しが **trk233** のまま **39 版**古かった。**trk272** に・スキン **77 種**・Wizard 24 種・端末 ⌨・trk255〜trk272 を 1 行ずつ・確かめたことを **994 → 1548 pass** に・ソースの URL を**個人名義から `Trk-Nexus/trk`** へ・外側の案内を `README-まず読む-*.txt` から **`00-まず読む.txt`／`SHA256SUMS-*.txt`** に。
+  - **実機の項目を 1 枚に**（`docs/DEVICE-CHECK-TRK265-271-2026-11-03.md`）：7 本に散らばっていた trk265〜trk271 の未確認（1-5b・1-1・2-1・3-1・1-8・4-1／A-1〜A-4／C-1〜C-8／D-1〜D-5／E-1〜E-6／F-1〜F-5／G-1〜G-5）を **38 項目**に。**必須は 8 件だけ**（いちばん壊れやすい 📌 の小窓）。**重複**（E-6＝G-4）は 1 つにまとめ、**もう意味が変わった 3 件（C-5・D-2・D-4）は「取り下げ」として表に残した**（消すと前の記録と食い違うため）。
+  - **`/trk/`（安定版）は trk219 のまま動かさない（※以前 trk246 と書いたのは誤り。trk290 の再チェックで確認）**。UX 改修案が未定なので、先方（`Trk-Nexus/trk-Avatar-Library`）に **A〜D の選択式**で許諾をお願いした：**A** 当てる版（trk272／条件つき／待つ）・**B** 触ってよい範囲（`cli` の鍵・`cat` の語・目録の項目・既定）・**C** 増やすときの運用（知らせるだけ／許諾をもらう）・**D** 差し戻しの条件。**返事の雛形**つき。期限は設けず、**お返事まで `/trk/` は trk246 のまま**。
+  - **気づいた穴（直した）**：trk271 の配布記録で HANDOFF に **64 桁の sha256 をそのまま**書いていた（trk223 の F2 に違反・`tests/trk223-review.test.mjs` が落ちる）。**`0576fbdc…db469108` に短縮**して解消。ZIP の完全なハッシュは**外側の `SHA256SUMS-*.txt` と `00-まず読む.txt`** に置く（ZIP の中の文書には書かない）。
+  - 版：`trk-build=trk272`／`CACHE="trk-v2026.11.03-trk272"`。`npm run check` **1548 pass / 0 fail**・`check-repo` 0 failure。**新しい保存キー 0**。
+  - **配布（2026-11-03）**：Drive の `trk-PWA-trk272-READMEと実機チェックと許諾-2026-11-03`（`1V6Rnlo1OR6-tv3jb9D0js8318Cn7xGk7`）に 7 本＝`trk-standalone-2026-11-03-trk272.zip`（354 ファイル・7,651,716 B・sha256 `183860a4…dc91fdb9`）・`SHA256SUMS-trk272-2026-11-03.txt`・`DEVICE-CHECK-TRK265-271-2026-11-03.md`・`LETTER-TRK272-2026-11-03.md`（trk273 で差し替え）・`VIEWER-TRK272-2026-11-03.md`・`PLAN-TRK272-2026-11-03.md`・`00-まず読む.txt`。**ZIP を展開して中身も確認**（`trk-build=trk272`・`CACHE="trk-v2026.11.03-trk272"`・`README.txt` の見出しが trk272・`docs/DEVICE-CHECK-…` と `docs/LETTER-TRK272-…` が入る・REF が 40 桁で埋まっている）。Drive の `sha256Checksum` も一致。
+
+- **🧙 trk271：Skin 側から届いた 3 ファイル（目録・生成物・検査の道具）を受ける（2026-11-03）**：記録＝[`VIEWER-TRK271-2026-11-03.md`](VIEWER-TRK271-2026-11-03.md)、洗い出し＝[`PLAN-TRK271-2026-11-03.md`](PLAN-TRK271-2026-11-03.md)、Skin 側へ返す文書＝[`SKIN-RETURN-TRK271-2026-11-03.md`](SKIN-RETURN-TRK271-2026-11-03.md)。元は Drive の `trk-PWA-trk269-端末の定番とWizardのスキン-2026-11-03`（`1eAfroK58tbRC6aoAv32-vonIz-AqFNT-`）に **10:43** 付けで置かれた 3 本＝`catalog-skins-trk269-2026-11-03.json`（`1gDErPkBO_LhNeGAeGQCAsdaEER0nFNLt`・361,311 B）・`js-skins-wizard-trk269-2026-11-03.js`（`1gjchGBsBVe2-9oyRK2UPS7nh2jR6bMXp`・26,480 B）・`check-cli-skin-trk269-v2.mjs`（`1Qy0GGTjs8C45GXRhEqyEL_kRgSP84EL7`・10,469 B）。
+  - **届いた目録は main と同一**（`trk-Avatar-Library` の `catalog/skins.json` と sha256 `b0591370…8bbf48d6` が一致・253 種・wizard 24・`cli` 12）。**スキンの値は 1 つも変えていない**（trk270 の 24 種のまま）。今回は**受け口**の回。
+  - **読み口を 1 か所に**：`tools/lib/skin-catalog.mjs`（新規）が **目録 JSON／スキン 1 枚／パック `{skin:…}`／生成物 `.js`** の 4 つを同じ配列にする。`.js` は **`vm` で評価**（`require`・`fetch` は渡さない・2 秒で打ち切り）・ESM の `export` は落として読む・**見分けは拡張子ではなく中身**（読み損ねたらもう一方でもう一度だけ試す）。
+  - **`tools/import-skin-catalog.mjs` v3**：共通の読み口へ。**`.js` からでも JSON と同じバイト列**（テストで固定）。`--cat`／`--cli-only`／`--out`／`--check` はそのまま。
+  - **`tools/check-cli-skin.mjs` v3**：`.js` の目録を受ける・`--catalog` で「名乗るものだけ」を強制・**`import` して使える**（`validateSkin`／`checkList`／`reasonFromErrors`・`main` は外に出さない）・外部 URL は `notes`（落とさない）。**終了コードの意味は変えない**（0／1／2）。
+  - **先方 v2 との見立ての差**：同じ目録で**先方 24/24 OK ／ こちら 17 OK・7 NG（10 件）**。差は**測る行**で、先方は `text`・`muted` × `panel`・`field` だけ。こちらは `text`／`button`・`onAccent`／`accent`・`accentInk`／`panel`・`game.miss`／`field`（3:1）も測る。NG は `alchemy`・`cauldron`・`hermetic`・`necromancer`・`sudo`・`tmux`・`void`（**生の値**の話で、本体は取り込み時に寄せてあるので 77 種すべて合格）。
+  - 見張り：`tests/trk271-skin-catalog-formats.test.mjs` **11 件**。`npm run check` **1548 pass / 0 fail**。cache は **`trk-v2026.11.03-trk271`**。
+  - **本体（`js/*`）の変更 0 バイト・新しい保存キー 0**。`TRK_PWA_REF` は **`8d17a1a938c53f1f19e9559ca626990d4ea0e22a`**。
+  - **`/trk/` に当てる版は保留**のまま（Skin 側の応答後）。
+
+- **🧙 trk270：Skin 側の返事を受けて Wizard を 24 種に（2026-11-03）**：記録＝[`VIEWER-TRK270-2026-11-03.md`](VIEWER-TRK270-2026-11-03.md)、洗い出し＝[`PLAN-TRK270-2026-11-03.md`](PLAN-TRK270-2026-11-03.md)、Skin 側へ返す文書＝[`SKIN-RETURN-TRK270-2026-11-03.md`](SKIN-RETURN-TRK270-2026-11-03.md)。元は Drive の `返事-trk269-2026-11-03.md`（`1XaDstwo2rADOeF6LIVeeEmE25GiUtX9u`）と、trk-Avatar-Library の **PR #34**（`main`・`c0292bb8`）で更新された `catalog/skins.json`（253 種）。
+  - **Wizard 24 種を全部**（`--cli-only` を外す）。`js/skins-wizard.js` は生成物のまま・`--check` で目録どおりを確認。**スキンは 61 → 77 種**（本体 49＋ミク 4＋Wizard 24）。
+  - **取り込み v2**：基準に届かない色は**文字ではなく背景（ボタン・地）**を動かして寄せる（`fitAway`）。文字は 1 色も動かしていない。エラー色は 3:1 へ。**寄せた 14 件**は実行時に内訳を出す（同じ目録なら同じバイト列）。
+  - **`wizard-hermetic` だけ地も動かした**（`#5c4033 → #aea099`）：パネルが明るく地が暗いと、1 つのうすい文字で両方は物理的に両立しない。
+  - **`auto` の選び方**：`skinCatalog` に **`look`（cli を名乗るか）** を足し、`pickCliSkin` は **cli を名乗るスキンを先に**選ぶ。24 種になると辞書順の先頭が `wizard-alchemy`（cli なし）になるため（当たるのは `wizard-arcane` で trk269 と同じ）。
+  - **道具 v2.1**：`tools/check-cli-skin.mjs` の**誤検知 2 つ**を修正＝半透明のパネル（`rgba(...)`・前は 20 種が誤検知）を色として受け取る／`bell:false` を「鳴らさない」として扱う（前は 2 種）。目録に当てると 12 種 OK／7 種 NG（10 件・**目録の生の値**の話で、本体は取り込み時に寄せる）。
+  - **返事との差分**：返事は「24 種に cli を追加」だが、実際の目録で `cli` を持つのは **12 種**（5 つの操作感は 12 種にすべて入っていた）。残り 12 種に付けるかは先方の判断、と返した。
+  - 見張り：`tests/trk270-wizard24.test.mjs` **13 件**。jsdom（本物の 77 種で端末を操作）**14 項目 0 NG**。`npm run check` **1537 pass / 0 fail**。cache は **`trk-v2026.11.03-trk270`**。
+  - **新しい保存キー 0**。`TRK_PWA_REF` は **`c36029ac07acc21f50b518a604052b5405437874`**。
+  - **`/trk/` に当てる版は保留**のまま（Skin 側の応答後）。
+  - **配布（2026-11-03）**：Drive の `trk-PWA-trk271-届いた3ファイルを受ける-2026-11-03`（`18lvHvIZAeykDRmPiHa8tLf5fyJdwpIvv`）に 6 本＝`trk-standalone-2026-11-03-trk271.zip`（350 ファイル・7,636,653 B・sha256 `0576fbdc…db469108`）・`SHA256SUMS-trk271-2026-11-03.txt`・`VIEWER-TRK271-2026-11-03.md`・`PLAN-TRK271-2026-11-03.md`・`SKIN-RETURN-TRK271-2026-11-03.md`・`00-まず読む.txt`。**ZIP を展開して中身も確認**（`trk-build=trk271`・`CACHE="trk-v2026.11.03-trk271"`・`trk-files/js/skins-wizard.js` に 24 種）。Drive の `sha256Checksum` も一致。
+
+- **⌨ trk269：端末の定番コマンドと Wizard のスキン 12 種（2026-11-03）**：記録＝[`VIEWER-TRK269-2026-11-03.md`](VIEWER-TRK269-2026-11-03.md)、洗い出し＝[`PLAN-TRK269-2026-11-03.md`](PLAN-TRK269-2026-11-03.md)、Skin 側へ返す文書＝[`SKIN-RETURN-TRK269-2026-11-03.md`](SKIN-RETURN-TRK269-2026-11-03.md)。元は Skin 側から Drive で届いた 4 ファイル（`CLI-定番機能とWizardスキン案.md`・`check-cli-skin.mjs`・`skins.json`・`HANDOFF.md`）。
+  - **伝達事項 4 つをそのまま反映**：§4-1 の `cli` 拡張 5 つ（`cursor`／`opacity`／`history`／`completion`／`bell`）・§4-2 のトリガー（`wizard`／`cli`／`console`）・§4-3 のコントラスト（4.5:1・エラー 3:1）・§4-4 の検査ツール（v2 に）。
+  - **コマンドは「別名＋新規」（U2）**：`ls`／`dir`＝`list`、`cd`＝`skin`、`man`＝`help`（`man <cmd>` は 1 つだけ）。新しく `pwd`・`cat`（`cat spell <id>` も）・`grep`・`history`・`clear`・`echo`・`bell on/off`。`|` は `;` と同じ区切り。`execute` は `{out, quit, clear}` を返し、`clear` は**先にログを消して**「消しました」だけ残す。
+  - **`cli` の 5 つ（U3）**：`cursor`（block/underline/bar）・`opacity`（0.5〜1）・`history`（10〜200）・`completion`（tab/off）・`bell`（true のみ）。`opacity` は**地を `::before` に移して**掛けるので**文字は薄くならない**。`bell` は**既定オフ**で、スキンが名乗り設定がオンのときだけ `AudioContext` で短い音を作る（音のファイルは増やさない）。`caret-shape` は未対応ブラウザーでは無視。
+  - **Wizard のスキン 12 種（U1）**：`tools/import-skin-catalog.mjs`（新規）で目録から生成 → **`js/skins-wizard.js`**（手で直さない・同じ目録なら同じバイト列・`--check` あり）。`colors`→`ui`／`game` は `buildCustomSkin` と同じ割合、届かない色は `fitInk` で合格点まで寄せる、`font` の**二重エスケープを戻す**、`cli` は `sanitizeCliLook` に委譲。`index.html` は `js/characters/miku.js` の直後に読み、`js/core.js` の `SKIN_CATS` に `wizard` を 1 語（棚の見出しは `catWizard`・4 言語）。**スキンは 61 種**（＋ミク 4＝65）。
+  - **入れなかった 12 種**：`muted`／入力欄が 1.01〜3.33:1（`wizard-void` は `text` も 1.00）。**`cli` の有無とちょうど一致**していた。色を直してもらえば `--cli-only` を外して 1 コマンドで入る。目録の `font` 二重エスケープ 167 種・余計な鍵 `"cli.font"` 3 種も返し文書でお願いした。
+  - **設定画面**：⚙ に「エラーの音（ピン）を鳴らす」（`settings.cliBell`・既定オン）＋「そう決まっていること」の説明 2 行（補完・履歴・カーソルの形・地の透け方はスキンが決める）。
+  - **道具 v2**：`tools/check-cli-skin.mjs` が**目録も受ける**（CLI を名乗るスキンだけ判定・他は `notes`）。道の文字（`/` `\` `` ` `` `~` `:` `..` `C:`）を `id`／`cli.font`／`cli.prompt` で断り、5 つの操作感も見る。**終了コードは 0／1（要修正・全部）／2（読めない）**＝先方版の「1＝名なし」と意味が違うので返し文書に明記。
+  - 見張り：`tests/trk269-cli-standard.test.mjs` **23 件**。jsdom で **18 項目 0 NG**（履歴の上限・Tab 補完 off・ビープ・`bell off`・`clear`・言語・設定のチェック）。`npm run check` **1524 pass / 0 fail**。cache は **`trk-v2026.11.03-trk269`**。
+  - **新しい保存キー 0**（`settings.cli*` の中だけ・`cliBell` を 1 つ追加）。`TRK_PWA_REF` は **`6f60e234fca63cf47a2cba4bbcd954ee3850dacd`**。
+  - **`/trk/` に当てる版は保留**のまま（Skin 側の応答後）。
+  - **配布（2026-11-03）**：Drive の `trk-PWA-trk269-端末の定番とWizardのスキン-2026-11-03`（`1eAfroK58tbRC6aoAv32-vonIz-AqFNT-`）に 6 本＝`trk-standalone-2026-11-03-trk269.zip`（344 ファイル・7,612,753 B・sha256 `9132ba57…23db1b39`）・`SHA256SUMS-trk269-2026-11-03.txt`・`VIEWER-TRK269-2026-11-03.md`・`PLAN-TRK269-2026-11-03.md`・`SKIN-RETURN-TRK269-2026-11-03.md`・`00-まず読む.txt`。**ZIP を展開して中身も確認**（`trk-build=trk269`・`CACHE="trk-v2026.11.03-trk269"`・`trk-files/js/cli.js` 1282 行・`js/skins-wizard.js` 157 行・展開先の `js/cli.js` で jsdom 18 項目 0 NG）。
+
+- **⌨ trk268：CLI 用スキンの受け口（2026-11-03）**：記録＝[`VIEWER-TRK268-2026-11-03.md`](VIEWER-TRK268-2026-11-03.md)、洗い出し＝[`PLAN-TRK268-2026-11-03.md`](PLAN-TRK268-2026-11-03.md)、先方へ返した文書＝[`SKIN-RETURN-TRK267-2026-11-03.md`](SKIN-RETURN-TRK267-2026-11-03.md) §9。**返事を待たずに、値でも `.stpack` でも入る形を先に用意**した回です（trk267 の続き）。
+  - **2 つの渡し方**：(a) 値を `js/data.js` に 1 枚入れる (b) `.stpack` の `skin` に同じ値を入れる。`sanitizeSkinDef` が `cat`・`cli` を残し、`buildCustomSkin` が `ui` に `--cli-*` を混ぜるので、**パックは入れた時点で `auto` が拾う**（棚の見え方は `custom` のまま＝`skinCatList` は触らない）。
+  - **名乗り**：`cat` に **`wizard`（第一候補）・`cli`・`console`** のどれか。`pickCliSkin`・`skinCatalog`・`grimoire` の絞り込みが同じ別名を見ます（`CLI_CATS`・`isCliCat`）。
+  - **端末だけの見た目**：`--cli-font`／`--cli-prompt`／`--cli-caret`／`--cli-scan`（既定は trk267 と同じ＝何も名乗らなければ見た目は変わらない）。値は `sanitizeCliLook` が整え、**かっこ・引用符・セミコロン・波かっこは落とす**（外部参照を作らせない）。合図の記号は CSS の `content`（`::before`）から。
+  - **受け入れの道具**：`tools/check-cli-skin.mjs`（アプリと同じ `js/data.js` を読んで、`cat` の名乗り・`colors` の不足・コントラスト 4.5:1／エラー 3:1・`cli` の値を見る。終了コード 0／1／2・`--json` あり）。**助言であって関門ではない**（通らなくても受け取れる）。
+  - 見張り：`tests/trk268-skin-hooks.test.mjs` **11 件**。`npm run check` **1501 pass / 0 fail**。jsdom 20 項目 0 NG（別名で選ぶ／`grimoire` の絞り込み／パックの値が届く／Esc・言語）。cache は **`trk-v2026.11.03-trk268`**。
+  - **新しい保存キー 0**（`settings.cli*` のまま）・`js/core.js` は差分 0・`sw.js` の先読み一覧も差分 0。
+  - **`/trk/` に当てる版は保留**のまま（Skin 側の応答後）。
+
+- **⌨ trk267：trk CLI（Wizard のターミナル）— Skin 側の設計書 v0.1 のフェーズ C（2026-11-03）**：記録＝[`VIEWER-TRK267-2026-11-03.md`](VIEWER-TRK267-2026-11-03.md)、洗い出しと判断＝[`PLAN-TRK267-2026-11-03.md`](PLAN-TRK267-2026-11-03.md)。元は Skin 側（`Trk-Nexus/trk-Avatar-Library`）の `docs/trk-cli-設計.md`（枝 `arena/890c19ec-trk-avatar-library`・未マージ・Drive `1gSPdwjz9p-6u7e2aodMvlzh-Zq5-QLN1`）。
+  - **入口は2つ（U1 `both`）**：⚙ の「⌨ ターミナル（trk CLI）」と、PC では **Ctrl+`**（Mac は ⌘+`）。選曲画面の上に重ねて出し、**Esc・`quit`・✕** で閉じる。
+  - **コマンドは設計書の10（U2 `full`）**：`play`（番号・曲名・next・prev・random・fav）・`list`・`skin`・`grimoire`（カテゴリで絞れる）・`volume`・`seek`・`spell`（`add`／`del` で登録）・`cast`（`;` で続けて唱える）・`help`・`quit`/`exit`。＋`repeat`・`shuffle`。最初から入っている呪文は 3 本（`shuffle-fav`・`repeat-all`・`midnight`）。
+  - **`play` の行き先は設定で選べる（U3 `both`）**：既定は **メディアプレイヤー**（開いて鳴らし、端末は 0.4 秒後に閉じる）。もう一つは曲リストの試聴。
+  - **見た目（U4）**：開いている間だけスキンを当てる。既定 `auto` は **`cat` に `wizard` を含むスキン → 無ければ `terminal`**、閉じたら元へ戻す。端末の中で `skin` を唱えたときは、そのスキンを残す（`state.userSkin`）。色・書体は CSS 変数（`--ui-*`・`--ui-accent-ink`）から取るので、**Skin 側が wizard-cli を足せば、こちらの規則を足さずに着られる**。
+  - **安全**：`play` は**生のパスを受け付けない**（`/` `\` `..` `~` `C:` を断り、`list` の番号か曲名だけ）。保存は `core.settings` の中だけ（`cliPlay`・`cliSkin`・`cliSpells`）＝**localStorage のキーは増やさない**。端末は `Trk.overlay` の名前に `cli` を足したので、開いている間はゲームのキー入力が止まる。ゲーム中・書斎・メディアプレーヤーを開いている間は開かない。
+  - **触ったファイル**：`js/cli.js`（新規・純関数と実行を「純粋な計算（trk267）」で切り出し）・`js/core.js`（重ね表示の名前1語・`cliPlay`／`cliSkin`／`cliSpells` の既定と、工場出荷の3行）・`js/media-player-mode.js`（`window.TrkMediaPlayer` に `play` を1つ）・`index.html`（⚙ の `#cliPanel` と `<script src="js/cli.js">`）・`css/style.css`（`.cli*`）。
+  - 見張り：`tests/trk267-cli.test.mjs` **37 件**。jsdom で **30 項目 0 NG**（開く→`list`→`play`→`volume`→`spell`→`cast`→履歴→閉じる／唱えたスキンは残る・唱えていなければ戻る／Ctrl+`・Esc／ゲーム中は開かない／メディアプレイヤーへ渡して閉じる／言語の追従）。`npm run check` **1490 pass / 0 fail**。cache は **`trk-v2026.11.03-trk267`**。
+  - **Skin 側へ返す文書（2026-11-03）**：[`SKIN-RETURN-TRK267-2026-11-03.md`](SKIN-RETURN-TRK267-2026-11-03.md)＝`TRK_PWA_REF` を `2b3637df…` へ／受け入れ条件（`cat` に `wizard` を 1 語・`ui` の 9 変数・コントラスト 4.5:1・目録はこちらが `data.js` に入れて `export-skin-gallery.mjs` で作り直す）／こちらの柔軟対応（判定語・id・`--cli-*`・パックの `cat`）。**先方の `catalog/skins.json` は trk の `js/data.js` の出力**なので、入力はこちらで持つことを明記した。
+  - **配布（2026-11-03）**：Drive の `trk-PWA-trk267-ターミナル（trk CLI）-2026-11-03`（`1Qc3kzRjwgDze2LZVt3DUofeerRRX0hE7`）に5本＝`trk-standalone-2026-11-03-trk267.zip`（337 ファイル・7,576,448 B・sha256 `34b54a27…ba18e3a`）・`SHA256SUMS-trk267-2026-11-03.txt`・`VIEWER-TRK267-2026-11-03.md`・`PLAN-TRK267-2026-11-03.md`・`00-まず読む.txt`。**ZIP を展開して中身の版も確認**（`trk-build=trk267`・`CACHE="trk-v2026.11.03-trk267"`・`trk-files/js/cli.js` 1007 行・展開先の `js/cli.js` で jsdom 30 項目 0 NG）。
+  - **`/trk/` に当てる版は保留**のまま（Skin 側との応答後）。
+
+- **📌 trk266：trk265 レビューの小さな推奨（2026-11-03）**：記録＝[`VIEWER-TRK266-2026-11-03.md`](VIEWER-TRK266-2026-11-03.md)、レビューへの返事＝[`REVIEW-RESPONSE-TRK265-2026-11-03.md`](REVIEW-RESPONSE-TRK265-2026-11-03.md)、洗い出し＝[`PLAN-TRK266-2026-11-03.md`](PLAN-TRK266-2026-11-03.md)。
+  - **F1**：押せない理由の見える行は `pipWhyVisible()` の判断に（**`mediaPipHomeApp` かつ読み込み後**のときだけ）。普通の非対応（Firefox など）は今までどおり `title` だけ＝行が出しっぱなしにならない。
+  - **F2**：`pipBusy` を足し、小窓を待つ間（最大 2.5 秒）の二度押しを無視（`togglePip()` の先頭・`finally` で必ず戻す）。
+  - **F3**：`mediaPipHint` の 4 言語に **Dock** を足した（「ホーム画面や Dock から起動したアプリ」）。
+  - 見張り：`tests/trk266-pip-why.test.mjs` **10 件**。jsdom で「Firefox（非対応）で行が出ない」「待っている間の二度押しで小窓が二重にならない」を実測。`npm run check` **1453 pass / 0 fail**。cache は **`trk-v2026.11.03-trk266`**。
+  - **`/trk/` に当てる版は保留**のまま（Skin 側との応答後）。`js/core.js` は差分 0 行。
+
+- **📌 trk265：trk264 レビューの手当て（2026-11-03）**：記録＝[`VIEWER-TRK265-2026-11-03.md`](VIEWER-TRK265-2026-11-03.md)、レビューへの返事＝[`REVIEW-RESPONSE-TRK264-2026-11-03.md`](REVIEW-RESPONSE-TRK264-2026-11-03.md)、洗い出し＝[`PLAN-TRK265-2026-11-03.md`](PLAN-TRK265-2026-11-03.md)。
+  - **M1（必須）**：閉じる側を `leavePipBoth()` に寄せ、**標準 → webkit を if / else にせず両方**試す。`pipActive` は `pipActuallyOn()`（実際に出ているか）に合わせる。`closeMedia()` の未処理の reject も解消。
+  - **R1**：`webkitSetPresentationMode` は `webkitpresentationmodechanged` を**先に待ってから**呼ぶ（上限 2.5 秒・時間切れは実状態）。`togglePip()` は `pipActive = ok || pipIsOn()`、トーストは `!pipActive` のときだけ。
+  - **R3**：押せない理由を `#mediaPipWhy`（操作列のすぐ下）に**見える 1 行**で出し、`aria-describedby` で読み上げにも繋ぐ。
+  - **Q4**：`pipHomeApp()` → **`pipStandaloneApp()`**（iphone/ipad のホーム画面と macOS の Dock）。文言も 4 言語で修正。**Q1 は変更なし・Q2 は実機待ち（駄目なら trk266）・R2／R4 は実機の項目**。
+  - 判断は `tests/trk265-pip-close.test.mjs` **14 件**（切り出し範囲「画中画の出入り（trk265）」）。jsdom で Safari の橋渡し（標準 exit が reject）を作り **22 項目 0 NG**。`npm run check` **1443 pass / 0 fail**。cache は **`trk-v2026.11.03-trk265`**。
+  - **`/trk/` に当てる版は保留**（Skin 側との応答後に決める）。`js/core.js` は差分 0 行。
+
+- **📌 trk264：Safari でも画中画を使えるようにする（2026-11-02）**：記録＝[`VIEWER-TRK264-2026-11-02.md`](VIEWER-TRK264-2026-11-02.md)、洗い出し＝[`PLAN-TRK264-2026-11-02.md`](PLAN-TRK264-2026-11-02.md)。
+  - **2 つの API**：標準（`requestPictureInPicture`）を先に、**断られたら Safari の `webkitSetPresentationMode` へ**（通ったほうを覚える）。出る・状態・イベント（`webkitpresentationmodechanged`）も両対応。
+  - **押せない理由**：ホーム画面アプリ（`navigator.standalone`／`display-mode: standalone`）では `webkitSupportsPresentationMode` を信じて 📌 を閉じ、`mediaPipHomeApp` を title に出す。開けなかったときは `mediaPipFailed`（「非対応」と分ける）。
+  - 判断は純粋な関数 `pipBackend`／`pipRunning`（`js/media-player-mode.js` の「純粋な計算（trk264）」）。`core.js` は触らない＝**localStorage のキーは増えていません**。
+  - 見張り：`tests/trk264-pip-safari.test.mjs` **22 件**。jsdom で 7 場面・24 項目（標準／Safari の振り分け／旧 Safari／ホーム画面アプリ／終了／ゲーム開始／設定オフ）を実測し **0 NG・例外 0**。`npm run check` **1429 pass / 0 fail**。cache は **`trk-v2026.11.02-trk264`**。
+
+- **📌 trk263：画中画をメディアプレーヤーの外でも残す・画中画の間は映像を隠す（2026-11-02）**：記録＝[`VIEWER-TRK263-2026-11-02.md`](VIEWER-TRK263-2026-11-02.md)、洗い出し＝[`PLAN-TRK263-2026-11-02.md`](PLAN-TRK263-2026-11-02.md)。
+  - **閉じても残す**：`mediaPipKeep`（既定**オン**）。✕／ESC でプレーヤーを閉じても小窓が残り、再生も音量もそのまま。**ゲーム開始・タイトル以外の画面・設定オフ・小窓の ✕ では閉じる**。
+  - **映像を隠す**：`mediaPipHideStage`（既定**オン**）。画中画を出している間はプレーヤー側の映像を隠し、**1 行の案内**（「ここにも表示」「画中画を終了」）を出す。小窓が閉じれば自動で戻る。
+  - 判断は純粋な関数 `pipExitPlan`／`stageVisible`／`pipNoticeVisible`（`js/media-player-mode.js` の「純粋な計算」の範囲）。
+  - 見張り：`tests/trk263-pip.test.mjs` **15 件**。`tests/trk206-media-exit.test.mjs` は「画中画を残すときは keep へ寄せる」ことを足して更新。`npm run check` **1407 pass / 0 fail**。cache は **`trk-v2026.11.02-trk263`**。
+
+- **🎬 trk262：映像の操作パネルの出かたと、字幕の置き場所・大きさ（2026-11-02）**：記録＝[`VIEWER-TRK262-2026-11-02.md`](VIEWER-TRK262-2026-11-02.md)、洗い出し＝[`PLAN-TRK262-2026-11-02.md`](PLAN-TRK262-2026-11-02.md)、自動字幕の案内＝[`AUTO-CAPTIONS-TRK262-2026-11-02.md`](AUTO-CAPTIONS-TRK262-2026-11-02.md)。
+  - **操作パネルの出かた**：`full`（触れると上下・今までどおり）／`bottom`（触れると下だけ）／`always`（下だけ常に）／`none`（何も出さない）。設定 `videoMaxChrome`（既定 `full`）。**暗くする膜は作らない**。🖥 全画面と ▶ メディアプレーヤーの映像の両方に効く。
+  - **逃げ道**：`none` でも ESC・映像の外のクリック・画面の上下 24px に触れる（3 秒）・一時停止中は操作を出せる。▶ 側は「再生中だけ隠し、止めれば必ず出る」。
+  - **下のバー**（🖥 全画面）：⏪10秒／⏩10秒／シーク線／時間／🔍／⛶／✕。操作は 1 か所だけ（上と下で二重に持たない）。
+  - **字幕**：置き場所 `bottom`／`middle`／`top`（`mediaSubsPos`・既定 `bottom`）、大きさ `small`／`normal`／`large`（`mediaSubsSize`・既定 `normal`）。trk が描く字幕だけに効く（📌 画中画・OS のライブキャプションは向こうの設定）。
+  - **自動字幕**：trk は音を聞かない（マイクも取らない）。Windows 11 `Windows+Ctrl+L`・macOS のライブキャプション・Chrome のライブキャプション・Android の手順を文書にまとめ、💬 字幕 パネルに「ℹ 自動字幕について」を置いた。
+  - 見張り：`tests/trk262-viewer.test.mjs` **18 件**（`js/viewer-chrome.js` を vm で読む純粋な計算＋配線の目印）。`npm run check` **1392 pass / 0 fail**。cache は **`trk-v2026.11.02-trk262`**。
+
+- **🎹 trk261：シンセの鍵盤を 25／49／61／88 鍵に、MIDI キーボードに対応（2026-11-02）**：記録＝[`SYNTH-TRK261-2026-11-02.md`](SYNTH-TRK261-2026-11-02.md)、洗い出し＝[`PLAN-TRK261-2026-11-02.md`](PLAN-TRK261-2026-11-02.md)。
+  - **鍵盤の広さ**：25（C3–C5・従来）／49（C2–C6）／61（C2–C7）／88（A0–C8）。設定 `synthModeKeyRange`（既定 `25`）。
+  - **幅の合わせ方**：`fit`（収まるなら広げ・はみ出せば縮める・下限 0.45 倍）／`scroll`（等倍で横スクロール）／`shrink`（いつも1画面・下限 0.28 倍）。設定 `synthModeKeyFit`（既定 `fit`）。`.instPiano` の `min-width:630px` は廃止し、JS が決める。
+  - **キー割り当ての移行**：配列（C3 基準・25 個）→ `{ 音番号: キー }`。旧データは読み込み時に自動で読み替え（利用者の割り当ては消えない）。
+  - **MIDI（Web MIDI）**：ノートオン/オフ（ベロシティを音量へ）・CC64 サステイン・CC120/123 オールノートオフ・ピッチベンド（±2半音）。抜き差しに追随し、閉じている間は鳴らさない。設定 `synthMidiAuto`（既定オン・許可済みのときだけ黙ってつなぐ）。
+  - **対応端末**：Chrome／Edge などは可、**Safari（iPhone・iPad を含む）は不可**（画面に理由を出す）。実物の鍵盤での確認は残る。
+  - 見張り：`tests/trk261-synth.test.mjs` **19 件**（純粋関数を切り出して読む）。`npm run check` **1374 pass / 0 fail**。cache は **`trk-v2026.11.02-trk261`**。
+
+- **🚑 trk260：開いた直後が「枠だけ・文字なし・ボタンが効かない」を修正（2026-11-02）**：記録＝[`FIX-TRK260-BOOT-2026-11-02.md`](FIX-TRK260-BOOT-2026-11-02.md)。
+  - **原因**：`js/core.js` の先頭で `fitStage()` を呼んでいた。その中で使う `const LIB_LIST_MIN` は同じファイルの 1800 行台にあり、**TDZ の `ReferenceError`** で core.js の残り（`settings`・`applyLanguage`・画面の配線・`window.Trk.core`）が丸ごと止まっていた。後続も `Trk.core` 不在で次々に落ち、**CSS だけ効いた殻**が残った。trk245〜trk259 の配布物が該当。
+  - **直し方**：最初の `fitStage()` を**ファイルの最後**へ移した（中身・`--trk-lib-h` の値は不変）。
+  - **見張り**：`tests/trk260-boot.test.mjs`（5 件）。読み込み時の呼び出しが後ろの `const` を触っていないかを `js/**` 全体で走査し、`core.js` の `fitStage();` の位置も固定。壊し試験で 3 件 FAIL を確認。
+  - **確かめ方**：jsdom に index.html を文書順で読ませ、直す前は例外 34 件・文字が空・曲リスト 0・ようこそ非表示、直した後は例外 0 件・`言語 / Language`・曲リスト 1 件・ようこそ表示。
+  - `npm run check` **1355 pass / 0 fail**。cache は **`trk-v2026.11.02-trk260`**。
+
+- **🗓 trk259：レビュー（`trk-Nexus-review-trk258-2026-11-02`）の推奨 3 点を手当て（2026-11-02）**：必須は無し。設計メモ＝[`POLISH-TRK259-2026-11-02.md`](POLISH-TRK259-2026-11-02.md)。
+  - **R3 目録の版を端末の日付に**：`updatedAt`（UTC）を `slice(0,10)` していたので、日本では**朝 9 時前の更新が前日**に出た。`catalogDay()` を通して端末の `getFullYear/getMonth/getDate` で出す（日付だけの目録・読めない値は今までどおり）。
+  - **R4 セットの進捗の分母**：要約・確認は「これから入る分」なのに、途中だけ `n:plan.packs.length`（30）だった。`done++` を「飛ばす」の後に移し、分母も `pend.pending.length`（29）に。
+  - **R5 許可リストに根拠**：`tools/lib/button-names.mjs` に **[id, なぜ静的でないか, 根拠の式]** を置き、`check:a11y` が毎回 `js/` に照らす。文言の設定を消すと FAIL（実際に `studyOpenBtn.textContent` を消して FAIL を確認）。
+  - **手順書の期待値**を実測（**516 ファイル・追加 116／更新 45／同一 355／反転 62 ファイル・425 語／`git status` 161／上流 `npm run check` 1339/0**）に直し、「**数字は当てる直前の dry-run を正**」と明記。
+  - **`TRK_PWA_REF` は 40 桁**（`722409a04de3fd72526f19d87e78c25c97983226`）に統一。`actions/checkout` は短い SHA を枝名として探すため。
+  - `npm run check` **1350 pass / 0 fail**（+11）・a11y **9/0**（根拠つき）。cache は **`trk-v2026.11.02-trk259`**。
+
+- **🗓 trk258：r10 の受け皿（R3・R4・R5・2026-11-02）**：返事17（r10）で**目録の形が r9 と同じ**まま版だけ進んだので、取り違えと数字のずれを画面で分かるようにしました。設計メモ＝[`POLISH-TRK258-2026-11-02.md`](POLISH-TRK258-2026-11-02.md)。
+  - **R3 目録の版**：📚 目録から入れる の要約に **`目録の版 2026-11-02`**（`catalog/index.json` の `updatedAt`・UTC の日付）。読む側は今のままなので `check-set --json` の形は不変。
+  - **R4 セットの要約**：r10 を r9 の上に入れると**見本 1 本だけ飛ぶ**ため、要約を `setPending`（これから入る分）で数えるように（30→**29**・64.2→**60.2 MB**）。終わりの 1 行も**実際に入った分**の合計へ。
+  - **R5 ボタンの読み上げ名**：`check:a11y` に 9 件目の検査。名無しの 12 個のうち**画面のタップ鍵 2 つ**に `data-i18n-aria` を付け、残る 10 個は **id の許可リスト**（HTML から消えたら FAIL）。
+  - 辞書は **1122 キー ×4**（+4 キー）。`npm run check` **1339 pass / 0 fail**（177 suites）・a11y **9/0**。cache は **`trk-v2026.11.02-trk258`**。
+
+- **📋 trk257：r10 を受けての洗い出しと、実機・上流の手順書（2026-11-02）**：返事17（r10）を読んで、**こちらで整えられるもの**と**こちらでは進められないもの**を分けた台帳＝[`PLAN-TRK257-2026-11-02.md`](PLAN-TRK257-2026-11-02.md)。
+  - **r10 の実測**：`first-set-2026-11-02-r10` **8,118,128 B**・`font-set-2026-11-02-r10` **64,197,328 B**（`.stlib` と `.zip` が同サイズ）／`catalog/index.json` **30 パック・48,061 B**／`catalog/typography.json` は **34,194 B・`4301ac04…` で r9 から不変**（`sync-typography-catalog --against=main --check` → **差：ありません**）／縮刷版 486,510 B・`74ca7054…`／定義の `files` は 13・37 で、ZIP は `set.json` と `README-はじめに.txt` が足されて **15・39**（先方の `build-set.mjs` の `files.length + 2`）。
+  - **実機の 1 枚**＝[`DEVICE-CHECK-R10-2026-11-02.md`](DEVICE-CHECK-R10-2026-11-02.md)：はじめてセット → 書体セット（r9 の上に入れて 29／1 を確かめる）→ 縮刷版 → trk254〜256 の 7 点 → 同居。**記入欄つき**で、そのまま HANDOFF §4 に写せる形。
+  - **上流の手順書**＝[`TRK-STABLE-RUNBOOK-2026-11-02.md`](TRK-STABLE-RUNBOOK-2026-11-02.md)：本筋は **`make-stable`（鏡）**、`backport` は最小の手当て、**併用しない**。`/tmp` に上流 `06cef87` を clone して実測（**追加 109・更新 44・同一 356・反転 57 ファイル**、鏡のあと `npm run check` **1329 pass / 0 fail**、`backport --check` は ①〜④ が当たる）。
+  - **鏡でだけ赤くなる 1 件を修正**：`tests/trk256-polish.test.mjs` の S4 が README の `trk` を直に書いていたため、鏡（`trk` → `trk` 反転）で落ちました。**origin から名前を決める**形に直し、鏡でも 1329/0 を実測。
+  - **コードは 0 行**（`tests/` 1 本だけ）。`sw.js` の cache は **`trk-v2026.11.02-trk256` のまま**。
+
+- **🧹 trk256：小粒のセット A／配布物 B（2026-11-02）**：`docs/BACKLOG-2026-11-02.md` の S2〜S6 と M1・M2 をまとめて入れました。設計メモ＝[`POLISH-TRK255-2026-11-02.md`](POLISH-TRK255-2026-11-02.md)（trk255 と同じ束）。
+  - **S2（オフラインの書類）**：`sw.js` の `PRECACHE_EXTRA` に `credits.html`・`privacy.html`・`docs/ADDONS.md` を追加。`docs/` は丸ごと先読みしない方針のまま、**`PRECACHE_ALLOW` に書いた1本だけ例外**にしました（3本で 36 KB ほど）。これまで初回オフラインでリンクを押すとアプリが再表示されていました。
+  - **S3（JS が止まっているとき）**：`<body>` の直後に `<noscript>` を1枚（日本語＋英語・見た目は直書き・スクリプト無し）。真っ暗な画面の代わりに理由が出ます。
+  - **S4（README）**：ローカル起動手順が `trk.git` / `cd trk` を指していたので `trk.git` / `cd trk` に。開発版と安定版（`Trk-Nexus/trk`）の違いを1行ずつ（日英）。README は 12 KB の上限内に収めています。
+  - **S5（HANDOFF §1.5）**：`1243 pass` → いまの件数、cache 名 `trk246` → `trk256`、`trk-Standalone はまだ空` → 組織移籍済みの記述へ。
+  - **S6（「13行」）**：`js/typography.js` の「上の13行」を「`PAIRINGS`（14組）」に。あわせて **`check-repo` に「§1.5 の cache 名 = `sw.js` の CACHE」の検査**を足したので、次に版を上げて書き忘れたら落ちます。
+  - **M1（Actions の SHA 固定）**：`check.yml`・`pages.yml` の `uses:` 6 本を 40 桁の commit SHA に（`checkout@11d5960… # v4.4.0`・`setup-node@49933ea… # v4.4.0`・`configure-pages@983d773… # v5.0.0`・`upload-pages-artifact@56afc60… # v3.0.1`・`deploy-pages@d6db901… # v4.0.5`）。`check-repo` に「タグに戻したら落ちる」検査を追加。
+  - **M2（mobile-web の docs 削減）**：`tools/prepare-mobile-web.mjs` が `docs` を丸ごと写していたのを、**`docs/guide/` と `docs/ADDONS.md` だけ**に。実測 **2.2 MB → 304 KB**（`mobile-web/` 全体は 30 MB のまま。減ったのは文書の分）。
+  - `tests/trk256-polish.test.mjs`（**16件**）。`npm run check` **1329 pass / 0 fail**（173 suites）、`sw.js` の cache は **`trk-v2026.11.02-trk256`**。**実機は未確認**（見る所は S2 のオフライン書類・S3 の表示）。
+
+- **✨ trk255：小粒の仕上げ（判断項目 U1〜U7）（2026-11-02）**：`docs/BACKLOG-2026-11-02.md` §4 に並べた判断待ちに答えをもらい、S1（版の表示）と一緒に実装しました。記録＝[`POLISH-TRK255-2026-11-02.md`](POLISH-TRK255-2026-11-02.md)。
+  - **🔤 U1**：`#typoUse` を `#typoState`（選んだ組の説明）のすぐ下に置き、`js/ui-prefs.js` の `syncTypo()` が目録の `trkUse` を1行で出します（**選んでいなければ `hidden`**）。名前は日本語のまま・**翻訳は増やしていません**。選択肢は `buildTypoOptions()` が初回しか作らないので、説明行は別に組み立てます。
+  - **🔄 U2**：`core.settings.swUpdateNotice`（既定 `true`）と `swUpdateSnooze`（既定 `0`）。「あとで」は `SNOOZE_MS = 24時間` を入れ、`swNoticeFor()` が `enabled:false`／`snoozed:true` のとき `none` を返します。設定に **「🔔 新しい版の知らせを出す」** を置き、オフでも「🔄 新しい版を確かめる」は使えます（自分で押して新しい版があったときは眠りを解いて知らせる）。**新しい保存キーは 0**（`localStorage` 等は触らない＝`tests/trk242` が文字列ごと禁じているので、コメントも言い換えました）。
+  - **🏷 U3＋S1**：`<meta name="trk-build" content="trk255">` を置き、`#swUpdateVersion` に「いまの版：trk255」。**帯には出しません**。値の正は `sw.js` の `CACHE` で、`tests/trk255-polish.test.mjs` が一致を見ます（言語を変えたら `core.on("language")` で追いつく）。
+  - **🧱 U4**：`css/player-bar.css` に `--trk-pb-dens-pad/gap/h` と `body.trk-density-*` の上書きを足し、`.trk-playerbar` の `min-height`・`gap`・`padding` にだけ掛けました。**`font-size` は変えません**（trk244 の約束・テストで縛る）。
+  - **⌨ U5**：`js/settings-find.js` に純粋関数 `slashAllowed(event)`。`/` のみ・`ctrl/meta/alt` 付きは無視・`isComposing` は無視・入力欄の中では何もしない。設定のパネルを開いているあいだだけ `keydown` を見ます。**検索語は保存しません**。
+  - **♿ U7**：`index.html` の英語 `aria-label` 13個（`Seek`・`Fullscreen`・`MASTER・2000 RUSH`・書斎の10個）を `data-i18n-aria` に置き換え、辞書（書斎は `js/study-room.js` の自前の辞書）へ4言語ずつ追加。`grep 'aria-label="' index.html` は **0**。
+  - `tests/trk255-polish.test.mjs`（**28件**）。`npm run check` **1313 pass / 0 fail**（167 suites）、辞書 **1118 キー ×4**、`sw.js` の cache は **`trk-v2026.11.02-trk255`**。**実機は未確認**（見る所は設計メモ §4＝`/` と IME・密度の見え方・読み上げ・24時間の帯）。
+  - **対外**：返事15（r9）への返答を [`2026-11-02-レビューへの返事-trk255.md`](2026-11-02-レビューへの返事-trk255.md) に書き、Drive の手紙フォルダと `trk-PWA-trk255-2026-11-02`（`1rnq-DdwspVt9JQz0rodHRkFUudPCoO8a`）へ。配布物は `trk-standalone-2026-11-02-trk255.zip`（7,415,056 B・307）・`trk-handover-2026-11-02-trk255.zip`（949,152 B・82）・`SHA256SUMS`・`README-まず読む`。**実機の通しは未測**（前回からの持ち越し）
+  - **残り**：U8（書体の size／tracking／leading・`ctx.font`）は実機の後。A の S2〜S6・B の M1・M2 はこれから。
+
+- **🔤 trk246：書体の組み合わせ14組（段階②）（2026-11-01）**：trk-Avatar-Library の 返事12・設計メモを受けた受け口。設計＝[`TYPOGRAPHY-TRK246-2026-11-01.md`](TYPOGRAPHY-TRK246-2026-11-01.md)。
+  - **目録の写し**：`js/typography.js` に14組（`display`／`heading`／`body`／`caption`／`numeral`／`accent`＋`scale`・`tracking`・`leading`）を同梱。**woff2 は同梱しない**（26.5 MB ある。実物は `.stpack` を持ち込む人だけが持つ）ので、無い端末は `var(--font)` へ自然に落ちる。外部取得はしない（オフライン優先）。
+  - **保存**：`settings.typography`（`core.settings` の中。書式は相手の §6 の案のまま `format`/`version`/`pairing`/`preset`/`base`/`scale`/`slots`）。**localStorage のキーは増やさない**ので `docs/MIGRATIONS.md` の行は不要。知らない組名・壊れた値は `sanitize()` が `null`（＝使わない）にし、**未知の項目はコピーしない**（先の版が足した項目をこの版が読んでも消えるだけ）。
+  - **当たり方**：CSS 変数2本（`--trk-typo-display`・`--trk-typo-body`）に集約し、`body.trk-typo-on` のときだけ `.brand h1`・`details.panel>summary`・`.panel h3`／`.hint`・`.brand p` に当たる。**何も選んでいない端末は規則が当たらない**（＝1ピクセルも変わらない）。`applySkin()` の `--font` を置いた後に `apply()` するので、スキンを切り替えて生き続ける。
+  - **見送り**：`ctx.font`（canvas 内20か所）＝実機で1か所ずつ確認したいので触らない／size・tracking・leading のスライダー（相手の `gallery/pairings.html` 試作を実機で見比べてから）／`pack.json` の `skin.typography`（書面合意待ち）／14組の名前の翻訳（目録の日本語をそのまま出す）。
+  - `tests/trk246-typography.test.mjs`（**16件**）。`npm run check` **1243 pass / 0 fail**、`check-repo` 0/0、`check:a11y` 8項目 0/0、`check-security` 64/0。`sw.js` の cache は **`trk-v2026.11.01-trk246@<スコープ>`**。**実機は未確認**（パック未導入端末でのフォールバック・スキン切替後の見え方）。
+
+- **🪟 trk245：密度を「窓の広さで自動」に・曲リストの高さを画面に合わせる（2026-11-01）**：trk244 の続き（利用者の指示 2 点）。設計＝[`DENSITY-WINDOW-TRK245-2026-11-01.md`](DENSITY-WINDOW-TRK245-2026-11-01.md)。
+  - **自動**：`uiDensity` に `auto` を追加して**既定にした**。面積（`幅×高さ/100万px²`）が 2.6 以上でゆったり／1.0 以上でふつう／0.45 以上でぎゅっと／未満でぎっしり。**幅が 900px 未満なら1段詰める**（縦長でも高さでは判断しない）。1920×1080・1440×900・1366×768 は ふつう＝**従来の見た目を変えない**。優先順位は ①75%・50% の「縮小＝詰める」→ ②`auto` なら窓 → ③選んだ段。
+  - **高さ**：`#libList` は 640px 固定だったが、**`#fxDock` のうしろに有った `#libList{height:320px}` が後から効いていた**（＝拡大率で縮んでもリストが伸びない）。これを消して `height:var(--trk-lib-h,640px)` にし、`fitStage()` が「設計高さ − 440px」を **320〜900px** に収めて `--trk-lib-h` を置くようにした（等倍 640px／125% 424px／75%・50% 900px）。
+  - **リサイズ**：`fitStage()` が密度のクラスも見直す（**保存しない・棚を作り直さない・`emit` も出さない**）。設定欄には「窓が 1440×900 なので、いまは「ふつう」にしています」を `role="status"` に出す。
+  - `tests/trk245-density-window.test.mjs`（**13件**）。`tests/trk244-density.test.mjs` の既定（`normal`→`auto`）と高さの期待値を同じ commit で更新。`npm run check` は **1227 pass / 0 fail**、`check-repo` 0/0、`check:a11y` 8項目 0/0、`check-security` 64/0。`sw.js` の cache は **`trk-v2026.11.01-trk245@<スコープ>`**。**実機は未確認**（しきい値は計算で決めた値）。
+  - **見送り**：縦長デスクトップで上下に余る余白（`#stage` の設計高さ自体を変える話＝盤面に触る）／しきい値の実測。
+
+- **🧱 trk244：表示の密度（2026-11-01）**：利用者さんの相談「**PC版では縮小化しても表示部分を減らして、全体の大きさを維持する**（Clementine 等の基本思想を設定として）」。trk222 の拡大率は 75%・50% で**文字まで小さく**なるので、縮小の目的（1画面に多く出す）に対して読みやすさを損ねていました。設計＝[`DENSITY-TRK244-2026-11-01.md`](DENSITY-TRK244-2026-11-01.md)。
+  - **足したもの**：密度の4段（`roomy`／`normal`／`compact`／`dense`）と、**縮小を「詰める」に使う**設定 `uiScaleCompact`（既定オン）。オンだと 75%・50% はステージを拡大縮小せず（`--trk-ui-zoom:1`）、密度だけ `compact`・`dense` にする＝**文字と全体の大きさは 100% のまま、見える行数だけ増える**。125% は従来どおり「文字を大きく」（密度は据え置き）。密度は拡大率と独立にも選べる（100% で `dense` など）。
+  - **作り方の約束**：JS は `body` へ `trk-density-<段>` を1つ出すだけ。余白・行間・棚の列数・曲リストのジャケの大きさは `css/style.css` の `--trk-dens-*` が決める（`normal` の値は trk243 までと同じ＝**既定の見た目を変えない**）。**`font-size` はどこでも変えない**（テストで縛る）。棚は作り直さない（スクロール位置とフォーカスを飛ばすため）。スマホ型は `.trk-mobile .libRow{min-height:52px}` の床を残し、詰めすぎない下限を当てる。
+  - **保存**：`uiDensity`（既定 `normal`）と `uiScaleCompact`（既定オン）の2つ。どちらも `core.settings` の中なので **localStorage のキーは増やさない**。`?reset=all` で既定へ戻る。旧版からの移行は不要（`docs/MIGRATIONS.md` に行を足さない）。
+  - **純粋関数**：`densityFromScale`・`uiScaleShrinks`・`uiDensityAuto`・`uiDensityValue`。`tests/trk244-density.test.mjs`（**20件**）。既存の `tests/trk223-*`（`.songCol` の gap が `calc(14px * var(--trk-dens-gap,1))` に）・`tests/trk226-*`（`DEFAULT_ON` に `uiScaleCompact` 追加）の期待値を同じ commit で更新。`npm run check` は **1214 pass / 0 fail**、`check-repo` 0/0、`check:a11y` 8項目 0/0。`sw.js` の cache は **`trk-v2026.11.01-trk244@<スコープ>`**。**実機は未確認**（設計書 §6）。
+  - **決めなかったこと**：密度の自動切替（窓の大きさで変える）／再生バー・ゲーム画面への密度の適用／`emit("density")` を使う担当（まだ無い）／設定欄からの「窓の大きさに合わせて自動」の導線。
+
+- **🔍 trk243：設定のさがす（2026-11-01）**：⚙ 設定のパネルが **19 枚**（`index.html` の `details.panel` を数えた数）になり、**目当ての項目を目で探すしかない**状態でした。設計＝[`SETTINGS-FIND-TRK243-2026-11-01.md`](SETTINGS-FIND-TRK243-2026-11-01.md)。
+  - **足したもの**：`js/settings-find.js`。⚙ の上に **「🔍 設定をさがす」**。①**いま画面に出ている言葉**（`textContent`）で絞る＝辞書のキーを別に持たないので、**文言を足しても検索が置いていかれない**（4 言語のどれでも当たる） ②空白（全角も）で区切った語は **AND** ③当たったパネルは**開いて**出す ④当たらなければ**その場だけ隠す**（空にすると**元の開閉**へ） ⑤`✕`・`Esc`・設定を開いたときに元へ ⑥件数と「見つかりませんでした」。
+  - **安全側**：**もともと隠れているものは検索でも出さない**（🍎 iPhone・開発用・条件付きのパネル）＝見えないものを「見つかりました」と言わない。**新しい保存キーは作らない**（検索語も残さない）。
+  - **純粋関数**：`setFindTerms`・`setFindHit`・`setFindPlan`。`tests/trk243-settings-find.test.mjs`（**22件**）。`npm run check` は **1194 pass / 0 fail**、`check-repo` 0/0。`sw.js` の cache は **`trk-v2026.11.01-trk243@<スコープ>`**。**実機は未確認**（設計書 §6）。
+  - **決めなかったこと**：設定の外からの導線／検索語の保存／絞ったときの並べ替え。
+
+- **🔄 trk242：新しい版の知らせ（2026-11-01）**：`sw.js` は登録していたが、**新しい版が入ったことを画面で知らせる仕組みが無かった**（`grep updatefound` 0 件）。しかも `sw.js` は install で `skipWaiting()` するので、新しい版はもう動いているのに画面は前の版のまま＝開き直すまで気づけない状態でした。設計＝[`UPDATE-NOTICE-TRK242-2026-11-01.md`](UPDATE-NOTICE-TRK242-2026-11-01.md)。
+  - **足したもの**：`js/sw-update.js`。①**画面の下の小さな帯**（窓ではない・`role="status"`）「いま更新する」＝開き直す／「あとで」＝この画面のあいだだけ黙る ②**初回のインストールでは出さない**（`controller` が無い） ③**遊んでいる途中は出さず、タイトルへ戻ったら出す**（`swDeferNotice`） ④起動時・画面に戻ったとき・**30 分に 1 回まで** `registration.update()` ⑤設定の **「🔄 アプリの更新」**（どの端末でも・iOS 以外でも確かめられる）。
+  - **移したもの**：Service Worker の登録を `js/main.js` から `js/sw-update.js` へ（登録と見張りを同じ場所に）。オプション（`scope:"./"`・`updateViaCache:"none"`・`file:` では登録しない）は変えていません。
+  - **決めなかったこと**：版の番号を帯に出す／「あとで」を翌日まで覚える（保存キーが増える）／自動で開き直す。**新しい保存キーは作っていません**（`localStorage` などをこのファイルは触らない＝検査で確認）。
+  - `tests/trk242-update-notice.test.mjs`（**23件**）。`npm run check` は **1172 pass / 0 fail**、`check-repo` 0/0。`sw.js` の cache は **`trk-v2026.11.01-trk242@<スコープ>`**。**実機は未確認**（§6 の確認項目は設計書）。
+
+- **🧺 trk241：スキンの棚を作り直す — 消さずに、見えるものだけ（2026-11-01）**：返事10 の②（「お気に入り機能や、現在デフォルトに入っているものを個別に出し入れ出来るように」「**削除ではなく、一時的にスキン毎に非表示**」）を受けて。設計＝[`SKIN-SHELF-TRK241-2026-11-01.md`](SKIN-SHELF-TRK241-2026-11-01.md)。
+  - **前版（trk229）との違い**：⭐／🚫 は既にあったので、**見つけ方と戻し方**を作り直しました。①カードの左上に **☆／🚫** を重ねた（カード本体＝当てる、小さなボタン＝出し入れ） ②チップに**数**、棚の下に **「🚫 隠しているスキンが N 種あります（スキンは消えていません）＋戻す」** ③整理の一覧に **さがす・絞り込み（すべて／⭐だけ／🚫だけ／まだ使っていない）・件数** ④**「🚫 使っていないものを隠す（N）」／「👁 隠したものを全部戻す（N）」**（押す前に件数・0 なら押せない）。
+  - **安全側の決まり**：**スキンは消さない**（`applySkin` は `skinHidden` を見ない＝隠しても当てられる）／**いま使っているスキンは隠しても棚に残す**（「効かない」と誤解させない・整理では `・使用中`）／**棚が空になる操作は断る**（`skinCanHide`）／**新しい保存キーは作らない**（整理の検索語と絞り込みは保存しない）。
+  - **純粋関数**：`skinCanHide`・`skinManageRows`・`skinBulkPlan`（＋`skinShelfEntries` に `current`）。`tests/trk241-skin-shelf-hide.test.mjs`（**28件**）。`npm run check` は **1149 pass / 0 fail**、`check-repo` 0/0。`sw.js` の cache は **`trk-v2026.11.01-trk241@<スコープ>`**（trk242 で trk242 へ上がりました）。**実機は未確認**（§6 の確認項目は設計書）。
+  - **決めなかったこと**：隠したものを検索からも外す／棚の既定を「⭐ と使用中だけ」にする／並び順のドラッグ。理由は設計書 §7。
+
+- **🧭 trk240：役割の書面と、受け入れの道具の「契約」（2026-11-01）**：倉庫（trk-Avatar-Library）の返事8 で、**相手の CI が `tools/check-set.mjs` をそのまま呼ぶ**ことになったため。書面＝[`ROLES-TRK240-2026-11-01.md`](ROLES-TRK240-2026-11-01.md)、返事の控え＝[`LETTER-TRK240-REPLY-2026-11-01.md`](LETTER-TRK240-REPLY-2026-11-01.md)。
+  - **分担を文字にした**：書体の製作・追加・ライセンス、スキンの製作、目録、セット `.stlib`（2 分割・目録の絞り込み）、`gallery/` の 3 枚は**ミュージアム（倉庫）側**。目録の読み取り・検証、入れる・使う・消す・容量・タグ・🔤 索引、Service Worker・オフライン・インストール・画面・プレイヤー・書斎・ゲームは**trk 側**。
+  - **3 原則**：①中身は作らない（こちらは書体もスキンも作らない／倉庫はアプリのコードを直さない） ②形は共有（目録の項目・L16・セット・`setPending`） ③相手の領域の決定は相手（セットの分割・目録の絞り方・`gallery` の文言は倉庫／アプリの画面・i18n・保存の形はこちら）。
+  - **道具の契約を固定**（`docs/ROLES-TRK240-2026-11-01.md` §4-1）：①呼び方 `node tools/check-set.mjs <セット> [--hash] [--have=<目録>] [--json]` ②終了コード `0`／`1`／`2` ③`--json` の意味（1 行の JSON・`tool`／`version`／`ok`／`problems`／`packs[]`／`missing[]`／`pending`） ④`--have` の形。**増やすときは先に知らせ、減らす・意味を変えるときは先に相談**。
+  - **足したもの**：`tools/check-set.mjs` に `--json`（`version: 2`）。人が読む文は trk239 と同じ形のまま。`pending.count`／`pending.bytes`／`pending.skip` を機械がそのまま突き合わせられる。
+  - **これからの PWA の続き（書面 §5）**：**trk241＝新しい版の知らせ**（`sw.js` の登録はあるが、新しい版を知らせる画面は無い＝`grep` で確認済み）／**trk242＝配布の最終判断**（`PWA.md` Phase 4：初回の案内・バックアップ導線・告知）／実機の残り／保留（独自ドメイン・ストア・金額）は相談。
+  - `tests/trk240-roles.test.mjs`（**9件**）。道具を実際に走らせて **0／1／2 の 3 つの終了コード**と `--json` の数字を確かめる。`npm run check` は **1121 pass / 0 fail**、`check-repo` 0/0、`check-a11y` 8/8、`check-security` 64/64。**アプリの殻（`index.html`・`js/`）は変えていないので `sw.js` の cache は `trk-v2026.11.01-trk239@<スコープ>` のまま**。
+
+- **📦 trk239：r6 の 2 分割に備える — 確認は「これから入る分」だけ（2026-11-01）**：倉庫の返事6（2 分割＝はじめてセット＋書体セット・はじめての 5 本は書体セットにも入る・セットの目録はそのセットのぶんだけに絞る）を受けて。手順書＝[`SET-SPLIT-TRK239-2026-11-01.md`](SET-SPLIT-TRK239-2026-11-01.md)、返事の控え＝[`LETTER-TRK239-REPLY-2026-11-01.md`](LETTER-TRK239-REPLY-2026-11-01.md)。
+  - **直したこと**：trk235 の `applySet` は確認に `plan.packs` の全部（＝目録の全部）を出していました。2 つ目に書体セット（29 本・60 MB）を選ぶと、実際に入るのは 24 本なのに「29 パック（60 MB）」と出て、**大きさが水増し**されていました。
+  - **いま**：`setPending(plan, installed)`（純粋関数・公開）で `pending`／`skip`／`bytes` を数え、確認は**これから入る分の数と大きさ**だけ。飛ばす分があるときは `catalogSetConfirmSkip`（4 言語）で「すでに入っていて版も同じ {skip}パックは飛ばします」と添えます。**版が違えば飛ばしません**（更新を取り逃がさない）。
+  - **変えないこと**：1 本ずつの sha256・上限（1 GiB／500 MB／目録 8 MB／5,000 ファイル）・入れる前に確認 1 回・**自動では適用しない**。
+  - **受け入れの道具**：`tools/check-set.mjs`。アプリのコード（`js/zip-io.js`＋`js/pack-catalog.js`）をそのまま読み込み、`openSet`／`planSet`／`setEntryCheck`／`setPending` で「アプリが何と表示するか」を先に出す（`--hash` で実バイトの sha256、`--have=<目録.json>` で 2 つ目の「飛ばす分」）。終了コード 0／1／2。
+  - **合成した r6 の形で確認**：はじめて（絞った目録 4 本）＝4 本・見つからない 0。続けて書体（7 本）＝**これから入る 4 本（7.8 KB）・飛ばす 3 本**。同じセット 2 回＝pending 0。
+  - `tests/trk239-set-skip.test.mjs`（**11件**）。`npm run check` は **1112 pass / 0 fail**、`check-repo` 0/0、`check-a11y` 8/8、`check-security` 64/64。`sw.js` の cache は **`trk-v2026.11.01-trk239@<スコープ>`**（`tests/trk234-pack-storage.test.mjs` の版の期待値も更新）。
+  - **未確認**：r6 の実物（まだ届いていない）と、実機での 2 つ続けての通し。
+
+- **🔤 trk236〜trk238：書体の「ひとこと・タグ」を読み、絞り、索引する（2026-11-01）**：倉庫（trk-Avatar-Library）の [`実機OKと起動時の索引-開発案-2026-11-01.md`](https://drive.google.com/drive/folders/1PMcWuefY4AufGLfTiMfN8vsI8sk7yKEo) への返事として、3 段をまとめて実装しました。手順書＝[`FONT-META-INDEX-TRK236-238-2026-11-01.md`](FONT-META-INDEX-TRK236-238-2026-11-01.md)、返事の控え＝[`LETTER-TRK238-REPLY-2026-11-01.md`](LETTER-TRK238-REPLY-2026-11-01.md)。
+  - **trk236（読む）**：目録の `fonts[].note`（ひとこと・60 字）・`cmap`（対応字数）・`bytes`（書体 1 本の大きさ）・`weight`（100〜900）を検証して持ち、📚 目録から入れる → 各パックの「🔎 中身」に **太さ／対応字数／大きさ／タグ／ひとこと** を 1 行で出します（ある項目だけ）。**古い目録（項目なし）もそのまま読めます**。
+  - **trk237（絞る）**：目録の `fonts[].tags`（8 個・各 16 字）を数え、一覧の上に**件数つきのタグのボタン**を出します（多い順・同数は `localeCompare("ja")`）。選ぶと一覧が絞られ、概要に「「{タグ}」で {n} 件」。**「すべて」で解除**。
+  - **trk238（索引）**：設定 → 📦 カスタムパック の上に **🔤 入れている書体**。`packDB.all()` の `manifest.fonts` を 1 回なめるだけで作り（**Blob＝書体の本体は読みません・保存もしません**）、家族名・太さ・パック名・ひとこと・タグ・対応字数・大きさ・ライセンス・**使う** を並べます。絞り込み（日本語の部分一致＋空白 AND）・並べ替え（書体名／パック名／大きさ）・タグのボタン。「使う」は**その書体の入っているパックを当てる**（`activatePack`）。
+  - **決めたこと（倉庫の 5 つの注意への答え）**：①**起動時ではなく、索引を開いたときに**作り直す（保存しない＝消したパックの行が残らない） ②行そのものは**入っている側が正**、`note`／`tags`／`license` が無いときだけ目録で補う ③キーは **`family|weight`**（目録全体で重複なし・`PACK_FONT_MAX = 8` はそのまま） ④`weight` の既定は **400** ⑤目録を控える方式とは併用しない。
+  - `tests/trk236-238-font-meta-index.test.mjs`（**25件**）。`npm run check` は **1101 pass / 0 fail**、`check-repo` 0/0、`check-a11y` 8/8、`check-security` 64/64。`sw.js` の cache は **`trk-v2026.11.01-trk238@<スコープ>`**（`tests/trk234-pack-storage.test.mjs` の版の期待値も更新）。
+  - **実物の目録で確認**（倉庫 main `848343c` の `catalog/index.json`）：16 パック・**落とした 0**、22 書体すべてに `note`／`cmap`／`tags`／`bytes`／`weight`、タグは **16 語**（`見出し` 10・`ポップ` 6・`明朝` 6・`丸ゴ` 5・`手書き` 5・`かわいい` 4 …）。
+  - **未確認**：実ブラウザ・実端末での見え方（🔎 中身の 1 行・タグのボタンの広さ・🔤 索引の 22 行と「使う」の切り替わり）。
+  - **次の段**：セット **r6**（はじめてセット＋書体セットの 2 分割）の受領と、追加 14 種の受け入れ（L16）。
+
+- **📦 trk235：セット（`.stlib` / `.zip`）を選ぶだけでまとめて入れる（2026-11-01）**：倉庫の返事（Q1〜Q5 は全ていまの形で可・L13〜L16 実装済み・セット **r4**）を受けて、アプリ側の受け皿を作りました。手順書＝[`CATALOG-SET-TRK235-2026-11-01.md`](CATALOG-SET-TRK235-2026-11-01.md)、返事の控え＝[`LETTER-TRK235-REPLY-2026-11-01.md`](LETTER-TRK235-REPLY-2026-11-01.md)。
+  - **入口**：📚 目録から入れる に「📦 セット（.stlib / .zip）を選ぶ」を 1 つ。`accept=".stlib,.zip,application/zip,application/octet-stream"`。拡張子は信じず、**先頭 4 バイトが `PK` か**で ZIP と判定します（`.stlib` の関連付けが無い端末のため）。
+  - **読む**：目録は `catalog/index.json`。**1 段だけ包まれた** `<フォルダ>/catalog/index.json` も許します（展開したフォルダを再圧縮した `.zip` 対策）。2 つ以上あれば「どれか分からない」で止めます。
+  - **入れる**：読むのは**目録の `packs[].file` と同じパス**（`packs/` と `font-packs/` を区別しない）。1 本ずつ CRC を確かめて取り出し、**中の実バイトで sha256 を照合**してから `installPackFile` へ。大きさは展開後サイズと `bytes` を比べます。
+  - **上限**：セット 1 GiB・1 本 500 MB・目録 8 MB・5,000 ファイル（倉庫と合意した値）。超えたら開く前／1 本ごとに止めます。
+  - **`set.json` は任意**：あれば `name`／`release` を表示にだけ使い、無い・壊れていても目録だけで動きます。入れる前に「セット名・入れる数・合計・見つからない数」を出し、**確認 1 回**。入れたあとも**自動では「使う」にしません**（選ぶのは人）。
+  - **ドロップ**：`.stlib`（と中に目録が入った `.zip`）は目録側が受け取ります。**目録が無い `.zip` は今までどおりパック**として入ります（`tryImportSet` が false を返して譲る）。
+  - **実物の r4 で確認**（画面を除く）：倉庫 main `3c491b5` から `build-set.mjs` で組み直して **Release と同一のバイト**（30,832,151 B・sha256 `0d943e76…`）を用意し、開く＝16 パック・30,698,033 B・見つからない 0、**16 本すべて sha256 一致**、1 本差し替え＝15 一致／1 不一致、目録にない `.stpack` は入れない、目録を壊す＝`catalogBad` で止まる。
+  - `tests/trk235-catalog-set.test.mjs`（**23件**）。`npm run check` は **1076 pass / 0 fail**、`check-repo` 0/0、`check-a11y` 8/8、`check-security` 64/64。`sw.js` の cache は **`trk-v2026.11.01-trk235@<スコープ>`**（`tests/trk234-pack-storage.test.mjs` の版の期待値も更新）。
+  - **実機で確認済み（2026-11-01）**：利用者の端末で **r5（30,832,734 B）を選び、16 パックとも投入**できました（[`CATALOG-SET-TRK235-2026-11-01.md`](CATALOG-SET-TRK235-2026-11-01.md) §6-2）。
+  - **未確認**：入れた書体が実際に当たるか・太さ（400／700）の切り替わり・ライセンス全文・16 行の一覧の見え方、30 MB のセットを開くまでの待ち時間、ドロップからの流れ、`gallery/fonts.html` の操作。
+  - **次の段**：trk236＝目録の `note`／`cmap`／`tags`／`bytes` を 🔎 中身に出す／trk237＝雰囲気タグで絞る（どちらも実装済み＝上の trk236〜trk238）。
+
+- **💾 trk234：容量の見える化と「まとめて消す」（2026-11-01）**：書体パック 14 種のように 1 本が MB 級になると、「いま何 MB か」「どれが重いか」「まとめて消すには」が要ります。開発案は [`LIBRARY-UX-PLAN-2026-11-01.md`](LIBRARY-UX-PLAN-2026-11-01.md) §5（F6）。
+  - **見える化**：設定 → 📦 カスタムパックの一覧の上に「💾 保存 {n}個・合計 {size}（上限 {cap}）」「上限の {pct}%」とバー、「端末の空き 約{free}」「大きいもの: 名前 2.9 MB / …」（重い順 3 件）、「使っていないもの {n}個・{size}」。目録の一覧の概要にも「目録の合計 {size}」。
+  - **まとめて消す**：各パックの左にチェック。**全部選ぶ／使っていないものを選ぶ／選択を解除／選んだ {n}個を消す（{size}）**。確認は **1 回**（件数と合計。使っているパックが混ざっていれば「先に外します」と出し分け）。目録の一覧にも「🧹 この目録のぶんを消す（{n}個・{size}）」。
+  - **❓謎設定「🧨 パックを全部消す」**：確認 2 回（1 回目＝件数と合計、2 回目＝**DELETE と入力**）。曲リストに足した曲は消しません。
+  - **約束**：曲リストへの合図（`packsChanged`）は**まとめて 1 回だけ**。消す直前に `packDeletePlan` で「実際にまだ入っているもの」へ選び直す。数字は `packSizeText`／`packUsageInfo`／`packDeletePlan`（DOM を触らない純粋関数）に集約し、画面と目録の一覧が同じ関数を通る。外部へは取りに行かない（端末の空きは `navigator.storage.estimate()` だけ）。
+  - `tests/trk234-pack-storage.test.mjs`（**25件**）。`npm run check` は **1053 pass / 0 fail**、`check-repo` 0/0。`sw.js` の cache は **`trk-v2026.11.01-trk234@<スコープ>`**。詳細は [`PACK-STORAGE-TRK234-2026-11-01.md`](PACK-STORAGE-TRK234-2026-11-01.md)。
+  - **未確認**：実ブラウザ・実端末でのバーの伸び方、チェックの押し心地、`confirm`／`prompt` の文面、14 種を入れたときの実使用量。
+  - **次の段**：trk235＝`.stlib`（目録＋パックを1ファイルに。倉庫の `tools/build-set.mjs` と対なので着手前に相談）。
+
+- **🔤 trk233：書体のライセンス全文を、入れて・読んで・出す（2026-11-01）**：倉庫が trk232 のお願い **L7**（`fonts[].licenseFile`）に応えてくれたので、アプリ側で受け取りました。あわせて、倉庫に置ける**書体パック 14 種**を作りました（[`FONT-PACKS-TRK233-2026-11-01.md`](FONT-PACKS-TRK233-2026-11-01.md)）。
+  - **受け取る**：`pack.json` の `fonts[].licenseFile`（パック内の `.txt`／`.md`・倉庫の `verify-pack` と同じ規則）を検証して保ちます。形の合わないものは**その項目だけ**落とし、書体そのものは残します。
+  - **保存する**：全文も他のファイルと同じく保存（1ファイル 256KB まで・`PACK_LIMIT.license`）。`manifestPaths` は**同じファイルを2回数えない**ようにしました（書体2つが同じ `fonts/OFL.txt` を指すのが普通のため）。
+  - **出す**：パック一覧の「🔤 同梱の書体」の中に **「📄 ライセンス全文を読む」**。押したときだけ読む（一覧を重くしない）、16em の枠の中でスクロール、閉じるボタンで戻ります。全文が入っていない古い版のパックでは「入れ直すと入ります」と案内します。
+  - **目録**：`packs[].fonts[].licenseFile` を落とさず、🔎 中身に「ライセンス全文: fonts/OFL.txt」と出します。
+  - **書体パック 14 種**（`docs/FONT-PACKS-TRK233-2026-11-01.md`）：OFL-1.1 の日本語書体（Zen Kaku Gothic New・M PLUS Rounded 1c・Klee One・Yusei Magic・Hachi Maru Pop・DotGothic16・Shippori Mincho・Zen Old Mincho・Dela Gothic One・Rampart One・RocknRoll One・Potta One・Kaisei Decol・Mochiy Pop One）を、**1書体（または2ウェイト）＝1パック**に。全部に `font` 宣言・`licenseFile`・見た目（5色）つき。合計 **27,765,040 B（26.5 MB）**。倉庫の `build-pack`／`verify-pack` に **14/14 合格**、アプリの `sanitizeManifest` でも 14/14 通ることを確認。
+  - **置き場所**：アプリ本体には入れず（26.5 MB のため）、Drive と倉庫で配ります。組み立て方は `tools/build-pack.mjs`（フォルダが正・決定的）で、`.stpack` もこちらで作りました。
+  - `tests/trk233-font-license.test.mjs`（**11件**）。`npm run check` は **1028 pass / 0 fail**。`sw.js` の cache は **`trk-v2026.11.01-trk233@<スコープ>`**。
+  - **未確認**：実ブラウザ・実端末での「全文の表示」と「14 種を入れたときの見え方」。この環境にブラウザがありません。
+  - **次の段**：trk234＝容量の表示・まとめて消す／trk235＝`.stlib`（目録＋パックを1ファイルに）。
+
+- **🔤 trk232：書体パックが本当に効くようにする（2026-11-01）**：倉庫の主役（書体）が、目録に「書体2」と出るだけで**実際には何も変わっていなかった**のを直しました。利用者の「開発案を整える」の第2弾です（[`LIBRARY-UX-PLAN-2026-11-01.md`](LIBRARY-UX-PLAN-2026-11-01.md) §4・F7／F8）。
+  - **受け取る側**：`pack.json` の `fonts[]`（`family`・`file`・`license`・`weight`・`style`）を検証して保つ。`file` は **woff2／woff**・`family` は英数字と空白 `. _ -` の 40 文字（倉庫の `verify-pack` と同じ規則）・`license` は必須・8書体まで・1書体 16MB まで・同じ family＋weight＋style は1つに。書体も**他のファイルと同じように保存**します（それまでは `manifestPaths` に載らず、2.8MB を落としても 0 バイトしか残りませんでした）。
+  - **使うとき**：`registerPackFonts` が `FontFace` で読み込み、`document.fonts` に足して、`core.applySkin` が `--font` の**先頭**に置きます（本文も、書体を指定しない見出しも同じ書体に）。**パックのスキンを使っているとき**だけ効き、**スキンを持たない書体パック**なら、どのスキンにも効きます。
+  - **外すとき・消すとき**：`clearPackFonts` が `document.fonts.delete` で外し、`objectURL` も `revokeObjectURL`（外したあとに `--font` を作り直すので、消した書体が残りません）。起動時の復元（`activePack`）でも登録し直します。
+  - **読めなかったとき**：読めた書体だけ使い、「書体を n件 読み込めませんでした。パックの見た目はそのまま使えます。」と出します（黙って効かない、を避ける）。書体APIが無い環境（古いブラウザ）でも落ちません。
+  - **見える化**：パック一覧に「書体 n」バッジと、**同梱の書体とライセンス**の欄。`packHint` にも書体を追記。
+  - **更新あり（F8）**：`sanitizeManifest` が `release`（`1.2.3` の形）を保ち、`listInstalledPacks` が返します。目録の `packs[].version` と違えば、目録の一覧に**「更新あり（1.0.0 → 1.1.0）」**と「新しい .stpack を選ぶ」を出し、概要に「🔔 更新あり n件」。入れ直すと消えます。
+  - **確かめたこと（この環境で）**：倉庫の実物 `font-packs/maru-go.stpack` を `sanitizeManifest` に通すと **書体2件（TrkZenMaru 400／700）・release 1.0.0** になり、`manifestPaths` が **2本（1,436,276＋1,492,576＝2.79MB）** を指すこと。`tests/trk232-pack-fonts.test.mjs`（**23件**）。`npm run check` は **1017 pass / 0 fail**。`sw.js` の cache は **`trk-v2026.11.01-trk232@<スコープ>`**。
+  - **未確認**：実ブラウザでの書体の見え方（この環境にブラウザが無い）。書体のライセンス全文（`OFL.txt`）はパックの中に残り、アプリは**宣言（`OFL-1.1`）と family だけ**を表示・保存します。
+  - **次の段**：trk233＝容量の表示・まとめて消す／trk234＝`.stlib`（目録＋パックを1ファイルに）。
+
+- **📥 trk231：倉庫まわりを「入れやすい・確かめやすい・消しやすい」に（2026-11-01）**：利用者の「導入しやすい形・確かめやすい形・導入や消去の簡略化を検討して開発案を」への対応。**開発案は [`LIBRARY-UX-PLAN-2026-11-01.md`](LIBRARY-UX-PLAN-2026-11-01.md)**（摩擦の実測 F1〜F8／方針／trk231〜234 の段取り／倉庫側へのお願い L1〜L6／採らない案／受け入れ条件）。
+  - **📥 まとめて入れる**：目録（`index.json`）＋ `.stpack` を**一度に選ぶ**か**まとめてドロップ**すると、ファイル名の末尾で突き合わせて1件ずつ照合し、まとめて入れます。すでに入っているものは入れ直しません。終わりに「入れた n件／入れられなかった n件／目録にない n件」。
+  - **導入済み・使用中・大きさ違い**のバッジと「（入っている n件）」。同じかどうかは**名前＋作者**（前後空白・大小文字を無視）＝`samePackAs`。
+  - **その場で「使う・消す」**（`activatePack`／`deletePackById` を `window.Trk.custom` に公開）。**消すときは、使っていれば先に外す**（`packPrev` を残さない）。パック一覧の削除も同じ関数へ寄せた（挙動は同じ）。
+  - **🔎 中身**：ファイル名・大きさ・sha256 の全部・書体（family／ライセンス／ファイル）を、**入れる前に**見られます。
+  - ドロップの取り合いを避けるため、`custom.js` は1ファイルの `.stpack` のときだけ先に受け取り、2ファイル以上か `.json` を含むときは目録の側へ渡します。
+  - `tests/trk231-catalog-bundle.test.mjs`（**12件**）。`npm run check` は **994 pass / 0 fail**。`sw.js` の cache は **`trk-v2026.10.31-trk231@<スコープ>`**。
+  - **次の段（提案）**：trk232＝書体パックを `FontFace` で使う＋`release` の保持／trk233＝まとめて消す・容量の表示／trk234＝`.stlib`（目録＋パックを1ファイルに）。
+
+- **📚 trk230：倉庫の目録から入れる（2026-10-31）**：利用者の「書体を容量を気にせず配れる環境は倉庫側で整える。こちらは受け入れられる環境を」への対応。
+  - 設定 → 📦 カスタムパック → **📚 目録から入れる**。倉庫の `catalog/index.json` を選ぶ（画面へのドロップも可）と、パックの一覧（名前・作者・大きさ・書体数・ライセンス・sha256 の先頭8桁）が出ます。
+  - 行ごとの「この .stpack を選ぶ」で、**大きさ → sha256 の順に照合**してから、既存のインストーラ（`installPackFile`）で入れます。合わなければ入れません（`crypto.subtle` が無い環境だけ「照合せずに入れる」と表示）。
+  - **外部へ取りに行きません**（`fetch` を使わない・テストで機械的に検査）。目録は保存しません（開き直すと空）。
+  - 目録の形は version 1（`format`／`version`／`packs[]`）。`version: 2` 以上は断る・危険なパス（`..`・絶対パス・`.stpack` 以外）はその1件だけ落とす・上限 500 件。
+  - 書体パック（`pack.json` の `fonts[]`）を**受け入れる側の作業は次の段**（§5 に手順）。倉庫側は先に用意できる。
+  - `tests/trk230-catalog-import.test.mjs`（**15件**）。`npm run check` は **982 pass / 0 fail**。`sw.js` の cache は **`trk-v2026.10.31-trk230@<スコープ>`**。
+  - あわせて `tests/trk221-player-bar.test.mjs` の cache 名の検査を、版番号を埋めない形（`trk-\d{3}`）に直した。
+
+- **🧺 trk229：スキンの棚の整理（2026-10-31）**：trk228 の報告への返信。「今の状態では見た目のスキン数を整理する機能は確か作っていなかった」。
+  - **さがす**：`#skinSearch`。名前・説明・**カテゴリ語**・id を、4言語ぶんまとめて小文字で照合します（例：「明朝」「mincho」「书卷」「명조」「dark」「type」）。空白で区切ると AND（「type dark」で書体の暗いものだけ）。
+  - **並べる**：おすすめ順（従来の並び）／名前順／よく使う順／最近使った順。名前順は表示言語の `localeCompare`。
+  - **⭐ お気に入り・🕒 最近使った・🚫 隠した**：チップで絞り込み。🚫 はふだんの棚から消え、`🚫 隠した` を見ているときだけ出ます（スキン自体は消えません）。
+  - **整理の一覧**（`#skinManage`）：全スキンの名前・⭐・🚫・使用回数・最終使用日を1か所で。⭐/🚫 はワンタップ。
+  - **記録**：`skinUse`（回数）と `skinLast`（日時）は、スキンを当てたときだけ数えます（起動時の復元＝`persist=false` では数えない）。**すべて端末の中だけ**。
+  - **件数**：絞り込んだときだけ「（表示／全体）」。
+  - 新しい保存キーは prefs の中に4つ（`skinFav`・`skinHidden`・`skinUse`・`skinLast`）と、`skinShelfCat` に `type`、`skinShelfOnly`・`skinSort`。**既存キーの意味は変えていません**（`skinShelfCat` は選択肢が増えるだけ、移行不要）。
+  - 判定と並べ替えは純粋関数（`skinMatchesQuery`・`skinShelfEntries`）にして、`tests/trk229-skin-shelf-organize.test.mjs`（**18件**）が同じ関数を動かして検査します。`npm run check` は **967 pass / 0 fail**。`sw.js` の cache は **`trk-v2026.10.31-trk229@<スコープ>`**。
+  - **未確認**：実機での見え方（検索欄の入力・整理の一覧の高さ・スマホ型での2段くずれ）。手順は [`SKIN-SHELF-TRK229-2026-10-31.md`](SKIN-SHELF-TRK229-2026-10-31.md) §6。
+- **🔤 trk228：書体（フォント）スキン 9 種（2026-10-31）**：trk227 の報告への返信。「ネッスン・ドルマのフォントの変化が人気なので、他のフォント違いのスキンも欲しい。久々なので多めでよい／贅沢に調べてよい」。
+  - **調べたこと**：2025〜2026 の日本語サイト（coliss・321web・inte-action・ffont・Canva）の「無料フォント」記事を読み、定番の系統（Noto／源ノ、Zen Maru・M PLUS Rounded、Shippori Mincho・Zen Old Mincho、Yusei Magic・Klee One、Dela Gothic One、BIZ UD）を確認。**すべて OFL で無料・商用可**。ただしこのアプリは CDN・外部API を使わない方針なので、**Google Fonts を実行時に読む形は採らない**。
+  - **同梱の重さ（実測）**：`@fontsource` の woff2 は 1 書体 **0.9〜1.5 MB**。かな＋英数に絞ると 28 KB だが漢字が全部欠け、漢字を全部入れると約 1.4 MB で元とほぼ同じ。→ **今回は同梱せず、端末にある書体を名前で指定**（追加 0 バイト・オフラインで動く）。
+  - **足した 9 種**：`typeMincho`（明朝の本）・`typeNewspaper`（新聞の活字）・`typeMarugo`（丸ゴのお茶目）・`typePop`（ポップ看板）・`typeKyokasho`（教科書の字）・`typeTypewriter`（タイプライター）・`typeKaisho`（楷書の便箋）・`typeOldstyle`（活字の古典）・`typeGothicHeavy`（極太ゴシック）。`cat` は新しい **`type`（書体）**。
+  - **書体が無い端末でも差が出るように**：`type` に `weight`・`lh`・`title`・`titleWeight`・`titleSpace`・`titleTransform`・`mark` を持たせ、`applySkin` が CSS 変数（`--font-title`／`--font-title-weight`／`--font-title-space`／`--font-title-transform`／`--font-weight`／`--font-lh`）に流します。**`type` を持たない既存 44 種は `inherit` に戻るので、見た目は trk227 と同じ**。
+  - **棚**：`SKIN_CATS` の `basic` の次に `type`。カードの中だけに書体を効かせる `--sk-font`／`--sk-title` と、**見本の文字 `あア漢 Aa 12`**（和文と欧文を並べて、和文書体でも欧文書体でも違いが見える）。`catType` は 4 言語（ja 書体／en Type／zh 字体／ko 서체）。
+  - テストは `tests/type-skins.test.mjs`（**9件**）。9 種の登録・カテゴリ・見本の文字・**外部URL／`@font-face` を含まないこと**・値の形・`catType` 4 言語・棚カードへの受け渡し・`applySkin` の変数・既存 44 種に `type` が付かないこと。`npm run check` は **949 pass / 0 fail**（日本・米国西海岸の両方）。`sw.js` の cache は **`trk-v2026.10.31-trk228@<スコープ>`**。`tools/check-repo.mjs` のスキン数は 44 → 53。
+  - **未確認**：実ブラウザ・実機での見え方（端末ごとに、どの書体で表示されるか・見出しの字間と大文字化・行間 1.85 で設定画面が崩れないか・棚カードの見本の収まり）。手順は [`FONT-SKINS-TRK228-2026-10-31.md`](FONT-SKINS-TRK228-2026-10-31.md) §7。**同梱するかどうかは利用者の返事待ち**（§5 に手順）。
+- **❓ trk227：リピートの段と、シャッフルの範囲を選べるように（2026-10-31）**：trk226 の報告への返信。「シャッフルではなく **リピート** に好みがある（既定の『なし → 1曲 → 全曲 → なし』はそのままでよい）」「『なし → 1曲 → なし』の体験ができるように、❓謎設定『リピートボタンを単曲リピートのみにする』を作り、既定オフに」「プレイリスト内のシャッフルも選べるように」。
+  - **`playerBarRepeatOneOnly`（既定オフ）**：オンにすると、バーの 🔁 は **なし ⇄ 1曲** の2段だけ（全曲を出さない）。**メディアプレイヤーの画面のリピートの選択肢も「なし／1曲」**に作り直します。保存に「全曲」が残っているときは、オンにした瞬間に「なし」へ寄せて保存します。
+  - **`playerBarShuffleInList`（既定オフ）**：オンにすると、シャッフル中の ⏮⏭ が**ライブラリに表示している一覧（`libView`＝TV の ◀▶ と曲送りが進む順番）**の中から選ばれます。一覧が空なら全曲。オフ（既定）は、これまでどおり全曲から。
+  - 純粋関数：`repeatChoices(oneOnly)`・`nextRepeat(value, oneOnly)`・`shufflePool()` を `Trk.playerBar`／`Trk.library` から読めます。`library.nextSong`／`prevSong` も `shufflePool()` を使う形に整理（**新しい一覧は作りません**）。
+  - 配線：`js/ui-prefs.js`（2つの欄。単曲のみにしたときの「全曲→なし」と `core.emit("mediaOptions")`）、`index.html`（`#playerBarRepeatOneOnly`・`#playerBarShuffleInList`）、`js/core.js`（既定とリセット）、`js/i18n.js`（4言語 × 4キー）。
+  - テストは `tests/trk227-repeat-shuffle-options.test.mjs`（**17件**）。段の並び・`repeatMode()` の寄せ方・偽 DOM で 🔁 を3回押す実測・シャッフルで選ばれる曲の集合・再生画面の選択肢の作り直し。`npm run check` は **940 pass / 0 fail**（日本・米国西海岸の両方）。`sw.js` の cache は **`trk-v2026.10.31-trk227@<スコープ>`**。
+  - **未確認**：実ブラウザ・実機での見え方（選択肢の作り直し・❓謎設定の欄の並び）。手順は [`PLAYER-BAR-TRK227-2026-10-31.md`](PLAYER-BAR-TRK227-2026-10-31.md) §5。
+- **🎵 trk226：下の再生バーを「プレイヤー」にする（2026-10-31）**：PC でバーを触ったときの相談（画像2枚）。「メディアプレイヤーの中と同じように、バーを触ってシークしたい」「ただし、触れない今のままがいい人も一定割合いる」「プレイリスト内シャッフルと単曲リピートを切り替えたい（シャッフルしたあと、特定の曲だけを1曲繰り返す使い方のため）」「画像2のような横長の操作パネルを別窓に出せないか（アイデア。PC 版のみで良い）」。
+  - **触れてシーク**：`seekEnabled(ctx)` で「謎設定がオフ・読み込み済み・長さが分かる・画面がライブラリ／プレイ中／一時停止」のときだけ触れるようにし、**ライブラリの試聴中でも動く**ようにしました（これまではプレイ中だけ）。ライブラリでは映像の `currentTime` を直接、プレイ中は `Trk.play.seekTo()`（ゲームの進行に任せる＝これまでと同じ道）。
+  - **❓謎設定「バーに触れても位置を移動しない」**（`settings.playerBarSeekLock`、**既定オフ**）：trk226 で足した**唯一の新しい保存キー**。オンのときは線が `disabled` になり `.is-locked`（カーソルも `default`）、触ると理由を案内します。
+  - **🎲 シャッフル・🔁 リピート**：値は**再生画面と同じ** `core.settings.mediaShuffle`／`mediaRepeat` を1つだけ使い、変えたら `core.emit("mediaOptions")` で互いに反映（新しいキーは増やしていません）。リピートは **なし → 1曲 → 全曲 → なし**（1曲のときは 🔂）。シャッフル中の ⏮⏭ は `shufflePick(allSongs(), currentKey)`＝**いまの曲を除いた中から**選びます（1曲ならその曲）。試聴の曲の終わりは、リピート1曲なら**頭から**（`previewRestartFor`）。
+  - **⧉ 別窓の操作パネル**（`js/player-panel.js`・新規）：実装前に Document Picture-in-Picture の対応を調べ（**Chrome／Edge 116+、Firefox 151+、Safari・モバイルは未対応**、https とユーザー操作が要る、位置はサイトから指定できない）、**Document PiP を第一・`window.open` の小窓を予備**にしました。**PC型のときだけ ⧉ を出します**（スマホ型では出さない）。**DOM は移さず**、`Trk.playerBar.snapshot()` を見て 250ms ごとに絵を描き直す**鏡方式**（曲名・時間・⏮▶⏭・🎲🔁・音量・✕）。スキンの `--ui-*` を写します。窓の `pagehide`・本体の `pagehide`・スマホ型への切り替えで片付けます。
+  - テストは `tests/trk226-player-bar-player.test.mjs`（**27件**）。純粋関数の戻り値・偽 DOM の実測（`currentTime` が 50 になる／謎設定オンで動かない／小窓が二重に開かない）・組み立てた中身の値（11部品・描き直しの文字と `aria-pressed`）・CSS を規則として当てた値で見ています。`npm run check` は **923 pass / 0 fail**（日本・米国西海岸の両方）。`sw.js` の cache は **`trk-v2026.10.31-trk226@<スコープ>`**。
+  - **未確認**：実ブラウザ・実機での見え方（Document PiP の窓・スキン色の追従・線をドラッグした感触・狭い幅での 🎲🔁⧉ の収まり）。手順は [`PLAYER-BAR-TRK226-2026-10-31.md`](PLAYER-BAR-TRK226-2026-10-31.md) §6。
+- **🎵 trk225：下の再生バーの置き場所と「隠さない」設定（2026-10-31）**：PC の実機（スマホ型で使用）からの相談。「バーが下部ナビに押し上げられて画面の途中に浮いて見える」「再生時間を出したままにしたいが ✕ で消してしまいそう」。
+  - **置き場所**（`settings.playerBarPos`、既定 **`bottom`**）：`bottom`＝画面のいちばん下（下部ナビはバーの高さぶん上へ）／`above`＝下部ナビの上（trk221〜trk224 までと同じ）。PC型は下部ナビが無いので、どちらを選んでも同じ（いちばん下）。**ナビを動かすのは CSS**（`body.trk-playerbar-at-bottom .trk-mobile-nav { bottom: var(--trk-playerbar-h) }`）、**バーの下余白は JS**（`--trk-playerbar-offset`）と役割を分けました。バーが画面のいちばん下に来るぶん、`env(safe-area-inset-bottom)` はバー自身が空けます。
+  - **隠さない**（`settings.playerBarLock`、既定オフ）：オンにするとバーの ✕ を出さない（`display:grid` に負けないよう `[hidden]` を `!important` で消す）。設定の「表示しない」は本人の選択なので止めません（止めるのは ✕ だけ）。
+  - テストは `tests/trk225-player-bar-settings.test.mjs`（22件）。純粋関数の戻り値・偽 DOM の実測（`--trk-playerbar-offset` が `0px`／`66px`、body の印、✕ の表示）・**CSS を規則として当てた値**（ナビの `bottom`、`[hidden]` の `display:none`、カードの下余白がバー＋ナビより広い）で見ています。実機の手順は [`PLAYER-BAR-TRK225-2026-10-31.md`](PLAYER-BAR-TRK225-2026-10-31.md)。
+  - **未確認**：実ブラウザ・実機での見え方（とくに iPhone の safe-area と、拡大率 125% のときの段の高さ）。
+- **🕰 trk224：trk223 レビューの F1・F2（2026-10-31）**：手渡しの `trk223-F1-fix-2026-10-31.zip` で届いた2件。詳しくは [`REVIEW-FIX-TRK224-2026-10-31.md`](REVIEW-FIX-TRK224-2026-10-31.md)。
+  - **F1（タイムゾーン依存）**：`js/zip-io.js` の `zipDosDateTime()` がローカル時刻の getter を使っていたため、配布ZIPのエントリ時刻が組んだ人の TZ で変わり、`tests/release-layout.test.mjs` が UTC 以外で落ちていた（CI は UTC なので緑に見えていた）。**UTC の getter** に変更。`mtime` を渡すのは配布ZIPの組み立てだけ（バックアップ・`.stpack` は 1980-01-01 固定）なので、利用者の書き出しには影響しません。副作用として、**配布ZIPを日本で展開すると時刻が9時間前（UTC）で表示されます**（中身と動作には影響なし）。Extended Timestamp でローカル表示にする案は、レイアウト変更とテストの手間に見合わないため今回は採りませんでした。
+  - **F2（文書の古いハッシュ）**：ZIPに入る文書に自分のZIPの `sha256` を書くと、固めた瞬間に古くなります（実際に1回目と2回目で食い違った）。**ハッシュは外側の `README-まず読む-*.txt` にだけ書く**運用にし、`tests/trk223-review.test.mjs` で「配布ZIPの名前と同じ行に64桁のハッシュを書かない」ことを検査します。
+  - `sw.js` の cache は **`trk-v2026.10.31-trk224@<スコープ>`**（アプリ本体が変わったため）。`TZ=Asia/Tokyo npm run check` も **874 pass / 0 fail**、`node tools/check-repo.mjs` 0 failure / 0 warning。CI（`.github/workflows/check.yml`）に **`TZ=Asia/Tokyo` のテスト**を足しました。**実機は未確認**（§4-64 の手順のまま）。
+- **🧭 trk223：trk222 レビュー（2026-10-31）への対応**：指摘の12項目を「検討して実装」。詳しくは [`REVIEW-RESPONSE-2026-10-31.md`](REVIEW-RESPONSE-2026-10-31.md)。
+  - **① スマホ型のエフェクトのタブ**：`#tvDock`（▶ TV）を隠す条件を「エフェクトのタブでも、ライブラリに出す設定でもないとき」に絞り、`.songCol` は `flex` のまま（`gap:14px` が消えない）。
+  - **② 再生バーとカードの重なり**：倍率の基準を 1080 固定から **ステージの設計の高さ（`offsetHeight`）** に変え、カードの上限は `calc(1020px - …)` をやめて `.screen` の内容の高さに。`uiscale` を購読し、`resize` でも測り直します。
+  - **③ 手渡し用ZIP**：`tools/pack-standalone.mjs`（新規）が **`git ls-files`（追跡ファイル）** から集め、`vendor-lock.json` 全件と `index.html` の参照を照合してから固めます。`dist/` を除外する事故（2026-10-31 のZIPに MMD の vendor が入らなかった）の再発防止です。
+  - **④ キャッシュの持ち主**：名前にスコープの印（`@trk`／`@trk`／`@root`）を付け、activate は自分のものだけ削除。共有の受け口（`js/share-inbox.js`）も同じ印。
+  - **⑤ 設定の保存**：`saveUserPrefs()` は保存済みの生の値に重ねる（知らないキーを消さない）。工場出荷の2経路だけ `{fresh:true}`。❓謎設定がオフのときは保存値を使わず、その場の選択だけ。
+  - **⑥〜⑫**：`#view`・`#fx` と MMD/VRM の拡大率のずれ、ようこそを閉じたあとの再生バー、先読みの `no-cache` と 3 秒の時間切れ、`verified.json`・`preset.json` の先読み、Pages の公開物から開発用を除外、`display_override` の先頭を `standalone`、テストを数値・規則で見る形（`tests/trk223-review.test.mjs` 25件）。
+  - **手渡し用ZIP**：`node tools/pack-standalone.mjs`（`git ls-files`＋`vendor-lock.json` 全100件の照合）で作り、`unzip -t` 破損なし（vendor 101エントリ＝`three-mmd-loader@0.8.4/dist/` の91件を含む）。**ファイル数・サイズ・`sha256` は、このリポジトリの文書には書きません**（ZIPに入る文書なので、固めた瞬間に古くなる＝trk224 の F2）。値は Drive の `README-まず読む-*.txt` にあります。
+  - **配布の扱い**：公開URLの配布物は差し替えていません。確認用のZIPを Drive の手渡しフォルダに置き（`trk-standalone-2026-10-31-trk223.zip`・`trk-handover-2026-10-31-trk223.zip`・`README-まず読む-2026-10-31-trk223.txt`）、前回の trk222 のZIPは名前の先頭に「【旧】」を付けています。
+  - `sw.js` の cache は **`trk-v2026.10.31-trk224@<スコープ>`**（trk224 で F1 を直したときに上げました）。**実ブラウザ・実機は未確認**（§4-64）。実機の手順は [`REVIEW-REQUEST-TRK223-2026-10-31.md`](REVIEW-REQUEST-TRK223-2026-10-31.md)。
+- **🔍 trk222：拡大率・アイコンの大きさ・2択の画面切り替え・エフェクト欄のタブ分け（2026-10-31）**：実際に触っての要望5点。
+  - **拡大率**（`settings.uiScale`＝50／75／100／125%、既定100%）：`fitStage()` がステージの設計サイズを `1/拡大率` に縮めて `min(iw/W, ih/H) × 拡大率` で描くので、文字とボタンが同じ比率で大きくなり、**画面からはみ出さない**。ゲーム中は100%（盤面を欠けさせない）、スマホ型は再生バーだけ `zoom` で拡大。
+  - **アイコンの大きさは100%で固定**（`fixedIconSize`・既定オン）：アイコンだけ `1/拡大率` に割り戻す（`--trk-icon-zoom`）。
+  - **右上の切り替えを2択に**：📱／🖥 は押すたび PC型 ↔ スマホ型。❓謎設定「画面の形は、常に選んだものを使う」（`uiModeLock`・既定オン）をオフにすると、その場だけ切り替えて保存しない（`sessionMode`）。
+  - **スマホ型のエフェクト欄をエフェクトのタブへ**（🎛／▶ TV／くわし×2／TRKアンプ／TRKエフェクト／TRK MIDI MIX）。`fxInLibrary`（既定オフ）でライブラリのタブにも出せる。**DOM は動かさず**、`body[data-trk-view]` と `body.trk-fx-in-library` の印＋CSS で見せ分け（`tv-dock.js`・`fx-dock.js` の MutationObserver と取り合わない）。
+  - 設定の配線は **`js/ui-prefs.js`（新規）**。保存は `core.settings` のみで**新しい保存キーなし**（`?reset=all` で既定へ）。`sw.js` の cache は **`trk-v2026.10.31-trk222`**、`tests/trk222-ui-zoom.test.mjs`（13件）で **835 pass**。実ブラウザ・実機は未確認（§4-61）。
+- **▶📱 trk221：PC でもスマホ型の UX＋下の再生バー（2026-10-31）**：`settings.uiMode`（`auto`／`desktop`／`mobile`）で、PC でもスマホ型・大きいタブレットでも PC型を選べる。下部ナビ・1画面1役割は trk220 のものを使い回す。
+  - **下の再生バー**（`js/player-bar.js`＋`css/player-bar.css`）：ジャケット・曲名／歌手・⏮▶⏭・上端のシーク線・経過と長さ・音量・⛶・✕。参考は Clementine／VLC の下部プレイヤー。色はスキンの CSS 変数だけ。
+  - **独自の再生状態を持たない**：▶ は曲名バナーの本物のボタン、曲送りは `nextSong`／`prevSong`、シークは `Trk.play.seekTo`、再生画面は `TrkMediaPlayer.open`。ゲーム中・再生画面・書斎・ほかの窓では引っ込み、下部ナビの上に載り 🛟 とトーストの位置も逃がす。
+  - `tests/trk221-ui-mode.test.mjs`（11件）・`tests/trk221-player-bar.test.mjs`（17件）。実機は未確認（§4-62）。
+- **📲 trk220：iPhone のホーム画面から使う standalone PWA の仕上げ（2026-10-30）**：スマホ用の画面シェル（下部ナビ・1画面1役割・取込の折りたたみ・設定の欄の記憶・縦向きの案内）、iOS の meta と manifest、`js/ios-pwa.js`、`sw.js` の install 事前キャッシュ、CI（`.github/workflows/check.yml`）。詳細は [`PWA.md`](PWA.md)。`tests/trk220-*.test.mjs`（47件）。実機は未確認（§4-63）。
+
 - **📦 1.1.8：trk219 を配る版（2026-10-29）**：**アプリ本体は trk219**（出力デバイスを切り替えても再生を止めない）。1.1.7 の配布ZIPの `trk-files/` を土台に、**コード4ファイル**（`index.html`・`js/audio-keep.js`＝新規・`js/fx.js`・`sw.js`）と**配布版のガイド2本**（`docs/guide/sound.md`・`docs/guide/en.md`）を差し替え、`README-1.1.7.md` を `README-1.1.8.md` に改名して今回の内容を追記、`README.md`・`README-SLIM.md`・`release/README.txt` を 1.1.8 に（`README-SLIM.md` のファイル数も 225 に）。
   - ZIP は **`2026-10-29 14:00`（UTC）** で組み立て＝**227エントリ・3,933,293 bytes**・`unzip -t` 破損なし・全エントリ同時刻・**`sha256 8075ce5bc3a15af65273455b5f29ed9be9657283ecf9b61dedda9d80274be9c2`**。`--check` OK・ローカル配信 200・差分は 1.1.7 に当てると配布物と完全一致。
   - **1.1.0〜1.1.7 のZIPと Drive の `trk-1.1.0`〜`trk-1.1.7` はそのまま**（同じ名前で作り直さない）。
@@ -732,8 +1447,13 @@ Windows の「サウンド」などで**音の出力先（スピーカー／ヘ�
 - [ ] 配布物を作るときは §9 の手順で `tools/prepare-release.mjs --check` を通し、`index.html`・`README.txt`・`trk-files/` 以外がルートに出ていないことを確かめた。
 - [ ] 版を上げたときは §9 の「版を上げるときに直す場所」を全部直し、`release/README.txt`・配布アプリの `README-1.x.y.md`・`sw.js` の `CACHE`・`release-manifest.json` の `version` がそろっていることを確かめた。
 - [ ] Drive へ上げたら、**落とし直してバイト一致**を確かめ、`SHA256SUMS` を新しいハッシュで上書きした（§9）。
+- [ ] **オフラインで起動できる**：`sw.js` の install 事前キャッシュに、`index.html` が読み込む CSS・JS・アイコンが入っている（`node tools/check-repo.mjs` が検査）。実機では機内モードで一度起動する。
+- [ ] **ホーム画面から起動して URL バーが出ない**：`manifest.webmanifest` の `display`／`display_override`・`start_url`・`scope`・アイコンを変えたときは、実機で入れ直して確かめる（`id` を変えると別アプリ扱いになる）。
+- [ ] **実機で確かめていないことを「確認済み」と書かない**：§4 に番号で残し、[`REVIEW-REQUEST-2026-10-31.md`](REVIEW-REQUEST-2026-10-31.md) の該当項目を更新する。
 
 ## 9. 配布物の形（1.0.8〜／現在 **1.1.8**：`index.html`＋`README.txt`＋`trk-files/`）
+
+> **このリポジトリ（trk）では配布ZIPを作りません。** 配り方は GitHub Pages です（[`PWA.md`](PWA.md) §11・[`ORIGIN.md`](ORIGIN.md)）。以下の §9 は上流 `trk` の 1.1.x のZIPの話で、`npm run release` を使うときだけ関係します。
 
 **決めたこと（2026-10-26／1.0.8〜1.1.8）**：ZIPを開いたときに **`index.html`・`README.txt`・`trk-files/` の3つだけ**が見える形にする（1.0.6 のころの試作 `trk-1.0.6-layout-proto.zip` と同じ見た目。利用者からの指定）。**OS別のZIPは作らない**——Windows・macOS・Linux は同じアプリ本体で動くので、1本で足りる（1.0.7 までの win/linux・mac の2本は廃止）。
 

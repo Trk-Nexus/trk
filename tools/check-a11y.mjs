@@ -19,6 +19,7 @@
  */
 import fs from "node:fs";
 import { restoreCoreAlias, sourceOf } from "./lib/js-source.mjs";
+import { RUNTIME_NAMED, namedProblems } from "./lib/button-names.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -158,6 +159,41 @@ rule(tabProblems.length === 0, "role=tablist holds tabs only (the ＋ button sta
   rule(Boolean(doc) && linked && /axe-core/.test(doc) && /html-validate/.test(doc),
     "docs/QUALITY-CHECKS.md が残っている（README と HANDOFF から参照）",
     doc ? "外部ツールでの点検手順つき" : "見つかりません");
+}
+
+/* ---------- 8. ボタンの読み上げ名（trk258・M3／trk259 で根拠つき） ----------
+   ここまでは入力欄・画像・見出しを見ていたが、**ボタンは見ていなかった**。
+   静的に名前の出どころが無いものは、次の2種類だけにする：
+     ・`aria-label` / `aria-labelledby` / `title` / `data-i18n` / `data-i18n-aria` / 中の文字 / 画像の alt がある
+     ・**JS が開いたときに文字を入れる**もの（下の許可リストに id で書く）
+   許可リストは「HTML に id がある」だけでは嘘をつける（レビュー 01 §1 #3）ので、**根拠の式（need）**も書いて、
+   それが `js/` のどれかに実在することを毎回見る。文言の設定を消したら、ここで FAIL する。
+   逆向きも見る：許可リストの id が HTML から消えたら FAIL。 */
+{
+  const runtimeNamed = RUNTIME_NAMED;
+  const html = read("index.html");
+  /* 上の走査で読んだ js/**（js-core の別名は sourceOf で戻したもの）を、まとめて1つの文字列にする */
+  const jsText = Object.values(js).join("\n");
+  const problems = [];
+  let allowed = 0;
+  for (const f of htmlFiles) {
+    const src = read(f);
+    for (const m of src.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
+      const attrs = m[1], inner = m[2], all = attrs + " " + inner;
+      if (/\baria-label=|\baria-labelledby=|\btitle=|\bdata-i18n-aria=|\bdata-i18n=/.test(all)) continue;
+      const text = inner.replace(/<[^>]*>/g, "").replace(/&[^;\s]+;/g, "x").trim();
+      if (text) continue;
+      const alt = /<img\b[^>]*\balt=["']([^"']+)["']/.exec(inner);
+      if (alt && alt[1].trim()) continue;
+      const id = (attrs.match(/\bid=["']([^"']+)["']/) || [])[1] || "";
+      if (id && runtimeNamed.some(([want]) => want === id)) { allowed++; continue; }
+      problems.push(`${f}: ${id || m[0].slice(0, 60).replace(/\s+/g, " ")}`);
+    }
+  }
+  /* 許可リストの「id が HTML にある」「根拠の式が js/ にある」をまとめて見る（消えたら許可も消す） */
+  problems.push(...namedProblems(html, jsText));
+  rule(problems.length === 0, "every <button> has an accessible name",
+    problems.length ? problems.join(" / ") : `${allowed} 件は実行時に名前が入る（許可リスト・根拠つき）`);
 }
 
 console.log("");

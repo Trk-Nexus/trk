@@ -279,7 +279,12 @@ addEventListener("keydown", e => {
     if (code === "Escape" && e.isTrusted && !e.repeat) escHoldStart();
     if (core.phase === "playing") { e.preventDefault(); window.Trk.play.pauseGame(); }
     else if (core.phase === "paused") { e.preventDefault(); window.Trk.play.resumeGame(); }
-    else if (core.phase === "title" && core.screen === "settings" && code === "Escape") { e.preventDefault(); core.closeSettings(); }
+    /* 📚 trk275（レビュー M1）：popover（📚 のパネル）が開いているときは**Esc を譲る**。
+       ここは前から `preventDefault()` して設定画面を閉じていたため、popover が自分で閉じられず、
+       パネルが開いたまま残って（次に設定を開くと開きっぱなし）下のボタンを奪っていました。 */
+    else if (core.phase === "title" && core.screen === "settings" && code === "Escape" && !document.querySelector(":popover-open")) {
+      e.preventDefault(); core.closeSettings();
+    }
     return;
   }
   if (e.code === "KeyF" && !e.repeat && !e.ctrlKey && !e.metaKey && core.slotOfKey("KeyF") < 0 && fullscreenSupported) toggleFullscreen();
@@ -445,6 +450,18 @@ core.$("videoMaxWheelStep").addEventListener("change", e => {
   const v = Number(e.target.value);
   core.settings.videoMaxWheelStep = [2, 5, 10].includes(v) ? v : 5;
   core.saveUserPrefs();
+});
+/* 🎬 trk262：映像を見るときの操作パネルの出かた（full／bottom／always／none。既定は full＝今までどおり） */
+function showVideoMaxChrome() {
+  const sel = core.$("videoMaxChrome");
+  const now = window.Trk.viewerChrome ? window.Trk.viewerChrome.mode(core.settings.videoMaxChrome) : "full";
+  if (sel) sel.value = now;
+  core.settings.videoMaxChrome = now;
+}
+core.$("videoMaxChrome").addEventListener("change", e => {
+  core.settings.videoMaxChrome = window.Trk.viewerChrome ? window.Trk.viewerChrome.mode(e.target.value) : "full";
+  core.saveUserPrefs();
+  core.emit("options");   /* 開いている 🖥 全画面・▶ メディアプレーヤーへ知らせる */
 });
 core.$("scroll").addEventListener("input", () => {
   core.settings.scroll = Number(core.$("scroll").value) || 1;
@@ -628,6 +645,7 @@ core.$("videoStyle").value = core.settings.videoStyle;
 core.$("videoZoom").value = core.settings.videoZoom;
 showVideoZoom();
 showVideoMaxWheelStep();
+showVideoMaxChrome();
 core.$("fxPower").value = core.settings.fxPower;
 core.$("gameFxMode").value = core.settings.gameFxMode;
 core.video.volume = core.settings.musicVolume;
@@ -637,6 +655,7 @@ if (!fullscreenSupported) { core.$("fullBtn").hidden = true; core.$("fullBtnTitl
 
 core.applySkin(core.settings.skin, false);
 core.applyLanguage(core.settings.language);
+core.applyUiScale();   /* 🖥 拡大率（50/75/100/125%）とアイコンの大きさを、起動時に反映する */
 syncTutorialUI();
 window.Trk.custom.syncNoteUI(); showFxPower(); window.Trk.custom.updateMascotUI(); syncOptionsUI();
 core.setStatus("seStatus", core.settings.seEnabled ? "seOn" : "seDefault");
@@ -654,10 +673,8 @@ packsReady.then(() => window.Trk.library.initLibrary()).catch(e => console.error
 
 /* PWA：オフラインでも開けるようにする（HTTPS か localhost のときだけ）。
    キャッシュの整理は sw.js が trk- で始まる名前だけを消すので、ほかのサイトに影響しません。 */
-if ("serviceWorker" in navigator && location.protocol !== "file:") {
-  navigator.serviceWorker.register("./sw.js", { scope: "./", updateViaCache:"none" })
-    .catch(() => { /* オフライン用のキャッシュが無くても、ゲームはそのまま遊べます */ });
-}
+/* 🔄 trk242：Service Worker の登録は js/sw-update.js へ移しました（登録と「新しい版の知らせ」を
+   同じ場所に置くため）。ここで登録すると、新しい版を見張る相手（registration）と離れてしまうためです。 */
 /* ✅ main.js 完了 */
 
 /* 公開名は据え置き（名前空間の移行の途中。window.Trk.* への移動は後の段階で行う） */

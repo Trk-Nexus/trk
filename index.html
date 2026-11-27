@@ -8,13 +8,18 @@
 <meta name="description" content="万能なブラウザ再生プレイヤー。完全無料。手持ちの音楽、画像、漫画、小説、そして音ゲーを楽しめます。データは、端末の中だけ。">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/study-room.css">
+<!-- 📱 スマホ用の画面シェル（body.trk-mobile が付いたときだけ効きます。PCの見た目は変わりません） -->
+<link rel="stylesheet" href="css/mobile-shell.css">
+<!-- 🎵 画面の下に出す再生バー（js/player-bar.js）。出すかどうかは設定で選べます -->
+<link rel="stylesheet" href="css/player-bar.css">
 <!-- SNSで共有したときのカード（画像は https:// から始まる完全なURLにする）。
      ⚠ 同じ名前のmeta・linkは1回だけ書く（trk129：同じ名前が2回あり、SNSが先の方の説明文を拾っていた）
-     ※ 配布ZIP用ビルドでは og:url／og:image を外すが、GitHub Pages版は公開URLがあるので残す -->
+     ※ 2026-11-02（trk250）：Pages のサイトを組織 Trk-Nexus へ移籍したので、下の2本は `trk-nexus.github.io` を指す
+     ※ 配布ZIP（trk-files/）にもこのまま入るが、OGタグは閲覧時に取得されるものではないのでオフライン動作には影響しない -->
 <meta property="og:title" content="trk! — AGRG">
 <meta property="og:description" content="万能なブラウザ再生プレイヤー。完全無料。手持ちの音楽、画像、漫画、小説、そして音ゲーを楽しめます。データは、端末の中だけ。">
-<meta property="og:url" content="https://tonbokiriraikirimuramasa-taikoubou.github.io/trk/">
-<meta property="og:image" content="https://tonbokiriraikirimuramasa-taikoubou.github.io/trk/docs/og.png">
+<meta property="og:url" content="https://trk-nexus.github.io/trk/">
+<meta property="og:image" content="https://trk-nexus.github.io/trk/docs/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@ttrk143">
@@ -23,8 +28,23 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-1024.png" sizes="1024x1024" type="image/png">
+<!-- 🍎 iPhone / iPad：ホーム画面のアイコンは 180×180。Safari は manifest の icons ではなくこちらを使う -->
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 <meta name="theme-color" content="#07080d">
+<!-- 🏷 trk255：いまの版。設定の「🔄 アプリの更新」だけに出す（帯には出さない）。
+     sw.js の CACHE と同じ番号にそろえる（tools と tests が見張ります）。 -->
+<meta name="trk-build" content="trk328">
+<!-- 🍎 iOS のホーム画面アプリ（standalone）として開くための指定。
+     iOS 26 以降は manifest が無くても standalone で開きますが、古い iOS のために残します。 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="trk!">
+<meta name="application-name" content="trk!">
+<meta name="format-detection" content="telephone=no">
 
 <!-- VRMを使うときだけ読み込む3Dの部品（three-vrm 3.5.5 は three 0.180 に対応） -->
 <script type="importmap">
@@ -43,6 +63,17 @@
 </head>
 
 <body>
+<!-- 🚫 trk256（S3）：JavaScript が止まっていると真っ暗な画面になるので、理由を1枚だけ出す。
+     CSS が読めない場合にも見えるよう、見た目はこの中に直書きする（JS は使わない）。 -->
+<noscript>
+  <div style="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:#0b0d16;color:#f1f5f9;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.9;text-align:center">
+    <p style="max-width:34em;margin:0">
+      <strong style="font-size:18px">trk! は JavaScript が必要です。</strong><br>
+      ブラウザの設定で JavaScript を有効にしてから、開き直してください。<br>
+      <span lang="en" style="opacity:.85">trk! needs JavaScript. Please enable it in your browser settings, then reload.</span>
+    </p>
+  </div>
+</noscript>
 <!-- 💬 trk191: アドオン引き出しの置き場所（slot "drawer"・API v2）。中身が無いときは非表示で、クリックも妨げない -->
 <div id="addonDrawerHost" class="addonDrawerHost"></div>
 <div id="stage" data-layout="classic" data-phase="title">
@@ -65,11 +96,12 @@
 
   <div id="judge"><span id="judgeText"></span><small id="judgeSub"></small></div>
   <div id="progress"></div>
-  <input id="seekBar" type="range" min="0" max="1000" value="0" aria-label="Seek">
+  <input id="seekBar" type="range" min="0" max="1000" value="0" data-i18n-aria="ariaSeek">
 
   <div id="touchKeys">
-    <button type="button" data-slot="0"><span></span></button>
-    <button type="button" data-slot="1"><span></span></button>
+    <!-- ♿ trk258：画面のタップ鍵にも読み上げ名を付ける（M3 の検査で見つかった2つ） -->
+    <button type="button" data-slot="0" data-i18n-aria="ariaLaneLeft"><span></span></button>
+    <button type="button" data-slot="1" data-i18n-aria="ariaLaneRight"><span></span></button>
   </div>
 
   <div id="controls">
@@ -100,7 +132,7 @@
             </select>
           </label>
           <button id="openSettingsBtn" type="button" data-i18n="openSettings"></button>
-          <button id="fullBtnTitle" type="button" aria-label="Fullscreen">⛶</button>
+          <button id="fullBtnTitle" type="button" data-i18n-aria="ariaFullscreen">⛶</button>
         </div>
       </header>
 
@@ -139,6 +171,7 @@
             <li data-i18n="welcomeVideo"></li>
             <li data-i18n="welcomeBook"></li>
             <li data-i18n="welcomeOffline"></li>
+            <li data-i18n="welcomeBackup"></li>
           </ul>
           <p class="welcomeHint" data-i18n="welcomeHint"></p>
           <div class="welcomeActions">
@@ -166,27 +199,32 @@
                 <button id="libSkinBtn" class="libSkinBtn" type="button" hidden></button>
               </span>
             </div>
-            <div class="miniActions">
-              <button id="libOpenBtn" type="button" data-i18n="libOpen"></button>
-              <!-- 📤 共有：端末に1回だけ許可して、ミュージックフォルダの中身を一気に取り込む（library.js） -->
-              <button id="libShareBtn" type="button" data-i18n="libShare"></button>
-              <button id="libReconnectBtn" type="button" hidden></button>
-              <button id="libRescanBtn" type="button" hidden data-i18n="libRescan"></button>
-              <label class="fileBtn small">
-                <input id="mediaFile" type="file" accept="video/*,audio/*,.mid,.midi,.mkv,.mpg,.mpeg,.mpe,.m2v,.m2ts" multiple hidden>
-                <span data-i18n="libAddFile"></span>
-              </label>
-              <!-- 🎬 動画を読み込む：最初のフレームまで確かめて「映像つき」として記録し、そのまま全画面で流す -->
-              <label class="fileBtn small" id="libVideoLabel">
-                <input id="videoFile" type="file" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.mpg,.mpeg,.mpe,.m2v,.m2ts" multiple hidden>
-                <span data-i18n="libAddVideo"></span>
-              </label>
-              <label class="fileBtn small">
-                <input id="songPackFile" type="file" accept=".stpack,.zip" hidden>
-                <span data-i18n="libAddPack"></span>
-              </label>
-            </div>
-            <div class="hint" data-i18n="libOpenShareHint"></div>
+            <!-- 📱 スマホでは、この折りたたみを閉じた状態から始めます（js/mobile-shell.js）。
+                 中のボタンは今までどおり同じ id なので、配線（library.js）は変わりません。 -->
+            <details class="trk-import" id="trkImportDetails" open>
+              <summary id="trkImportSummary" data-i18n="libImportToggle"></summary>
+              <div class="miniActions">
+                <button id="libOpenBtn" type="button" data-i18n="libOpen"></button>
+                <!-- 📤 共有：端末に1回だけ許可して、ミュージックフォルダの中身を一気に取り込む（library.js） -->
+                <button id="libShareBtn" type="button" data-i18n="libShare"></button>
+                <button id="libReconnectBtn" type="button" hidden></button>
+                <button id="libRescanBtn" type="button" hidden data-i18n="libRescan"></button>
+                <label class="fileBtn small">
+                  <input id="mediaFile" type="file" accept="video/*,audio/*,.mid,.midi,.mkv,.mpg,.mpeg,.mpe,.m2v,.m2ts" multiple hidden>
+                  <span data-i18n="libAddFile"></span>
+                </label>
+                <!-- 🎬 動画を読み込む：最初のフレームまで確かめて「映像つき」として記録し、そのまま全画面で流す -->
+                <label class="fileBtn small" id="libVideoLabel">
+                  <input id="videoFile" type="file" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi,.mpg,.mpeg,.mpe,.m2v,.m2ts" multiple hidden>
+                  <span data-i18n="libAddVideo"></span>
+                </label>
+                <label class="fileBtn small">
+                  <input id="songPackFile" type="file" accept=".stpack,.zip" hidden>
+                  <span data-i18n="libAddPack"></span>
+                </label>
+              </div>
+              <div class="hint" data-i18n="libOpenShareHint"></div>
+            </details>
             <input id="libDirInput" type="file" webkitdirectory multiple hidden>
             <div class="libTools">
               <input id="libSearch" type="search" autocomplete="off" data-i18n-aria="libSearch">
@@ -261,7 +299,7 @@
 
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
               <h3 data-i18n="difficulty" style="margin:0"></h3>
-              <button type="button" id="expertDiffToggle" class="miniBtn" title="🔥 MASTER・2000 RUSH" aria-label="MASTER・2000 RUSH" style="padding:2px 8px;font-size:12px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#ffb000;font-weight:700">🔥 MASTER</button>
+              <button type="button" id="expertDiffToggle" class="miniBtn" title="🔥 MASTER・2000 RUSH" data-i18n-aria="ariaMasterRush" style="padding:2px 8px;font-size:12px;cursor:pointer;border-radius:4px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#ffb000;font-weight:700">🔥 MASTER</button>
             </div>
             <div class="seg" id="difficultyPicker">
               <button type="button" data-mode="easy" data-i18n="easy">Easy</button>
@@ -337,7 +375,7 @@
           <div class="hint center contactLine">
             <span data-i18n="feedbackLabel"></span>
             <a href="https://x.com/ttrk143" target="_blank" rel="noopener noreferrer">X @ttrk143</a> ／
-            <a href="https://github.com/TonbokiriRaikiriMuramasa-Taikoubou/trk/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> ／
+            <a href="https://github.com/Trk-Nexus/trk/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> ／
             <a href="privacy.html">Privacy / プライバシー</a> ／
             <a href="credits.html">Credits / 権利</a>
           </div>
@@ -348,12 +386,37 @@
   </section>
 
   <!-- ===== 設定画面 ===== -->
-  <section id="settingsScreen" class="screen" hidden>
+  <section id="settingsScreen" class="screen" hidden data-set-level="standard">
     <div class="card wide">
       <header class="head">
         <h2 class="setTitle" data-i18n="settingsTitle"></h2>
         <button id="closeSettingsBtn" type="button" class="primary slim" data-i18n="closeSettings"></button>
       </header>
+
+      <!-- ⚖ trk279：見せる量を選ぶ「段」。値は変えません（js/settings-level.js）
+           1＝シンプル／2＝スタンダード／3＝プロ／4＝マスター。既定はスタンダード -->
+      <div class="setLevel" role="group" aria-labelledby="setLevelTitle">
+        <span id="setLevelTitle" class="setLevelLabel" data-i18n="setLevelTitle"></span>
+        <div class="setLevelBtns">
+          <button type="button" id="setLevelSimple" data-set-level-btn="simple" data-i18n="setLevelSimple" aria-pressed="false"></button>
+          <button type="button" id="setLevelStandard" data-set-level-btn="standard" data-i18n="setLevelStandard" aria-pressed="true"></button>
+          <button type="button" id="setLevelPro" data-set-level-btn="pro" data-i18n="setLevelPro" aria-pressed="false"></button>
+          <button type="button" id="setLevelMaster" data-set-level-btn="master" data-i18n="setLevelMaster" aria-pressed="false"></button>
+          <button type="button" id="setLevelWizard" data-set-level-btn="wizard" data-i18n="setLevelWizard" aria-pressed="false"></button>
+        </div>
+        <button type="button" id="setLevelMore" class="miniBtn setLevelMore" data-i18n="setLevelMore" hidden></button>
+        <p class="hint" data-i18n="setLevelHint"></p>
+        <p id="setLevelStatus" class="hint status" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- 🔍 trk243：設定のパネルが 19 枚になったので、言葉で絞れるようにしました（js/settings-find.js） -->
+      <div id="setFind" class="setFind">
+        <label class="skinFindBox"><span data-i18n="setFindLabel"></span>
+          <input id="setFindInput" type="search" data-i18n-placeholder="setFindHint" autocomplete="off"></label>
+        <button id="setFindClear" type="button" class="miniBtn" data-i18n-aria="setFindClear" hidden>✕</button>
+        <span id="setFindCount" class="hint status" role="status" aria-live="polite" hidden></span>
+      </div>
+      <p class="hint" id="setFindNothing" hidden data-i18n="setFindNothing"></p>
 
       <!-- 🔍 trk198：設定を言葉で絞り込む（欄が104個まで増えたので、探さずに届くように） -->
       <div class="setSearch">
@@ -362,20 +425,359 @@
         <span id="settingsSearchStatus" class="hint" role="status" aria-live="polite"></span>
       </div>
 
+      <!-- ⌨ trk267／trk284：ターミナル（trk CLI）。呪文で曲・スキン・音量・再生位置を直に操ります。
+             段がウィザードのときだけ出ます。**設定のいちばん上**（画面・再生バーより上）に置きます。 -->
+      <details class="panel" id="cliPanel">
+        <summary data-i18n="cliPanelTitle"></summary>
+        <div class="hint" data-i18n="cliPanelHint"></div>
+        <div class="miniActions">
+          <button id="cliOpenBtn" type="button" data-i18n="cliOpenBtn" aria-haspopup="dialog" aria-controls="cliMode"></button>
+        </div>
+        <!-- ⌨ trk283：呼び出しキー（同じキーで開閉）。Ctrl／⌘ と一緒に押します -->
+        <div class="keyRows">
+          <div class="keyRow">
+            <strong data-i18n="cliKeyLabel"></strong><span class="keyValue" id="cliKeyValue"></span>
+            <button id="cliKeyAssign" type="button" data-i18n="assign"></button>
+          </div>
+        </div>
+        <label class="check"><input id="cliAutoCloseChk" type="checkbox"><span data-i18n="cliAutoClose"></span></label>
+        <!-- ⌨ trk286：下から持ち上がる板（ボトムシート）の高さ -->
+        <div class="inline">
+          <span id="cliSheetSizeLabel" data-i18n="cliSheetSizeLabel"></span>
+          <select id="cliSheetSize" aria-labelledby="cliSheetSizeLabel">
+            <option value="half" data-i18n="cliSheetHalf"></option>
+            <option value="tall" data-i18n="cliSheetTall"></option>
+            <option value="full" data-i18n="cliSheetFull"></option>
+          </select>
+        </div>
+        <div class="hint" data-i18n="cliSheetHint"></div>
+        <!-- ⌨ trk287：一緒に押す修飾キー（Win／⌘ = Super でも呼べる） -->
+        <div class="inline">
+          <span id="cliModLabel" data-i18n="cliModLabel"></span>
+          <select id="cliModSel" aria-labelledby="cliModLabel">
+            <option value="ctrlOrMeta" data-i18n="cliModCtrlOrMeta"></option>
+            <option value="meta" data-i18n="cliModMeta"></option>
+            <option value="ctrl" data-i18n="cliModCtrl"></option>
+            <option value="alt" data-i18n="cliModAlt"></option>
+          </select>
+        </div>
+        <div class="hint" data-i18n="cliModHint"></div>
+        <div class="hint" data-i18n="cliKeyHint"></div>
+        <div class="hint" id="cliKeyStatus" aria-live="polite"></div>
+        <div class="inline">
+          <span id="cliPlayLabel" data-i18n="cliPlayLabel"></span>
+          <select id="cliPlaySel" aria-labelledby="cliPlayLabel">
+            <option value="media" data-i18n="cliPlayMedia"></option>
+            <option value="preview" data-i18n="cliPlayPreview"></option>
+          </select>
+        </div>
+        <div class="inline">
+          <span id="cliSkinLabel" data-i18n="cliSkinLabel"></span>
+          <select id="cliSkinSel" aria-labelledby="cliSkinLabel">
+            <option value="auto" data-i18n="cliSkinAuto"></option>
+            <option value="terminal" data-i18n="cliSkinTerminal"></option>
+            <option value="keep" data-i18n="cliSkinKeep"></option>
+          </select>
+        </div>
+        <div class="hint" data-i18n="cliSkinHint"></div>
+        <!-- ⌨ trk283：端末のスキンを個別に選ぶ（オンのときは上の「見た目」より優先） -->
+        <label class="check"><input id="cliSkinPickChk" type="checkbox"><span data-i18n="cliSkinPickChk"></span></label>
+        <div class="inline">
+          <span id="cliSkinPickLabel" data-i18n="cliSkinPickLabel"></span>
+          <select id="cliSkinPickSel" aria-labelledby="cliSkinPickLabel"></select>
+        </div>
+        <!-- ⌨ trk283：入力できるかの見せ方（バッジ／状態行／打てないときだけ） -->
+        <div class="inline">
+          <span id="cliTypingLabel" data-i18n="cliTypingLabel"></span>
+          <select id="cliTypingSel" aria-labelledby="cliTypingLabel">
+            <option value="badge" data-i18n="cliTypingBadge"></option>
+            <option value="status" data-i18n="cliTypingStatus"></option>
+            <option value="quiet" data-i18n="cliTypingQuiet"></option>
+          </select>
+        </div>
+        <div class="hint" data-i18n="cliTypingHint"></div>
+        <!-- ⌨ trk285：入力の合図。既定は Linux 系の「<スキン名(English)> ~ %」 -->
+        <div class="inline">
+          <span id="cliPromptLabel" data-i18n="cliPromptStyleLabel"></span>
+          <select id="cliPromptSel" aria-labelledby="cliPromptLabel">
+            <option value="linux" data-i18n="cliPromptLinux"></option>
+            <option value="bash" data-i18n="cliPromptBash"></option>
+            <option value="root" data-i18n="cliPromptRoot"></option>
+            <option value="fish" data-i18n="cliPromptFish"></option>
+            <option value="ps" data-i18n="cliPromptPs"></option>
+            <option value="plain" data-i18n="cliPromptPlain"></option>
+            <option value="skin" data-i18n="cliPromptSkin"></option>
+          </select>
+        </div>
+        <div class="hint mono" id="cliPromptPreview" aria-live="polite"></div>
+        <div class="hint" data-i18n="cliPromptHint"></div>
+        <!-- ⌨ trk269：音・Tab 補完・履歴。補完と履歴の長さはスキンが決めます -->
+        <label class="check"><input id="cliBellChk" type="checkbox"><span data-i18n="cliBellLabel"></span></label>
+        <div class="hint" data-i18n="cliBellHint"></div>
+        <!-- ⌨ trk288（R7）：このスキンが音を出さないときだけ一言出す（音はアプリのいまのスキンで決まる） -->
+        <div class="hint" id="cliBellNote" hidden data-i18n="cliBellSkinOff"></div>
+        <!-- ⌨ trk288（R2）：文字の入れ方（既定はブラウザーに任せる。元に戻すを選ぶと Ctrl+Z が効く） -->
+        <div class="inline">
+          <span id="cliInsertLabel" data-i18n="cliInsertLabel"></span>
+          <select id="cliInsertSel" aria-labelledby="cliInsertLabel">
+            <option value="native" data-i18n="cliInsertNative"></option>
+            <option value="exec" data-i18n="cliInsertExec"></option>
+          </select>
+        </div>
+        <div class="hint" data-i18n="cliInsertHint"></div>
+        <div class="hint" data-i18n="cliFeelHint"></div>
+      </details>
+
       <div class="grid">
         <!-- 左：見た目 -->
         <div class="col">
+          <!-- 🖥 画面の形と、下に出す再生バー（js/mobile-shell.js・js/player-bar.js。trk221）
+               「PCでも縦型のスタンドで使う」「大きいタブレットで広く使う」を行き来するための欄です -->
+          <details class="panel" id="uiPanel">
+            <summary data-i18n="secUi"></summary>
+            <label class="field">
+              <span data-i18n="uiModeLabel"></span>
+              <select id="uiMode">
+                <option value="auto" data-i18n="uiModeAuto"></option>
+                <option value="desktop" data-i18n="uiModeDesktop"></option>
+                <option value="mobile" data-i18n="uiModeMobile"></option>
+              </select>
+            </label>
+            <div class="hint" data-i18n="uiModeHint"></div>
+            <label class="field">
+              <span data-i18n="playerBarLabel"></span>
+              <select id="playerBarMode">
+                <option value="on" data-i18n="playerBarOn"></option>
+                <option value="auto" data-i18n="playerBarAuto"></option>
+                <option value="off" data-i18n="playerBarOff"></option>
+              </select>
+            </label>
+            <div class="hint" data-i18n="playerBarHint"></div>
+            <!-- 🎵 trk225：バーの置き場所（スマホ型）と、誤って消さないための鍵 -->
+            <label class="field">
+              <span data-i18n="playerBarPosLabel"></span>
+              <select id="playerBarPos">
+                <option value="bottom" data-i18n="playerBarPosBottom"></option>
+                <option value="above" data-i18n="playerBarPosAbove"></option>
+              </select>
+            </label>
+            <div class="hint" data-i18n="playerBarPosHint"></div>
+            <label class="check"><input id="playerBarLock" type="checkbox"><span data-i18n="playerBarLockLabel"></span></label>
+            <div class="hint" data-i18n="playerBarLockHint"></div>
+            <!-- 🖥 trk222：拡大率（画面と文字をまとめて大きく／小さく） -->
+            <label class="field">
+              <span data-i18n="uiScaleLabel"></span>
+              <select id="uiScale">
+                <option value="50">50%</option>
+                <option value="75">75%</option>
+                <option value="100" data-i18n="uiScaleNormal"></option>
+                <option value="125">125%</option>
+              </select>
+            </label>
+            <div class="hint" data-i18n="uiScaleHint"></div>
+            <label class="check"><input id="fixedIconSize" type="checkbox"><span data-i18n="fixedIconSize"></span></label>
+            <div class="hint" data-i18n="fixedIconSizeHint"></div>
+            <!-- 🧱 trk244：表示の密度（余白と行間を詰めて、多く見せる） -->
+            <label class="field">
+              <span data-i18n="uiDensityLabel"></span>
+              <select id="uiDensity">
+                <option value="auto" data-i18n="uiDensityAutoOption"></option>
+                <option value="roomy" data-i18n="uiDensityRoomy"></option>
+                <option value="normal" data-i18n="uiDensityNormal"></option>
+                <option value="compact" data-i18n="uiDensityCompact"></option>
+                <option value="dense" data-i18n="uiDensityDense"></option>
+              </select>
+            </label>
+            <div class="hint" data-i18n="uiDensityHint"></div>
+            <label class="check"><input id="uiScaleCompact" type="checkbox"><span data-i18n="uiScaleCompactLabel"></span></label>
+            <div class="hint" data-i18n="uiScaleCompactHint"></div>
+            <div id="uiDensityState" class="hint status" role="status" aria-live="polite"></div>
+            <!-- 🎛 trk222：スマホ型で、エフェクトの欄をどのタブに置くか -->
+            <label class="check"><input id="fxInLibrary" type="checkbox"><span data-i18n="fxInLibrary"></span></label>
+            <div class="hint" data-i18n="fxInLibraryHint"></div>
+          </details>
+
           <details class="panel" open>
             <summary data-i18n="secDisplay"></summary>
             <div><label><span data-i18n="displayModeLabel"></span> <select id="displayMode"><option value="simple" data-i18n="displaySimple"></option><option value="full" data-i18n="displayFull"></option></select></label></div>
             <p class="hint" data-i18n="displayModeHint"></p>
             <label class="check"><input id="devView" type="checkbox"><span data-i18n="devViewLabel"></span></label>
+            <!-- 🔤 trk246：書体の組み合わせ（見出し用の字を、相手の目録の14組から選ぶ。スキンの font はそのまま） -->
+            <label class="field">
+              <span data-i18n="typoLabel"></span>
+              <select id="typoPairing">
+                <option value="" data-i18n="typoOff"></option>
+                <!-- 14組の選択肢は js/typography.js の目録から足します（名前は今あるものだけ・外部取得なし） -->
+              </select>
+            </label>
+            <div class="hint" data-i18n="typoHint"></div>
+            <div id="typoState" class="hint status" role="status" aria-live="polite"></div>
+            <!-- 🔤 trk255：選んだ組の説明（上行）の下に、その組が合う曲を1行だけ（目録の trkUse） -->
+            <div id="typoUse" class="hint" hidden></div>
+            <!-- 🔤 trk326（R-TYP-1）：倉庫で調整した組み合わせ単体 JSON（trk-typography-pairing v1）を読む -->
+            <div class="miniActions"><button id="typoImportBtn" type="button" data-i18n="typoImportBtn"></button></div>
+            <input id="typoImportFile" type="file" accept="application/json,.json" hidden>
+            <div class="hint" data-i18n="typoImportHint"></div>
+            <div id="typoImportState" class="hint status" role="status" aria-live="polite"></div>
+            <!-- 🔤 trk315：題字の書体（利用者が導入する書体ファイル。同梱・自動取得はしない）。中身は js/title-font.js が作る -->
+            <h3 data-i18n="tfHeading"></h3>
+            <div id="titleFontPanel" class="titleFontPanel"></div>
             <h3 data-i18n="skin"></h3>
+            <!-- 🎨 trk297：領域ごとの 3 行（js/remodern-ui.js）。初期はどれも現状維持 -->
+            <div id="remodernRegions" class="remodernRegions">
+              <p class="hint" data-i18n="remodernHint"></p>
+              <div class="remodernRow"><span data-i18n="remodernCommon"></span>
+                <select id="remodern-common-mode" data-i18n-aria="remodernCommon"></select>
+                <select id="remodern-common-work" data-i18n-aria="remodernCommon"></select></div>
+              <div class="remodernApplyRow"><span id="remodern-common-impact" class="hint" role="status"></span><div class="miniActions"><button id="remodern-common-apply" type="button" data-i18n="remodernApply"></button><button id="remodern-common-undo" type="button" data-i18n="remodernUndo"></button></div></div>
+              <div class="remodernRow"><span data-i18n="remodernStudy"></span>
+                <select id="remodern-study-mode" data-i18n-aria="remodernStudy"></select>
+                <select id="remodern-study-work" data-i18n-aria="remodernStudy"></select></div>
+              <div class="remodernApplyRow"><span id="remodern-study-impact" class="hint" role="status"></span><div class="miniActions"><button id="remodern-study-apply" type="button" data-i18n="remodernApply"></button><button id="remodern-study-undo" type="button" data-i18n="remodernUndo"></button></div></div>
+              <div class="remodernRow"><span data-i18n="remodernBase"></span>
+                <select id="remodern-base-mode" data-i18n-aria="remodernBase"></select>
+                <select id="remodern-base-work" data-i18n-aria="remodernBase"></select></div>
+              <div class="remodernApplyRow"><span id="remodern-base-impact" class="hint" role="status"></span><div class="miniActions"><button id="remodern-base-apply" type="button" data-i18n="remodernApply"></button><button id="remodern-base-undo" type="button" data-i18n="remodernUndo"></button></div></div>
+              <div class="miniActions"><button id="remodernResetBtn" type="button" data-i18n="remodernReset"></button></div>
+              <label class="check"><input id="remodernIconsChk" type="checkbox"><span data-i18n="remodernIconsChk"></span></label>
+              <div class="hint" data-i18n="remodernIconsHint"></div>
+              <!-- 🔤 trk326（R-REM-3）：書斎・基地に作品の配色を当てるか（独立のオプトイン。既定はどちらもオフ） -->
+              <label class="check"><input id="remodernOptInStudy" type="checkbox"><span data-i18n="remodernOptInStudy"></span></label>
+              <label class="check"><input id="remodernOptInBase" type="checkbox"><span data-i18n="remodernOptInBase"></span></label>
+              <div class="hint" data-i18n="remodernOptInHint"></div>
+              <div id="remodernStatus" class="hint status" role="status" aria-live="polite"></div>
+              <!-- 🎨 trk300：作品ファイル（.stpack の拡張）を読む。スキンのパックとは別に入る -->
+              <div class="hint" data-i18n="remodernWorkHint"></div>
+              <div class="miniActions">
+                <button id="remodernWorkBtn" type="button" data-i18n="remodernWorkBtn"></button>
+                <button id="remodernWorkClear" type="button" data-i18n="remodernWorkClear"></button>
+              </div>
+              <input id="remodernWorkFile" type="file" accept=".stpack,.zip" hidden>
+              <div id="remodernWorkStatus" class="hint status" role="status" aria-live="polite"></div>
+            </div>
+            <!-- 🎨 trk297：書斎・基地の「🎨 スキン」ボタンから開く、領域ひとつぶんのダイアログ（閉じるボタンは必ず見える） -->
+            <dialog id="remodernDialog" class="remodernDialog" aria-labelledby="remodernDlgTitle">
+              <h3 id="remodernDlgTitle"></h3>
+              <p class="hint" data-i18n="remodernDlgHint"></p>
+              <div class="remodernRow">
+                <label><span data-i18n="remodernDlgMode"></span> <select id="remodernDlgMode"></select></label>
+                <label><span data-i18n="remodernDlgWork"></span> <select id="remodernDlgWork"></select></label>
+              </div>
+              <div id="remodernDlgImpact" class="hint" role="status"></div>
+              <div class="miniActions"><button id="remodernDlgApply" type="button" data-i18n="remodernApply"></button><button id="remodernDlgUndo" type="button" data-i18n="remodernUndo"></button></div>
+              <div id="remodernDlgStatus" class="hint status" role="status" aria-live="polite"></div>
+              <div class="miniActions"><button id="remodernDlgClose" type="button" class="primary" data-i18n="remodernDlgClose"></button></div>
+            </dialog>
             <div id="skinNow"></div>
             <details id="skinShelf" class="subPanel" open>
               <summary><span data-i18n="skinShelf"></span> <span id="skinShelfCount"></span></summary>
+              <!-- 🧺 trk229：スキンが53種になったので、さがす・並べる・お気に入り・隠すを足しました -->
+              <div id="skinFind">
+                <label class="skinFindBox"><span data-i18n="skinSearchLabel"></span>
+                  <input id="skinSearch" type="search" data-i18n-placeholder="skinSearchHint" autocomplete="off"></label>
+                <label class="skinFindBox"><span data-i18n="skinSortLabel"></span>
+                  <select id="skinSort">
+                    <option value="default" data-i18n="skinSortDefault"></option>
+                    <option value="name" data-i18n="skinSortName"></option>
+                    <option value="used" data-i18n="skinSortUsed"></option>
+                    <option value="recent" data-i18n="skinSortRecent"></option>
+                  </select></label>
+                <!-- 📚 trk274：巻で絞る（既定は定番＋ウィザードだけ。全巻は選んだときだけ出す） -->
+                <label class="skinFindBox"><span data-i18n="skinVolLabel"></span>
+                  <select id="skinVol" data-i18n-aria="skinVolLabel"></select></label>
+                <button type="button" class="miniBtn" id="skinVolBtn" popovertarget="skinVolPanel" data-i18n="skinVolOpen"></button>
+              </div>
+              <!-- 📚 trk274：巻を切り替えた結果を、画面の見た目と同時に読み上げる（G-3） -->
+              <p class="hint status" id="skinVolStatus" role="status" aria-live="polite"></p>
               <div id="skinChips"></div>
               <div id="skinGrid"></div>
+              <p class="hint" id="skinNoMatch" hidden data-i18n="skinNoMatch"></p>
+              <!-- 📚 trk274：巻から選ぶ（popover＝トップレイヤー・外側タップと Esc で閉じる・モーダルにしない） -->
+              <div id="skinVolPanel" popover aria-labelledby="skinVolHintText">
+                <p class="hint" id="skinVolHintText" data-i18n="skinVolHint"></p>
+                <div id="skinVolList"></div>
+                <!-- ⌨ trk276：キーで選ぶ（使わない・読み方向・4 つのキーのアサイン） -->
+                <details class="subPanel" id="skinVolKeyBox">
+                  <summary data-i18n="skinVolKeysTitle"></summary>
+                  <div class="seg volSeg" id="skinVolNavRow">
+                    <button type="button" data-volnav="on" data-i18n="skinVolKeysOn"></button>
+                    <button type="button" data-volnav="off" data-i18n="skinVolKeysOff"></button>
+                  </div>
+                  <p class="hint volLabel" data-i18n="skinVolDirTitle"></p>
+                  <div class="seg volSeg" id="skinVolDirRow">
+                    <button type="button" data-voldir="row" data-i18n="skinVolDirRowLabel"></button>
+                    <button type="button" data-voldir="col" data-i18n="skinVolDirColLabel"></button>
+                  </div>
+                  <p class="hint volLabel" data-i18n="skinVolWrapTitle"></p>
+                  <div class="seg volSeg" id="skinVolWrapRow">
+                    <button type="button" data-volwrap="stop" data-i18n="skinVolWrapStop"></button>
+                    <button type="button" data-volwrap="wrap" data-i18n="skinVolWrapLoop"></button>
+                    <button type="button" data-volwrap="chain" data-i18n="skinVolWrapChain"></button>
+                  </div>
+                  <div class="volKeyPad" id="skinVolKeyPad">
+                    <button type="button" class="miniBtn volKey" data-volkey="L" data-i18n-aria="skinVolKeyLeft"></button>
+                    <button type="button" class="miniBtn volKey" data-volkey="R" data-i18n-aria="skinVolKeyRight"></button>
+                    <button type="button" class="miniBtn volKey" data-volkey="U" data-i18n-aria="skinVolKeyUp"></button>
+                    <button type="button" class="miniBtn volKey" data-volkey="D" data-i18n-aria="skinVolKeyDown"></button>
+                  </div>
+                  <p class="hint" data-i18n="skinVolKeysHint"></p>
+                </details>
+              </div>
+              <!-- 🧺 trk241：隠したスキンがあるときだけ出る案内（隠しっぱなしにしないため） -->
+              <p class="hint skinHiddenNote" id="skinHiddenNote" hidden>
+                <span id="skinHiddenNoteText"></span>
+                <button type="button" class="miniBtn" id="skinHiddenRestore"></button>
+              </p>
+              <details id="skinManage" class="subPanel">
+                <summary><span data-i18n="skinManageTitle"></span> <span id="skinManageCount"></span></summary>
+                <div class="hint" data-i18n="skinManageHint"></div>
+                <!-- 🧺 trk241：スキンが増えても整理できるよう、さがす・絞る・まとめてを足しました -->
+                <div id="skinManageFind">
+                  <label class="skinFindBox"><span data-i18n="skinSearchLabel"></span>
+                    <input id="skinManageSearch" type="search" data-i18n-placeholder="skinSearchHint" autocomplete="off"></label>
+                  <label class="skinFindBox"><span data-i18n="skinManageFilterLabel"></span>
+                    <select id="skinManageFilter">
+                      <option value="all" data-i18n="skinManageFilterAll"></option>
+                      <option value="fav" data-i18n="skinManageFilterFav"></option>
+                      <option value="hidden" data-i18n="skinManageFilterHidden"></option>
+                      <option value="unused" data-i18n="skinManageFilterUnused"></option>
+                    </select></label>
+                </div>
+                <div id="skinManageBulk">
+                  <button type="button" class="miniBtn" id="skinManageHideUnused"></button>
+                  <button type="button" class="miniBtn" id="skinManageRestoreAll"></button>
+                </div>
+                <div id="skinManageList"></div>
+                <p class="hint" id="skinManageNothing" hidden data-i18n="skinNoMatch"></p>
+              </details>
+            </details>
+
+            <!-- 📚 trk326（R-SKIN-1）：旧配色（legacyColors）をこの端末だけ使う。中身は js/custom.js が作る -->
+            <details id="skinLegacyBox" class="subPanel" hidden>
+              <summary data-i18n="skinLegacyLabel"></summary>
+              <div class="hint" data-i18n="skinLegacyHint"></div>
+              <div id="skinLegacyList" class="skinLegacyList"></div>
+              <div id="skinLegacyStatus" class="hint status" role="status" aria-live="polite"></div>
+            </details>
+            <!-- 📚 trk326：巻別スキンの受け子（R-VOL-1）。検証は js/library-receiver.js、保存と画面は js/custom.js -->
+            <details id="skinImportPanel" class="subPanel">
+              <summary data-i18n="skinImportTitle"></summary>
+              <div class="hint" data-i18n="skinImportHint"></div>
+              <div class="miniActions">
+                <button id="skinImportBtn" type="button" data-i18n="skinImportPick"></button>
+                <button id="skinImportClear" type="button" data-i18n="skinImportClear" disabled></button>
+              </div>
+              <input id="skinImportFile" type="file" accept="application/json,.json" hidden>
+              <div id="skinImportStatus" class="hint status" role="status" aria-live="polite"></div>
+              <div id="skinImportPreview" class="hint" hidden></div>
+              <div class="miniActions" id="skinImportActions" hidden>
+                <button id="skinImportSkip" type="button" class="primary" data-i18n="skinImportSkip"></button>
+                <button id="skinImportOverwrite" type="button" data-i18n="skinImportOverwrite"></button>
+                <button id="skinImportCancel" type="button" data-i18n="skinImportCancel"></button>
+              </div>
+              <div id="skinImportErrors" hidden></div>
+              <div id="skinImportSummary" class="hint" hidden></div>
+              <div id="skinImportList"></div>
             </details>
 
             <details id="skinMaker" class="subPanel devOnly">
@@ -628,6 +1030,16 @@
                   <option value="10">10%</option>
                 </select>
               </label>
+              <!-- 🎬 trk262：映像を見るときの操作パネルの出かた（🖥 全画面ビューアと ▶ メディアプレーヤー） -->
+              <label class="field">
+                <span data-i18n="videoMaxChrome"></span>
+                <select id="videoMaxChrome">
+                  <option value="full" data-i18n="videoChromeFull"></option>
+                  <option value="bottom" data-i18n="videoChromeBottom"></option>
+                  <option value="always" data-i18n="videoChromeAlways"></option>
+                  <option value="none" data-i18n="videoChromeNone"></option>
+                </select>
+              </label>
               <label class="field">
                 <span data-i18n="scrollSpeed"></span>
                 <span class="inline tight">
@@ -636,6 +1048,7 @@
                 </span>
               </label>
             </div>
+            <div class="hint" data-i18n="videoChromeHint"></div>
             <!-- extras.js がここに「背景の暗さ・ぼかし」を追加します -->
 
             <div class="inline">
@@ -660,6 +1073,19 @@
 
             <h3 data-i18n="swayTitle"></h3>
             <div class="hint" data-i18n="swayModeHint"></div>
+            <!-- 🛣 trk282：TRUCK の揺れは「道の種類」で決める（おまかせ＝80% は高速道路） -->
+            <label class="field">
+              <span data-i18n="swayRoadLabel"></span>
+              <select id="swayRoad">
+                <option value="auto" data-i18n="swayRoadAuto"></option>
+                <option value="highway" data-i18n="swayRoadHighway"></option>
+                <option value="mountain" data-i18n="swayRoadMountain"></option>
+                <option value="up" data-i18n="swayRoadUp"></option>
+                <option value="down" data-i18n="swayRoadDown"></option>
+                <option value="coast" data-i18n="swayRoadCoast"></option>
+              </select>
+            </label>
+            <div class="hint" data-i18n="swayRoadHint"></div>
             <label class="check"><input id="swayBeat" type="checkbox"><span data-i18n="swayBeat"></span></label>
             <label class="check"><input id="swayHit" type="checkbox"><span data-i18n="swayHit"></span></label>
             <div class="inline">
@@ -878,6 +1304,17 @@
             <div class="hint" data-i18n="showMasterDiffHint"></div>
 
             <h3 data-i18n="secMystery"></h3>
+            <!-- 🖥 trk222：画面の形は、常に選んだものを使う（オフなら開くたびに端末へ合わせて選び直す） -->
+            <label class="check"><input id="uiModeLock" type="checkbox"><span data-i18n="uiModeLock"></span></label>
+            <div class="hint" data-i18n="uiModeLockHint"></div>
+            <!-- 🎵 trk226：下の再生バーの位置の線に触れたときに、曲の位置を動かすか -->
+            <label class="check"><input id="playerBarSeekLock" type="checkbox"><span data-i18n="playerBarSeekLock"></span></label>
+            <div class="hint" data-i18n="playerBarSeekLockHint"></div>
+            <!-- 🎵 trk227：リピートボタンの段（なし⇄1曲 だけにする）と、シャッフルの範囲（いまの一覧から） -->
+            <label class="check"><input id="playerBarRepeatOneOnly" type="checkbox"><span data-i18n="playerBarRepeatOneOnly"></span></label>
+            <div class="hint" data-i18n="playerBarRepeatOneOnlyHint"></div>
+            <label class="check"><input id="playerBarShuffleInList" type="checkbox"><span data-i18n="playerBarShuffleInList"></span></label>
+            <div class="hint" data-i18n="playerBarShuffleInListHint"></div>
             <label class="check"><input id="swayAllModes" type="checkbox"><span data-i18n="swayAllModes"></span></label>
             <div class="hint" data-i18n="swayAllModesHint"></div>
             <label class="check"><input id="escNoReturn" type="checkbox"><span data-i18n="escNoReturn"></span></label>
@@ -904,6 +1341,9 @@
               </select>
             </label>
             <div class="hint" data-i18n="chartGenHint"></div>
+            <!-- 💾 trk234：パックを全部消す（確認2回。容量を空けたいときの最後の手段） -->
+            <div class="hint"><button id="packWipeBtn" type="button" data-i18n="packWipeAll"></button></div>
+            <div class="hint" data-i18n="packWipeAllHint"></div>
           </details>
 
           <details class="panel" open>
@@ -1045,9 +1485,77 @@
               </label>
               <button id="packOffBtn" type="button" data-i18n="packOff"></button>
             </div>
+            <!-- 💾 trk234：容量の見える化（入っているパックの合計・端末の空き）と、まとめて消す -->
+            <div id="packUsage" class="packUsage" hidden>
+              <div class="packUsageHead">
+                <b id="packUsageTotal"></b>
+                <span id="packUsageShare" class="hint"></span>
+              </div>
+              <div class="packUsageBar" id="packUsageBar"><i id="packUsageFill"></i></div>
+              <div class="hint" id="packUsageFree"></div>
+              <div class="hint" id="packUsageDetail"></div>
+              <div class="miniActions">
+                <button id="packPickAll" type="button" data-i18n="packSelectAll"></button>
+                <button id="packPickUnused" type="button" data-i18n="packSelectUnused"></button>
+                <button id="packPickNone" type="button" data-i18n="packSelectNone"></button>
+                <button id="packDeletePicked" type="button" disabled></button>
+              </div>
+              <div class="hint" id="packPickStatus"></div>
+            </div>
+            <!-- 🔤 trk238：入れているパックの書体の索引（起動のたびに manifest から作り直す・保存しない） -->
+            <details id="packFontIndexPanel" class="subPanel">
+              <summary data-i18n="fontIndexTitle"></summary>
+              <div class="hint" data-i18n="fontIndexHint"></div>
+              <div class="miniActions">
+                <input id="packFontIndexSearch" type="search" data-i18n-aria="fontIndexSearch" data-i18n-placeholder="fontIndexSearch" autocomplete="off">
+                <select id="packFontIndexOrder" data-i18n-aria="fontIndexOrder">
+                  <option value="family" data-i18n="fontIndexOrderFamily"></option>
+                  <option value="pack" data-i18n="fontIndexOrderPack"></option>
+                  <option value="size" data-i18n="fontIndexOrderSize"></option>
+                </select>
+              </div>
+              <div class="miniActions" id="packFontIndexTags" hidden></div>
+              <div class="hint" id="packFontIndexSummary"></div>
+              <div id="packFontIndexList"></div>
+              <div class="hint status" id="packFontIndexStatus"></div>
+            </details>
             <!-- verified.js が各パックに「✔公認・指紋・📋 公認リスト用にコピー」を追加します -->
             <div id="packList"></div>
             <div id="packStatus" class="hint status"></div>
+
+            <!-- 📚 trk230：倉庫（trk-Avatar-Library）の目録を読んで、そこから入れる。外部へは取りに行きません -->
+            <details id="packCatalogPanel" class="subPanel">
+              <summary data-i18n="catalogTitle"></summary>
+              <div class="hint" data-i18n="catalogHint"></div>
+              <div class="miniActions">
+                <label class="fileBtn small">
+                  <input id="catalogFile" type="file" accept=".json,application/json" hidden>
+                  <span data-i18n="catalogOpen"></span>
+                </label>
+                <!-- 📥 trk231：目録＋パックをまとめて選ぶ（名前で突き合わせて、まとめて入れる） -->
+                <label class="fileBtn small">
+                  <input id="catalogBundle" type="file" accept=".json,.stpack,application/json" multiple hidden>
+                  <span data-i18n="catalogBundleOpen"></span>
+                </label>
+                <!-- 📦 trk235：セット（.stlib / .zip）を 1 回選ぶだけで、目録とパックをまとめて入れる -->
+                <label class="fileBtn small">
+                  <input id="catalogSet" type="file" accept=".stlib,.zip,application/zip,application/octet-stream" hidden>
+                  <span data-i18n="catalogSetOpen"></span>
+                </label>
+              </div>
+              <div class="hint" data-i18n="catalogBundleHint"></div>
+              <div class="hint" data-i18n="catalogSetHint"></div>
+              <!-- 🔤 trk237：雰囲気のタグで一覧を絞る（目録の fonts[].tags） -->
+              <div class="miniActions" id="catalogTagFilter" hidden></div>
+              <div class="hint" id="catalogSummary"></div>
+              <!-- 💾 trk234：この目録のぶんを、まとめて消す（確認は1回） -->
+              <div class="miniActions" id="catalogBulkActions" hidden>
+                <button id="catalogRemoveAll" type="button"></button>
+              </div>
+              <div class="hint" id="catalogBulkStatus"></div>
+              <div id="catalogList"></div>
+              <div class="hint status" id="catalogStatus"></div>
+            </details>
 
             <details id="packBuilder" class="subPanel">
               <summary data-i18n="packBuild"></summary>
@@ -1083,6 +1591,31 @@
             </details>
           </details>
 
+          <!-- 🔄 新しい版の知らせ（trk242・js/sw-update.js）。どの端末でも「新しい版を確かめる」を押せる -->
+          <details class="panel" id="updatePanel">
+            <summary data-i18n="secUpdate"></summary>
+            <div class="hint" data-i18n="swUpdateHint"></div>
+            <!-- 🔔 trk255：「あとで」を24時間覚え、知らせそのものも止められる -->
+            <label class="check"><input id="swUpdateNoticeChk" type="checkbox"><span data-i18n="swUpdateNoticeChk"></span></label>
+            <div class="hint" data-i18n="swUpdateNoticeHint"></div>
+            <!-- 🏷 trk255：いまの版（ここだけに出す） -->
+            <div id="swUpdateVersion" class="hint"></div>
+            <div class="miniActions">
+              <button id="swUpdateCheckBtn" type="button" data-i18n="swUpdateCheck"></button>
+            </div>
+            <div id="swUpdateStatus" class="hint status" role="status" aria-live="polite"></div>
+          </details>
+
+          <!-- 📲 trk295：trk をアプリとして入れる（js/app-install.js）。iPhone は既存のホーム画面の案内を開く -->
+          <details class="panel" id="installPanel">
+            <summary data-i18n="secInstall"></summary>
+            <div class="hint" data-i18n="installHint"></div>
+            <div class="miniActions">
+              <button id="appInstallBtn" type="button" data-i18n="appInstallBtn" hidden></button>
+            </div>
+            <div id="appInstallState" class="hint status" role="status" aria-live="polite"></div>
+          </details>
+
           <!-- 💾 端末の保存（trk136）。書斎・パック・記録の保存を、ブラウザに消されにくい状態へ固定する -->
           <details class="panel" id="storagePanel">
             <summary data-i18n="secStorage"></summary>
@@ -1093,6 +1626,31 @@
             </div>
             <label class="check"><input id="ignoreLimitsChk" type="checkbox"><span data-i18n="ignoreLimits"></span></label>
             <div class="hint" data-i18n="ignoreLimitsHint"></div>
+            <!-- 📤📥 trk247：設定の書き出し・読み込み（これまで 🛟 緊急復旧にしか無かった導線を、保存の話をしに来る場所へ） -->
+            <h3 data-i18n="storageTransferTitle"></h3>
+            <div class="hint" data-i18n="storageTransferHint"></div>
+            <div class="miniActions">
+              <button id="storageExportAllBtn" type="button" data-i18n="storageExportAllBtn"></button>
+              <button id="storageExportCoreBtn" type="button" data-i18n="storageExportCoreBtn"></button>
+              <button id="storageExportNotesBtn" type="button" data-i18n="storageExportNotesBtn"></button>
+              <label class="fileBtn small">
+                <input id="storageImportFile" type="file" accept="application/json,.json" hidden>
+                <span data-i18n="storageImportBtn"></span>
+              </label>
+            </div>
+            <div id="storageTransferState" class="hint status" role="status" aria-live="polite"></div>
+          </details>
+
+          <!-- 🍎 iPhone / iPad の案内（js/ios-pwa.js）。ほかの端末では hidden のまま出しません -->
+          <details class="panel ios-only" id="iosPanel">
+            <summary data-i18n="secIos"></summary>
+            <div class="hint" data-i18n="iosStorageHint"></div>
+            <div class="hint" data-i18n="iosAudioHint"></div>
+            <div class="miniActions">
+              <button id="iosInstallBtn" type="button" data-i18n="iosInstallBtn"></button>
+              <button id="iosUpdateBtn" type="button" data-i18n="iosUpdateBtn"></button>
+            </div>
+            <div id="iosUpdateStatus" class="hint status" role="status" aria-live="polite"></div>
           </details>
 
           <!-- 🎵 明示的に保存した曲・動画だけを IndexedDB の仮想棚へ置く（trk1.0.4候補） -->
@@ -1167,6 +1725,24 @@
             <div class="miniActions">
               <button id="folderAutoNowBtn" type="button" data-i18n="folderAutoNow"></button>
             </div>
+            <!-- 🔓 trk293：許可のワンボタン（初期オフ。オンにすると、覚えたフォルダーがあるときだけ出る） -->
+            <label class="check"><input id="permAskBtnChk" type="checkbox"><span data-i18n="permAskBtnChk"></span></label>
+            <div id="permAskBtnHint" class="hint" data-i18n="permAskBtnHint"></div>
+            <div class="miniActions">
+              <button id="permAskBtn" type="button" data-i18n="permAskBtn" hidden></button>
+            </div>
+            <!-- 📖 trk295：「毎回許可」の選び方（ブラウザーの確認の3択の意味） -->
+            <details id="permGuide" class="hint">
+              <summary data-i18n="permGuideSummary"></summary>
+              <div class="hint" data-i18n="permGuideLead"></div>
+              <ol class="iosInstallSteps">
+                <li data-i18n="permGuideStep1"></li>
+                <li data-i18n="permGuideStep2"></li>
+                <li data-i18n="permGuideStep3"></li>
+                <li data-i18n="permGuideStep4"></li>
+              </ol>
+              <div class="hint" data-i18n="permGuideTip"></div>
+            </details>
             <div id="folderPermState" class="hint" role="status" aria-live="polite"></div>
             <div id="libShareState" class="hint"></div>
             <div id="libShareStatus" class="hint status"></div>
@@ -1330,6 +1906,16 @@
             <div id="favPanelBody"></div>
           </details>
 
+          <details class="panel" id="hideSettingsPanel">
+            <summary data-i18n="hideSettingsTitle">🙈 設定を隠す</summary>
+            <p class="hint" data-i18n="hideSettingsHint"></p>
+            <div id="hideSettingsList" class="hideSettingsList"></div>
+            <div class="miniActions" style="margin-top:8px">
+              <button id="hideSettingsResetBtn" type="button" class="slim" data-i18n="hideSettingsReset">↺ すべて表示に戻す</button>
+              <span id="hideSettingsStatus" class="hint"></span>
+            </div>
+          </details>
+
           <details class="panel" id="emergencyPanel">
             <summary>🛟 緊急復旧 / Emergency Recovery</summary>
             <div class="hint">
@@ -1342,6 +1928,8 @@
               <button id="emergencyAudioResetBtn" type="button">🔊 音リセット</button>
               <button id="emergencyWelcomeBtn" type="button" data-i18n="welcomeReplay">👋 ようこそをもう一度</button>
             </div>
+            <label class="check" style="margin-top:10px"><input id="showFloatingSafeBtn" type="checkbox"><span data-i18n="showFloatingSafeBtnLabel">🛟 セーフモードのボタンを表示する</span></label>
+            <p class="hint" data-i18n="showFloatingSafeBtnHint"></p>
             <div class="miniActions">
               <button id="emergencyExportNotesBtn" type="button">🎨 ノーツ設定を書き出し</button>
               <button id="emergencyExportAllBtn" type="button">💾 全設定を書き出し</button>
@@ -1350,6 +1938,7 @@
                 <span>📥 設定を読み込み</span>
               </label>
             </div>
+            <p class="hint" data-i18n="emergencyTransferNote"></p>
             <div class="hint" style="margin-top:8px">
               <details>
                 <summary>URLコマンド一覧</summary>
@@ -1421,8 +2010,8 @@
       <div id="credits"></div>
       <div class="hint pclCredit" hidden></div>
       <div class="hint center contactLine" style="margin-top:14px">
-        <a href="https://github.com/TonbokiriRaikiriMuramasa-Taikoubou/trk/issues/new?template=feedback.yml" target="_blank" rel="noopener noreferrer" data-i18n="feedbackLink"></a> ／
-        <a href="https://github.com/TonbokiriRaikiriMuramasa-Taikoubou/trk/issues/new?template=chart_feedback.yml" target="_blank" rel="noopener noreferrer" data-i18n="chartFeedbackLink"></a> ／
+        <a href="https://github.com/Trk-Nexus/trk/issues/new?template=feedback.yml" target="_blank" rel="noopener noreferrer" data-i18n="feedbackLink"></a> ／
+        <a href="https://github.com/Trk-Nexus/trk/issues/new?template=chart_feedback.yml" target="_blank" rel="noopener noreferrer" data-i18n="chartFeedbackLink"></a> ／
         <a href="privacy.html">Privacy / プライバシー</a> ／
         <a href="credits.html">Credits / 権利</a>
       </div>
@@ -1460,6 +2049,8 @@
           <input id="studyArchiveInput" type="file" multiple accept=".cbz,.zip,application/zip,application/x-cbz,application/vnd.comicbook+zip" hidden>
           <span data-i18n="studyImportArchives">🗜 CBZ/ZIPを取り込む</span>
         </label>
+        <!-- 🎨 trk297：スキンのボタン（設定でオンのときだけ見える。押すと、この領域だけのダイアログ） -->
+        <button id="studyRemodernBtn" type="button" class="study-file-btn" data-remodern-open="study" hidden data-i18n="studyRemodernBtn">🎨 スキン</button>
         <button id="studyHeaderSettingsBtn" type="button" class="study-file-btn" aria-haspopup="dialog" aria-controls="studySettings" data-i18n="studySettings">⚙ 設定</button>
         <button id="studyHelpBtn" type="button" class="study-close-btn" data-i18n="studyHelp">❓ キーの説明</button>
         <button id="studyCloseBtn" type="button" class="study-close-btn" data-i18n="studyClose">✕ 書斎を閉じる</button>
@@ -1467,7 +2058,7 @@
     </header>
 
     <div class="study-workspace">
-      <aside id="studyShelf" class="study-shelf" aria-label="Study shelf">
+      <aside id="studyShelf" class="study-shelf" data-i18n-aria="studyA11yShelf">
         <div class="study-shelf-heading">
           <button id="studyShelfCreateFolder" type="button" class="study-shelf-title" data-i18n="studyShelf">本棚</button>
           <div class="study-shelf-btns">
@@ -1542,10 +2133,10 @@
               <input id="studyAmerican" type="checkbox">
               <span data-i18n="studyAmerican">🇺🇸 アメリカン（左右・順序反転）</span>
             </label>
-            <span id="studyZoomGroup" class="study-zoom-group" role="group" aria-label="Zoom">
-              <button id="studyZoomOut" type="button" class="study-small-btn" aria-label="Zoom out">−</button>
+            <span id="studyZoomGroup" class="study-zoom-group" role="group" data-i18n-aria="studyA11yZoom">
+              <button id="studyZoomOut" type="button" class="study-small-btn" data-i18n-aria="studyA11yZoomOut">−</button>
               <span id="studyZoomLabel" class="study-zoom-label">100%</span>
-              <button id="studyZoomIn" type="button" class="study-small-btn" aria-label="Zoom in">＋</button>
+              <button id="studyZoomIn" type="button" class="study-small-btn" data-i18n-aria="studyA11yZoomIn">＋</button>
               <button id="studyZoomFit" type="button" class="study-small-btn" data-i18n="studyZoomFit">フィット</button>
             </span>
             <button id="studyAutoScrollBtn" type="button" class="study-small-btn study-auto-scroll-btn" aria-pressed="false" data-i18n="studyAutoScrollStart" hidden>⏩ 自動スクロール</button>
@@ -1594,18 +2185,18 @@
             </label>
             <span id="studyTextTuneRow" class="study-option">
               <span data-i18n="studyTextTuneLabel">文字</span>
-              <select id="studyTextSize" aria-label="Text size">
+              <select id="studyTextSize" data-i18n-aria="studyA11yTextSize">
                 <option value="small" data-i18n="studyTextSizeSmall">小</option>
                 <option value="normal" data-i18n="studyTextSizeNormal">普通</option>
                 <option value="large" data-i18n="studyTextSizeLarge">大</option>
                 <option value="huge" data-i18n="studyTextSizeHuge">特大</option>
               </select>
-              <select id="studyTextSpacing" aria-label="Line spacing">
+              <select id="studyTextSpacing" data-i18n-aria="studyA11yLineSpacing">
                 <option value="tight" data-i18n="studyTextSpacingTight">詰める</option>
                 <option value="normal" data-i18n="studyTextSpacingNormal">行間ふつう</option>
                 <option value="loose" data-i18n="studyTextSpacingLoose">行間広め</option>
               </select>
-              <select id="studyTextWidth" aria-label="Margins">
+              <select id="studyTextWidth" data-i18n-aria="studyA11yMargins">
                 <option value="narrow" data-i18n="studyTextWidthNarrow">余白せまい</option>
                 <option value="normal" data-i18n="studyTextWidthNormal">余白ふつう</option>
                 <option value="wide" data-i18n="studyTextWidthWide">余白広い</option>
@@ -1666,7 +2257,7 @@
           </div>
 
           <div id="studyPanels" class="study-panels">
-            <section id="studyTvPane" class="study-tv-pane" hidden aria-label="TV">
+            <section id="studyTvPane" class="study-tv-pane" hidden data-i18n-aria="studyA11yTv">
               <div id="studyTvScreen" class="study-tv-screen">
                 <img id="studyTvArt" class="study-tv-art" alt="" hidden>
                 <div id="studyTvEmpty" class="study-tv-empty" data-i18n="studyTvEmpty">動画または曲のジャケットがここに表示されます。</div>
@@ -1678,7 +2269,7 @@
               </div>
             </section>
             <section id="studyContentPane" class="study-content-pane">
-              <div id="studyImageStage" class="study-image-stage" role="region" tabindex="0" aria-label="Image reader" hidden data-mode="single">
+              <div id="studyImageStage" class="study-image-stage" role="region" tabindex="0" data-i18n-aria="studyA11yImageReader" hidden data-mode="single">
                 <div id="studySingleWrap" class="study-single-wrap">
                   <img id="studyPageSingle" class="study-page-image study-page-single" alt="" draggable="false" hidden>
                 </div>
@@ -1712,7 +2303,7 @@
           <footer class="study-reader-footer">
             <button id="studyNextBtn" type="button" class="study-small-btn" data-i18n="studyNext">◀ 次へ</button>
             <div id="studyProgressWrap" class="study-progress-wrap" hidden>
-              <input id="studyProgress" type="range" min="0" max="0" step="1" aria-label="Page">
+              <input id="studyProgress" type="range" min="0" max="0" step="1" data-i18n-aria="studyA11yPage">
               <span id="studyPageCount" class="study-page-count"></span>
               <button id="studyProgressDoneBtn" type="button" class="study-progress-done" data-i18n="studyProgressDone">完了</button>
             </div>
@@ -1896,7 +2487,7 @@
   </div>
 </section>
 
-<button id="floatingSafeBtn" type="button" title="🛟 セーフモード (5回クリックで緊急復旧) / ?safe=1" style="position:fixed;right:8px;bottom:8px;z-index:99999;opacity:.15;width:36px;height:36px;border-radius:50%;background:#111;color:#fff;border:2px solid #0f0;font-size:18px;display:flex;align-items:center;justify-content:center;transition:opacity .2s, transform .2s;cursor:pointer">🛟</button>
+<button id="floatingSafeBtn" type="button" hidden title="🛟 セーフモード (5回クリックで緊急復旧) / ?safe=1" style="position:fixed;right:8px;bottom:8px;z-index:99999;opacity:.15;width:36px;height:36px;border-radius:50%;background:#111;color:#fff;border:2px solid #0f0;font-size:18px;display:flex;align-items:center;justify-content:center;transition:opacity .2s, transform .2s;cursor:pointer">🛟</button>
 <script>
   (function(){
     const b = document.getElementById("floatingSafeBtn");
@@ -1923,12 +2514,25 @@
 <script src="js/i18n-options.js"></script>
 <!-- ===== データ ===== -->
 <script src="js/data.js"></script>
+<script src="js/library-receiver.js"></script>
+<!-- 🔤 trk246：書体の組み合わせの目録（14組）。data.js の後・core.js の前に読みます（core.js が settings を作るときに使うため） -->
+<script src="js/typography.js"></script>
+<script src="js/title-font.js"></script>
 <!-- ▼ キャラクター（data.js の後、core.js の前）
      初音ミク：PCL（非営利・無償のみ）。商用の派生版では、この1行とファイルを削除してください。 -->
 <script src="js/characters/miku.js"></script>
+<!-- 🧙 trk269：Wizard のスキン（Skin 側の目録から生成。data.js の後・core.js の前に） -->
+<script src="js/skins-wizard.js"></script>
+<!-- 📚 trk274：巻別のスキン 176 種と、巻の目録（13 巻）。Skin 側の目録から生成（同じく data.js の後・core.js の前） -->
+<script src="js/skins-volumes.js"></script>
 <script src="js/tv-presets.js"></script>
 <!-- ▲ 自作キャラのMODは、この下に <script src="js/characters/○○.js"></script> を足してください -->
 <!-- ===== 土台 ===== -->
+<!-- 🎨 trk297：trk-re-modern の領域ごとの選択（純粋な道具。core.js より前） -->
+<script src="js/remodern-regions.js"></script>
+<script src="js/remodern-work.js"></script>
+<script src="js/remodern-registry.js"></script>
+<script src="js/remodern-paint.js"></script>
 <script src="js/core.js"></script>
 <!-- 🪶 軽量化（スマホ・低出力端末向け。描画する側より前に読みます） -->
 <script src="js/lite.js"></script>
@@ -1948,6 +2552,8 @@
 <script src="js/game.js"></script>
 <script src="js/render.js"></script>
 <script src="js/custom.js"></script>
+<!-- 📚 trk230：倉庫の目録からパックを入れる（custom.js の installPackFile を使う） -->
+<script src="js/pack-catalog.js"></script>
 <!-- ===== モード ===== -->
 <script src="js/truck.js"></script>
 <script src="js/modes.js"></script>
@@ -1961,6 +2567,7 @@
 <script src="js/tv-dock.js"></script>
 <script src="js/tv-rich.js"></script>
 <!-- 🖥 動画の全画面表示（TVドックの⛶とメディアプレーヤーの「全画面で表示」で使います） -->
+<script src="js/viewer-chrome.js"></script>
 <script src="js/video-max.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/fx-synth.js"></script>
@@ -1986,6 +2593,8 @@
 <!-- ✨ フレーム補完（動き補償・光学フロー／WebGL2） -->
 <script src="js/frame-interp.js"></script>
 <script src="js/media-player-mode.js"></script>
+<script src="js/cli-pure.js"></script>
+<script src="js/cli.js"></script>
 <!-- 📚 端末内の画像・テキスト閲覧モード（外部ライブラリ／アップロードなし） -->
 <script src="js/study-room-utils.js"></script>
 <script src="js/study-room.js"></script>
@@ -1993,5 +2602,32 @@
 <script src="js/zip-io.js"></script>
 <script src="js/backup.js"></script>
 <script src="js/share-inbox.js"></script>
+<!-- 📱 スマホ用の画面シェル（下部ナビ・エフェクト画面・縦向きの案内）。PC では何もしません -->
+<script src="js/mobile-shell.js"></script>
+<!-- ⚙ 設定で開いた欄を覚える（スマホのときだけ） -->
+<script src="js/mobile-settings-panels.js"></script>
+<!-- 🎵 画面の下に出す再生バー（曲名・再生・曲送り・位置・音量）。設定で on／auto／off -->
+<script src="js/player-bar.js"></script>
+<!-- ⧉ 操作パネルを別窓に出す（PC型のみ。Document PiP が無ければ小窓）。bar の後で読む -->
+<script src="js/player-panel.js"></script>
+<!-- 🖥 画面と再生バーの追加の設定（拡大率・アイコンの大きさ・画面の形の固定・エフェクト欄の置き場所） -->
+<script src="js/ui-prefs.js"></script>
+<!-- 🍎 iPhone / iPad の調整（インストール案内・音のセッション）。ほかの端末では何もしません -->
+<!-- 🔄 trk242：新しい版の知らせ（登録と見張りと帯をこのファイルが受け持つ） -->
+<script src="js/sw-update.js"></script>
+<!-- 🔍 trk243：設定のさがす -->
+<script src="js/settings-find.js"></script>
+<!-- ⚖ trk279：設定の「段」（見せる量）。さがす・開閉の記憶より後に読みます -->
+<script src="js/settings-level.js"></script>
+<script src="js/ios-pwa.js"></script>
+<script src="js/app-install.js"></script>
+<!-- 🎨 trk297：設定「🎨 スキン」の領域ごとの 3 行（js/remodern-regions.js を使う） -->
+<script src="js/remodern-ui.js"></script>
+  <!-- 🔄 trk242：新しい版が入ったときだけ出る小さな帯（窓で覆わない・遊びを止めない） -->
+  <div id="swUpdateBar" class="swUpdateBar" role="status" aria-live="polite" hidden>
+    <span id="swUpdateBarText" data-i18n="swUpdateBarText"></span>
+    <button id="swUpdateNow" type="button" data-i18n="swUpdateNow"></button>
+    <button id="swUpdateLater" type="button" data-i18n="swUpdateLater"></button>
+  </div>
 </body>
 </html>

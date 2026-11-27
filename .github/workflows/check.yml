@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# 変更のたびに `npm run check` を通す（静的検査・セキュリティ・a11y・vendor・各機能テスト）。
+# ビルドはありません。配布物は .github/workflows/pages.yml がそのまま出します。
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Run checks
+        # npm run check = check-repo / check-security / check-a11y / check-vendor /
+        # check-mmd-motion-data / check-study-room / check-lite / run-tests
+        run: npm run check
+      - name: Run tests outside UTC
+        # ランナーは UTC で動くので、ローカル時刻を使うコードの不具合は UTC では見えません
+        # （trk224・レビュー F1：ZIP の時刻が TZ 依存で、UTC 以外では release-layout が落ちていた）。
+        # 日本（UTC+9・日付をまたぐ側）でもテストを流しておきます。
+        env:
+          TZ: Asia/Tokyo
+        run: node tools/run-tests.mjs
+      - name: Browser smoke (trk289)
+        # 実ブラウザーで起動・譜面・画面の押下を見る（tools/smoke-browser.mjs --compare）。
+        # 基準（tests/fixtures/smoke-baseline.json）と比べ、新しいエラー・未解決の名前・譜面の差で失敗する。
+        # ランナーの Google Chrome を使う。puppeteer-core は package.json に入れず、この手順だけで入れる（--no-save）。
+        env:
+          SMOKE_CHROME: /usr/bin/google-chrome
+          SMOKE_CHROME_ARGS: '["--no-sandbox"]'
+          SMOKE_PUPPETEER: puppeteer-core
+        run: |
+          test -x "$SMOKE_CHROME" || { echo "Chrome が見つかりません: $SMOKE_CHROME"; exit 1; }
+          npm install --no-save puppeteer-core@23.11.1
+          node tools/smoke-browser.mjs --compare

@@ -14,7 +14,7 @@ const MEDIA_EXT = ["mp4", "m4a", "m4b", "mp3", "ogg", "oga", "opus", "wav", "web
 const LIB_MAX = 3000, LIB_SHOW = 300, ADDED_MAX = 50, CHART_SUFFIX = ".shadow-taiko.json"; /* ADDED_MAX はセッション内リストのみ */
 const MEDIA_KEEP_BYTES_1G = 1024 ** 3, MEDIA_KEEP_BYTES_5G = 5 * 1024 ** 3;
 const TRK_PUBLIC_PAGE_URL = "https://freegame-mugen.jp/puzzle/game_15772.html";
-const TRK_OLD_PROJECT_URL = "https://github.com/TonbokiriRaikiriMuramasa-Taikoubou/trk";
+const TRK_OLD_PROJECT_URL = "https://github.com/Trk-Nexus/trk";
 const TRK_OLD_GAME_GUIDE_NOTE = "非営利の紹介プレイリスト。音源は同梱しません。公式の入手先からどうぞ。";
 function mediaKeepCapBytes() {
   return core.settings.mediaKeepLimit === "unlimited" ? Infinity
@@ -1875,6 +1875,23 @@ function ensureTrkClassicPlaylist(opts) {
   if (doToast) try { plToast(tr("trkClassicAdded", { n: wishes.length })); } catch(_){}
   if (go) { core.settings.libTab = "pl:" + TRK_CLASSIC_ID; core.saveUserPrefs(); try { renderLib(); } catch(_){} }
   return true;
+}
+/* 🎧 trk327：いまのキューからプレイリストを作る（利用者が押したときだけ・曲ファイルは動かさない）。
+   name は空なら「Queue」。戻り値 { ok, id, count, name } か { ok:false, reason: "empty"|"bad" }。 */
+function createPlaylistFromSongs(name, keys) {
+  const list = Array.isArray(keys) ? [...new Set(keys.filter(k => typeof k === "string" && k.length > 0 && k.length <= 200))].slice(0, 500) : [];
+  if (!list.length) return { ok: false, reason: "empty" };
+  const clean = String(name == null ? "" : name).trim().slice(0, 40) || "Queue";
+  const id = "pl-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 1000).toString(36);
+  const p = plSanitize({ id, name: clean, icon: "\uD83C\uDFA7", color: "none", tags: ["queue"], wish: [], songs: list, createdAt: Date.now() });
+  if (!p) return { ok: false, reason: "bad" };
+  core.settings.playlists.push(p);
+  if (core.saveUserPrefs() === false) {
+    core.settings.playlists = core.settings.playlists.filter(x => x !== p);
+    return { ok: false, reason: "save" };
+  }
+  try { renderLib(); } catch (_) {}
+  return { ok: true, id, count: p.songs.length, name: clean };
 }
 /* 🎓 trk's OST Vol.1 — オリジナル曲とチュートリアルのデモ曲をまとめるプレイリスト。
    🐔 trk's playlist の中（Game Vol.1 の下）に置く。開いたタブは libOpenTabs で残るため
@@ -4313,9 +4330,16 @@ function previewContinue() {
   return true;
 }
 video.addEventListener("canplay", () => { if (previewPending) { previewPending = false; startPreview(); } });
+/* 🎵 trk226：試聴が終わったときに戻る位置。リピートが「1曲」なら頭から、
+   それ以外は試聴の開始位置（プレビューの仕様）。下の再生バーの 🔁 と同じ設定を見ます。
+   （純粋関数として切り出し、テストから直接動かせるようにしています） */
+function previewRestartFor(repeat, start) {
+  const at = Number(start);
+  return repeat === "one" ? 0 : (Number.isFinite(at) ? at : 0);
+}
 video.addEventListener("ended", () => {
   if (window._trkMediaPlayerMode || core.phase !== "title" || !core.currentSong || !core.settings.previewEnabled) return;
-  try { video.currentTime = previewStartFor(); } catch (_) {}
+  try { video.currentTime = previewRestartFor(core.settings.mediaRepeat, previewStartFor()); } catch (_) {}
   video.play().catch(() => {});
 });
 on("beforePlay", () => { previewPending = false; stopPreview(); startBarClose(); });   /* trk193：開始位置バーも閉じる */
@@ -4715,14 +4739,18 @@ async function trySongChart() {
 /* ---------- 📻 ラジオ：曲が終わったら、少しして次の曲へ ---------- */
 let radioTimer = 0, radioTick = 0;
 function cancelRadio() { clearTimeout(radioTimer); clearInterval(radioTick); radioTimer = radioTick = 0; }
+/* シャッフルの対象（❓trk227「シャッフルは、いまの一覧（プレイリスト）の中から選ぶ」）
+   ・ライブラリに表示している一覧（libView＝表示順）があればそれ。無ければ全曲
+   ・曲送り（nextSong／prevSong）と同じ並びなので、「見えている順番の中でランダム」になる */
+function shufflePool() { return libView.length ? libView.slice() : allSongs(); }
 function nextSong() {
-  const list = libView.length ? libView : allSongs(); if (!list.length) return null;
+  const list = shufflePool(); if (!list.length) return null;
   const i = core.currentSong ? list.findIndex(x => x.key === core.currentSong.key) : -1;
   return list[(i + 1) % list.length];
 }
 /* 📺 TVドックの ◀ から使う（前の曲。端は末尾へ回り込む。曲が無いときは null） */
 function prevSong() {
-  const list = libView.length ? libView : allSongs(); if (!list.length) return null;
+  const list = shufflePool(); if (!list.length) return null;
   const i = core.currentSong ? Math.max(0, list.findIndex(x => x.key === core.currentSong.key)) : 0;
   return list[(i - 1 + list.length) % list.length];
 }
@@ -4968,15 +4996,54 @@ async function folderAutoKick(e) {
     core.setStatus("libStatus", "folderAutoChecking", { name:h.name });
     const p = await folderPermissionOf(h);
     if (p === "granted") { await useHandle(h, false, wasShared); markFolderAccess(true); return; }
-    if (p === "denied") { core.setStatus("libShareStatus", "libDenied"); syncShareUI(); return; }
+    /* trk293：拒否されているときは「なぜ曲が出ないか」と直し方を出す（黙って libDenied だけにしない） */
+    if (p === "denied") { core.setStatus("libShareStatus", "folderPermDenied", { name:h.name }); syncShareUI(); return; }
     /* ここはクリック／キー入力の中。ブラウザーの確認は、この中でしか出せない */
     const r = await h.requestPermission({ mode:"read" });
     if (r === "granted") { await useHandle(h, false, wasShared); markFolderAccess(false); }   /* 今回の許可（毎回許可かは分からない） */
-    else { core.setStatus("libShareStatus", "libDenied"); core.$("libReconnectBtn").hidden = false; showReconnect(); syncShareUI(); }
+    else { core.setStatus("libShareStatus", r === "denied" ? "folderPermDenied" : "libDenied", { name:h.name }); core.$("libReconnectBtn").hidden = false; showReconnect(); syncShareUI(); }
   } catch (_) {
     core.setStatus("libShareStatus", "libDenied");
     core.$("libReconnectBtn").hidden = false; showReconnect(); syncShareUI();
   } finally { folderAutoBusy = false; }
+}
+/* 🔓 trk293：「共有の許可をブラウザに求める」ワンボタン（設定でオン・初期オフ）。
+   ボタンのクリックの中で、まだ許可が要る1本だけ requestPermission する（1タップ＝1本）。
+   ・許可が生きている → そのまま読む ・確認待ち（prompt）→ ブラウザーの確認を出す
+   ・拒否（denied）→ ブラウザーはもう確認を出さないので、直し方（サイトの設定）だけを出す。
+   「毎回許可」はブラウザーの確認でしか選べない（アプリからは強制できない）。 */
+async function askFolderPermissionNow() {
+  disarmFolderAutoRead();
+  const registry = sharedFolders.slice();
+  const handles = registry.length ? registry.map(f => f.handle) : (libHandle ? [libHandle] : []);
+  if (!handles.length) { core.setStatus("libShareStatus", "permAskNoFolder"); syncShareUI(); return; }
+  let target = null, state = "granted";
+  for (const h of handles) {
+    const q = await folderPermissionOf(h);
+    if (q !== "granted") { target = h; state = q; break; }
+  }
+  if (target && state === "denied") {
+    folderLastPermission = "denied";
+    core.setStatus("libShareStatus", "folderPermDenied", { name:target.name });
+    syncShareUI(); return;
+  }
+  if (target) {
+    const answer = await target.requestPermission({ mode:"read" }).catch(() => "denied");
+    folderLastPermission = answer;
+    if (answer !== "granted") {
+      core.setStatus("libShareStatus", answer === "denied" ? "folderPermDenied" : "permAskNotNow", { name:target.name });
+      syncShareUI(); return;
+    }
+    markFolderAccess(false);   /* 今回の許可（毎回許可かは分からない）→ 案内は folderPermSession の文言で出る */
+  } else {
+    markFolderAccess(folderAccessPersisted);
+  }
+  try {
+    if (registry.length) await readSharedFolders();
+    else await useHandle(libHandle, false, libShared);
+    core.setStatus("libShareStatus", "permAskGranted");
+  } catch (e) { console.error(e); core.setStatus("libShareStatus", "libDenied"); }
+  syncShareUI();
 }
 function armFolderAutoRead() {
   if (folderAutoArmed) return;
@@ -5391,6 +5458,10 @@ function syncShareUI() {
   /* 🔓 trk194：自動の読み取りの設定と、いまの許可の状態（次回も自動で読めるか） */
   const autoChk = core.$("folderAutoReadChk"), autoHint = core.$("folderAutoReadHint"), permState = core.$("folderPermState");
   if (autoChk) autoChk.checked = core.settings.folderAutoRead !== false;
+  /* 🔓 trk293：許可のワンボタン（オンのときだけ・覚えたフォルダーがあるときだけ出す） */
+  const askChk = core.$("permAskBtnChk"), askBtn = core.$("permAskBtn");
+  if (askChk) askChk.checked = core.settings.permAskBtn === true;
+  if (askBtn) askBtn.hidden = !(core.settings.permAskBtn === true && (libHandle || (typeof sharedFolders !== "undefined" && sharedFolders.length)));
   if (autoHint) autoHint.textContent = tr("folderAutoReadHint");
   if (permState) permState.textContent = folderAccessPersisted ? tr("folderPermPersisted")
     : folderAccessSession ? tr("folderPermSession")
@@ -5696,6 +5767,15 @@ if (folderAutoReadChk) folderAutoReadChk.addEventListener("change", async () => 
   else { disarmFolderAutoRead(); syncShareUI(); }
 });
 /* 「いま読み取る」ボタン：確認が必要なときに、タップの中で許可を求める（自動の待ち合わせと同じ道） */
+/* 🔓 trk293：許可のワンボタン（設定で表示をオンにしたときだけ見える） */
+const permAskBtnChk = core.$("permAskBtnChk");
+if (permAskBtnChk) permAskBtnChk.addEventListener("change", () => {
+  core.settings.permAskBtn = !!permAskBtnChk.checked;
+  core.saveUserPrefs();
+  syncShareUI();
+});
+const permAskBtn = core.$("permAskBtn");
+if (permAskBtn) permAskBtn.addEventListener("click", () => { void askFolderPermissionNow(); });
 const folderAutoNowBtn = core.$("folderAutoNowBtn");
 if (folderAutoNowBtn) folderAutoNowBtn.addEventListener("click", () => { void folderAutoKick(); });
 const trkMusicFolderBtn = core.$("trkMusicFolderBtn");
@@ -5993,7 +6073,7 @@ window.Trk = window.Trk || {};
 core.on("phase", () => core.emit("nowPlaying", nowPlaying()));
 core.on("mediaReady", () => core.emit("nowPlaying", nowPlaying()));
 
-window.Trk.library = Object.assign(window.Trk.library || {}, { LIB_SHOW, MEDIA_EXT, VIDEO_EXT, addSongFiles, addVideoFiles, allSongs, bannerRandomBtn, bannerVolTip, ensureTrkDistributionPlaylists, ensureTrkOstPlaylist, trkOstPlaylistId: TRK_OST_ID, trkRestoreRemoved, initLibrary, nextSong, noteMediaPlayed, onLongPress, setStartFromZero, syncStartZeroInputs, startBarOpen, syncPreviewSetBtn, restoreFolderAccess, folderReadPlan, plToast, prevSong, previewStartFor, previewContinue, pruneFolderRefsOnce, refreshPackSongs, saveSongPrefs, selectSong, setAddonSongs, songInfo, songDisplayTitle, songDisplayMeta, songTagsOf, loadSongTags, srcLabel, nowPlaying, startPreview, trySongChart, plTitleKeys, plSongMatchKeys, plWishTitleKeys, plIsClassicalTitle, plClassicalTitleKey, plDecoratedTitleKeys, plWishDecoratedKeys, plHasVersionTag, plWishMediaMatches });
+window.Trk.library = Object.assign(window.Trk.library || {}, { createPlaylistFromSongs, LIB_SHOW, MEDIA_EXT, VIDEO_EXT, addSongFiles, addVideoFiles, allSongs, bannerRandomBtn, bannerVolTip, ensureTrkDistributionPlaylists, ensureTrkOstPlaylist, trkOstPlaylistId: TRK_OST_ID, trkRestoreRemoved, initLibrary, nextSong, noteMediaPlayed, onLongPress, setStartFromZero, syncStartZeroInputs, startBarOpen, syncPreviewSetBtn, restoreFolderAccess, folderReadPlan, plToast, prevSong, previewStartFor, previewContinue, pruneFolderRefsOnce, refreshPackSongs, saveSongPrefs, selectSong, setAddonSongs, songInfo, songDisplayTitle, songDisplayMeta, songTagsOf, loadSongTags, srcLabel, nowPlaying, startPreview, trySongChart, plTitleKeys, plSongMatchKeys, plWishTitleKeys, plIsClassicalTitle, plClassicalTitleKey, plDecoratedTitleKeys, plWishDecoratedKeys, plHasVersionTag, plWishMediaMatches, previewRestartFor, shufflePool });
 Object.defineProperty(window.Trk.library, "addonSongs", { configurable:true, get:() => addonSongs, set:v => { addonSongs = v; } });
 Object.defineProperty(window.Trk.library, "libView", { configurable:true, get:() => libView, set:v => { libView = v; } });
 Object.defineProperty(window.Trk.library, "renderBanner", { configurable:true, get:() => renderBanner, set:v => { renderBanner = v; } });

@@ -9,6 +9,7 @@
 
 /* 文言はこの機能内で4言語そろえる（tools/check-study-room.mjs が4言語の抜けを検査します）。 */
 Object.assign(TEXT.ja, {
+  studyRemodernBtn: "🎨 スキン",
   studyTitle:"📚 書斎", studyOpenBtn:"📚 書斎", studyOpenBtnHint:"書斎（本棚・テレビ・画像リーダー）を開きます。曲リストの見出しを長押ししても開けます", studyLaunchHint:"♫を長押しして書斎を開く（キーボードではEnter）",
   /* 📂 trk208：フォルダーを共有して「フォルダのまま読む」（コピーしない） */
   studyShareFolder:"📂 フォルダを共有して読む",
@@ -156,6 +157,7 @@ Object.assign(TEXT.ja, {
   studyImageOrderReverse:"逆順（右綴じ向け）", studyOrphanSweep:"未使用の画像データを整理しました（{n}件）。"
 });
 Object.assign(TEXT.en, {
+  studyRemodernBtn: "🎨 Skin",
   studyTitle:"📚 Study", studyOpenBtn:"📚 Study", studyOpenBtnHint:"Open Study (shelf, TV and the image reader). You can also hold the Songs heading", studyLaunchHint:"Hold ♫ Songs to open Study (press Enter when focused)",
   /* 📂 trk208: share a folder and read it in place (no copy) */
   studyShareFolder:"📂 Share a folder and read it",
@@ -300,6 +302,7 @@ Object.assign(TEXT.en, {
   studyImageOrderReverse:"Reversed (right-binding)", studyOrphanSweep:"Cleaned up {n} unused image(s)."
 });
 Object.assign(TEXT.zh, {
+  studyRemodernBtn: "🎨 皮肤",
   studyTitle:"📚 书斋", studyOpenBtn:"📚 书斋", studyOpenBtnHint:"打开书斋（书架、电视和图片阅读器）。长按歌曲列表标题也可以打开", studyLaunchHint:"长按♫歌曲列表打开书斋（键盘聚焦后按 Enter）",
   /* 📂 trk208：共享文件夹并“就地阅读”（不复制） */
   studyShareFolder:"📂 共享文件夹并阅读",
@@ -434,6 +437,7 @@ Object.assign(TEXT.zh, {
   studyImageOrderReverse:"倒序（右开本）", studyOrphanSweep:"已整理 {n} 个未使用的图片数据。"
 });
 Object.assign(TEXT.ko, {
+  studyRemodernBtn: "🎨 스킨",
   studyTitle:"📚 서재", studyOpenBtn:"📚 서재", studyOpenBtnHint:"서재(책장, TV, 이미지 리더)를 엽니다. 곡 목록 제목을 길게 눌러도 열립니다", studyLaunchHint:"♫ 곡 목록을 길게 눌러 서재 열기 (키보드에서는 Enter)",
   /* 📂 trk208: 폴더를 공유해 '폴더 그대로' 읽기(복사 없음) */
   studyShareFolder:"📂 폴더를 공유해서 읽기",
@@ -575,6 +579,30 @@ Object.assign(TEXT.ko, {
   studyTextStats:"{chars}자 · {lines}행", studyImageOrderLabel:"페이지 순서", studyImageOrderNatural:"파일명 순",
   studyImageOrderReverse:"역순 (오른쪽 제본)", studyOrphanSweep:"사용하지 않는 이미지 데이터 {n}개를 정리했습니다."
 });
+
+/* ♿ trk255：書斎の読み上げ名（aria-label）を4言語そろえる。
+   画面に見えない言葉なので、見た目は変わりません（読み上げだけが変わる）。 */
+Object.assign(TEXT.ja, {
+  studyA11yShelf:"本棚", studyA11yZoom:"表示の拡大", studyA11yZoomOut:"縮小", studyA11yZoomIn:"拡大",
+  studyA11yTextSize:"文字の大きさ", studyA11yLineSpacing:"行間", studyA11yMargins:"余白",
+  studyA11yTv:"テレビ", studyA11yImageReader:"画像リーダー", studyA11yPage:"ページ"
+});
+Object.assign(TEXT.en, {
+  studyA11yShelf:"Study shelf", studyA11yZoom:"Zoom controls", studyA11yZoomOut:"Zoom out", studyA11yZoomIn:"Zoom in",
+  studyA11yTextSize:"Text size", studyA11yLineSpacing:"Line spacing", studyA11yMargins:"Margins",
+  studyA11yTv:"TV", studyA11yImageReader:"Image reader", studyA11yPage:"Page"
+});
+Object.assign(TEXT.zh, {
+  studyA11yShelf:"书架", studyA11yZoom:"缩放控制", studyA11yZoomOut:"缩小", studyA11yZoomIn:"放大",
+  studyA11yTextSize:"文字大小", studyA11yLineSpacing:"行距", studyA11yMargins:"边距",
+  studyA11yTv:"电视", studyA11yImageReader:"图片阅读器", studyA11yPage:"页面"
+});
+Object.assign(TEXT.ko, {
+  studyA11yShelf:"책장", studyA11yZoom:"확대 조절", studyA11yZoomOut:"축소", studyA11yZoomIn:"확대",
+  studyA11yTextSize:"글자 크기", studyA11yLineSpacing:"줄 간격", studyA11yMargins:"여백",
+  studyA11yTv:"TV", studyA11yImageReader:"이미지 리더", studyA11yPage:"페이지"
+});
+
 
 const STUDY_UTIL = window.TrkStudyUtils;
 const STUDY_DB_NAME = "trk_study_room_v1";

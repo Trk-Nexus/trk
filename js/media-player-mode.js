@@ -33,13 +33,22 @@ Object.assign(TEXT.ja, {
   mediaVideoKeysHint:"メディアプレーヤー中の動画操作、逆再生、区間ループと、ゲーム中の背景動画の拡大・縮小をキーに割り当てます。ゲームの判定や記録は変わりません。",
   mediaVideoKeysReset:"↺ 動画キーを初期値に戻す", mediaVideoCapture0:"「動画を拡大」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture1:"「動画を縮小」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture2:"「再生速度を上げる」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture3:"「再生速度を下げる」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture4:"「再生／一時停止」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture5:"「逆再生」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture6:"「区間ループ」に割り当てるキーを押してください。ESCでキャンセル。", mediaVideoCapture7:"「壁紙／スクリーンセーバー」に割り当てるキーを押してください。ESCでキャンセル。",
   mediaVideoToastZoom:"動画ズーム {n}x", mediaVideoToastRate:"再生速度 {n}x",
-  mediaPip:"📌 画中画", mediaPipClose:"📌 画中画を終了", mediaPipUnsupported:"このブラウザは画中画に対応していません",
+  mediaPip:"📌 画中画", mediaPipClose:"📌 画中画を終了", mediaPipUnsupported:"このブラウザは画中画に対応していません", mediaPipHomeApp:"ホーム画面や Dock から起動したアプリでは画中画を使えません（Safari で開くと使えます）", mediaPipFailed:"画中画を開けませんでした（動画を再生してから、もう一度お試しください）",
+mediaPipTitle:"📌 画中画（小窓）",
+  mediaPipHint:"画中画は、動画を画面の隅の小窓に映したまま別のことをできる機能です。小窓はブラウザーが持っているので、位置・大きさ・閉じるボタンはページからは変えられません（PC の Chrome／Edge／Safari、iPhone／iPad の Safari。iPhone／iPad のホーム画面や macOS の Dock から起動したアプリでは使えないことがあります）。",
+  mediaPipKeep:"メディアプレーヤーを閉じても画中画を続ける", mediaPipHideStage:"画中画を出している間は、こちらの映像を隠す",
+  mediaPipKeepOn:"📌 画中画で続けます（小窓の ✕ で終了）",
+  mediaPipNotice:"📌 画中画で表示中", mediaPipShowHere:"ここにも表示", mediaPipHideHere:"こちらの絵を隠す",
   mediaResumeRewind:"⏪ 再開時の巻き戻し", mediaResumeOff:"オフ", mediaResumeSet:"再開時に{s}秒巻き戻します",
   mediaSleepTrack:"💤 この曲の終わり", mediaSleepTrackSet:"この曲の終わりで再生を止めます",
   mediaWakeLockTitle:"🔆 画面を消灯させない", mediaWakeLockHint:"動画の再生中に画面が暗くなるのを防ぎます（音声だけの再生では防ぎません）。対応していないブラウザでは何もしません。", mediaWakeLockToggle:"動画の再生中は画面をつけたままにする",
   mediaWaveTitle:"🌊 波形シークバー", mediaWaveHint:"シークバーに音量の包絡（波形）を描きます。ポインターを乗せると、その位置の時刻が出ます。材料は端末内の解析結果（trk_analysis_cache_v1）だけ＝解析が無い曲（長い曲・軽量化設定など）ではふつうのバーのままです。", mediaWaveToggle:"シークバーに波形を表示する",
   mediaLyricsTitle:"🎤 歌詞", mediaLyricsHint:"埋め込み歌詞（ID3 USLT/SYLT・MP4 ©lyr・FLAC/Ogg LYRICS）・フォルダの同名 .lrc・選んだ歌詞ファイルを、再生位置に合わせて表示します。同期歌詞は行をクリックするとその位置へ移動します。選んだ歌詞は曲ごとに端末内へ保存され、外へは送信しません。", mediaLyricsNone:"この曲の歌詞は見つかりませんでした。", mediaLyricsLoading:"歌詞を読み込み中…", mediaLyricsSourceEmbedded:"出典：埋め込みタグ", mediaLyricsSourceFile:"出典：フォルダの .lrc（{name}）", mediaLyricsSourceManual:"出典：選んだファイル（{name}）", mediaLyricsPlain:"※ 時刻のない歌詞なので、そのまま表示します", mediaLyricsChoose:"📄 歌詞ファイルを選ぶ", mediaLyricsClear:"✖ 選んだ歌詞を消す", mediaLyricsSaved:"歌詞をこの曲に保存しました（{n}行）", mediaLyricsTooBig:"この歌詞ファイルは大きすぎます（256KBまで）。", mediaLyricsReadFailed:"この歌詞ファイルは読めませんでした。", mediaLyricsNeedSong:"先に曲を再生してください。",
   mediaSubsTitle:"💬 字幕", mediaSubsHint:"選んだ SRT/VTT ファイルか、フォルダの同名 .srt/.vtt を動画の上に表示します。表示の遅れ・早すぎは「遅延」で調整できます。選んだ字幕と遅延は曲ごとに端末内へ保存され、外へは送信しません。📌 画中画でも字幕が付きます。", mediaSubsNone:"この動画の字幕は見つかりませんでした。", mediaSubsLoading:"字幕を読み込み中…", mediaSubsSourceFile:"出典：フォルダの字幕（{name}）", mediaSubsSourceManual:"出典：選んだファイル（{name}）", mediaSubsChoose:"📄 字幕ファイルを選ぶ", mediaSubsClear:"✖ 選んだ字幕を消す", mediaSubsSaved:"字幕をこの曲に保存しました（{n}件）", mediaSubsTooBig:"この字幕ファイルは大きすぎます（512KBまで）。", mediaSubsReadFailed:"この字幕ファイルは読めませんでした。", mediaSubsNeedSong:"先に動画を再生してください。", mediaSubsOn:"字幕を表示する", mediaSubsOffset:"遅延", mediaSubsEarlier:"− 早く", mediaSubsLater:"＋ 遅く", mediaSubsReset:"↺ 0", mediaSubsOffsetNow:"いま：{s}秒",
+mediaSubsPos:"字幕の置き場所", mediaSubsPosBottom:"下", mediaSubsPosMiddle:"中央", mediaSubsPosTop:"上",
+  mediaSubsSize:"字幕の大きさ", mediaSubsSizeSmall:"小", mediaSubsSizeNormal:"中", mediaSubsSizeLarge:"大",
+  mediaSubsAutoTitle:"ℹ 自動字幕について",
+  mediaSubsAutoHint:"trk は、音を聞き取って字幕を作ることはしません（マイクも使いません）。音声から自動で字幕を出すときは、お使いの OS やブラウザーの「ライブ キャプション」を使います。Windows 11 は Windows＋Ctrl＋L（22H2 以降・日本語対応）、macOS は システム設定 → アクセシビリティ → ライブキャプション、Chrome は 設定 → ユーザー補助 → ライブキャプションです。字幕は画面の下（OS の設定で上）に出るので、ここの「置き場所」「大きさ」は trk の字幕だけに効きます。いちばん正確なのは .srt/.vtt を用意する方法です。くわしくは docs/AUTO-CAPTIONS-TRK262-2026-11-02.md に書いてあります。",
   mediaChapTitle:"🔖 チャプター", mediaChapHint:"M4B/MP4 等に埋め込まれたチャプター（chpl）の一覧です。クリックでその位置へ移動します。チャプターは読むだけで、ファイルへの書き戻しや外部への送信はしません。iTunes方式のチャプタートラックは対応していません。", mediaChapNone:"チャプターは見つかりませんでした。", mediaChapLoading:"チャプターを読み込み中…", mediaChapCount:"チャプター {n} 件", mediaChapNow:"▶ {name}", mediaChapPrev:"⏮ 前のチャプター", mediaChapNext:"次のチャプター ⏭", mediaSleepChapter:"チャプターの終わりで止める", mediaSleepChapterSet:"チャプターの終わりで止めます（{m}）", mediaSleepChapterNone:"この曲にチャプターがありません。",
   mediaModeStatus:"メディアプレーヤー中（ゲームの記録には影響しません）"
 });
@@ -68,13 +77,22 @@ Object.assign(TEXT.en, {
   mediaVideoKeysHint:"Assign keys for video zoom, reverse playback, A-B looping, and media-player controls. Game judgment and records are not changed.",
   mediaVideoKeysReset:"↺ Reset video keys", mediaVideoCapture0:"Press a key for “Zoom in”. ESC cancels.", mediaVideoCapture1:"Press a key for “Zoom out”. ESC cancels.", mediaVideoCapture2:"Press a key for “Speed up”. ESC cancels.", mediaVideoCapture3:"Press a key for “Slow down”. ESC cancels.", mediaVideoCapture4:"Press a key for “Play / pause”. ESC cancels.", mediaVideoCapture5:"Press a key for “Reverse”. ESC cancels.", mediaVideoCapture6:"Press a key for “A-B loop”. ESC cancels.", mediaVideoCapture7:"Press a key for “Wallpaper / screen saver”. ESC cancels.",
   mediaVideoToastZoom:"Video zoom {n}x", mediaVideoToastRate:"Playback speed {n}x",
-  mediaPip:"📌 Picture-in-picture", mediaPipClose:"📌 Exit picture-in-picture", mediaPipUnsupported:"This browser doesn't support picture-in-picture",
+  mediaPip:"📌 Picture-in-picture", mediaPipClose:"📌 Exit picture-in-picture", mediaPipUnsupported:"This browser doesn't support picture-in-picture", mediaPipHomeApp:"Picture-in-picture isn't available in the app opened from the Home Screen or Dock (open it in Safari instead)", mediaPipFailed:"Could not open picture-in-picture (start the video and try again)",
+mediaPipTitle:"📌 Picture-in-picture",
+  mediaPipHint:"Picture-in-picture keeps the video in a small floating window while you do something else. The window belongs to the browser, so its position, size, and close button cannot be changed from the page (Chrome / Edge / Safari on desktop, Safari on iPhone and iPad; it may not work in an app opened from the Home Screen on iPhone / iPad or from the Dock on macOS).",
+  mediaPipKeep:"Keep picture-in-picture after closing the media player", mediaPipHideStage:"Hide the video here while picture-in-picture is showing",
+  mediaPipKeepOn:"📌 Continuing in picture-in-picture (close the small window to stop)",
+  mediaPipNotice:"📌 Showing in picture-in-picture", mediaPipShowHere:"Show here too", mediaPipHideHere:"Hide the video here",
   mediaResumeRewind:"⏪ Resume rewind", mediaResumeOff:"Off", mediaResumeSet:"Resume rewind: {s}s",
   mediaSleepTrack:"💤 End of this track", mediaSleepTrackSet:"Playback will stop when this track ends",
   mediaWakeLockTitle:"🔆 Keep screen on", mediaWakeLockHint:"Prevents the screen from dimming while a video plays (audio-only playback won't). Does nothing on browsers without support.", mediaWakeLockToggle:"Keep the screen on while a video plays",
   mediaWaveTitle:"🌊 Waveform seek bar", mediaWaveHint:"Draws the loudness envelope (waveform) on the seek bar and shows the time at the pointer. The material is the on-device analysis cache only — songs without analysis (long tracks, lite settings) keep the plain bar.", mediaWaveToggle:"Show the waveform on the seek bar",
   mediaLyricsTitle:"🎤 Lyrics", mediaLyricsHint:"Shows embedded lyrics (ID3 USLT/SYLT, MP4 ©lyr, FLAC/Ogg LYRICS), a same-named .lrc from the folder, or a file you choose, in sync with playback. With synced lyrics, click a line to jump there. Chosen lyrics are saved on this device per song and never uploaded.", mediaLyricsNone:"No lyrics found for this song.", mediaLyricsLoading:"Loading lyrics…", mediaLyricsSourceEmbedded:"Source: embedded tags", mediaLyricsSourceFile:"Source: folder .lrc ({name})", mediaLyricsSourceManual:"Source: chosen file ({name})", mediaLyricsPlain:"· not time-synced (shown as-is)", mediaLyricsChoose:"📄 Choose lyrics file", mediaLyricsClear:"✖ Remove chosen lyrics", mediaLyricsSaved:"Lyrics saved for this song ({n} lines)", mediaLyricsTooBig:"That lyrics file is too big (up to 256 KB).", mediaLyricsReadFailed:"Could not read that lyrics file.", mediaLyricsNeedSong:"Load a song first.",
   mediaSubsTitle:"💬 Subtitles", mediaSubsHint:"Shows an SRT/VTT file you choose, or a same-named .srt/.vtt from the folder, over the video. Adjust timing with “Delay”. Chosen subtitles and the delay are saved on this device per song and never uploaded. Subtitles also appear in picture-in-picture.", mediaSubsNone:"No subtitles found for this video.", mediaSubsLoading:"Loading subtitles…", mediaSubsSourceFile:"Source: folder subtitle ({name})", mediaSubsSourceManual:"Source: chosen file ({name})", mediaSubsChoose:"📄 Choose subtitle file", mediaSubsClear:"✖ Remove chosen subtitles", mediaSubsSaved:"Subtitles saved for this song ({n} cues)", mediaSubsTooBig:"That subtitle file is too big (up to 512 KB).", mediaSubsReadFailed:"Could not read that subtitle file.", mediaSubsNeedSong:"Load a video first.", mediaSubsOn:"Show subtitles", mediaSubsOffset:"Delay", mediaSubsEarlier:"− Earlier", mediaSubsLater:"＋ Later", mediaSubsReset:"↺ 0", mediaSubsOffsetNow:"Now: {s}s",
+mediaSubsPos:"Subtitle position", mediaSubsPosBottom:"Bottom", mediaSubsPosMiddle:"Middle", mediaSubsPosTop:"Top",
+  mediaSubsSize:"Subtitle size", mediaSubsSizeSmall:"Small", mediaSubsSizeNormal:"Normal", mediaSubsSizeLarge:"Large",
+  mediaSubsAutoTitle:"ℹ About live captions",
+  mediaSubsAutoHint:"trk never listens to audio to create subtitles (it does not use the microphone). For captions generated from speech, use your OS or browser “Live Captions”: Windows 11 — Windows+Ctrl+L (22H2 or later, Japanese supported); macOS — System Settings → Accessibility → Live Captions; Chrome — Settings → Accessibility → Live Caption. Those captions appear at the bottom of the screen (top if the OS is set that way), so “Position” and “Size” here apply only to trk’s own subtitles. The most accurate option is to supply an .srt/.vtt file. Details: docs/AUTO-CAPTIONS-TRK262-2026-11-02.md.",
   mediaChapTitle:"🔖 Chapters", mediaChapHint:"Lists the chapters (chpl) embedded in M4B/MP4 files; click one to jump there. Chapters are read-only — no write-back, no upload. iTunes-style chapter tracks are not supported.", mediaChapNone:"No chapters found.", mediaChapLoading:"Loading chapters…", mediaChapCount:"{n} chapters", mediaChapNow:"▶ {name}", mediaChapPrev:"⏮ Previous chapter", mediaChapNext:"Next chapter ⏭", mediaSleepChapter:"Stop at the end of the chapter", mediaSleepChapterSet:"Will stop at the end of the chapter ({m})", mediaSleepChapterNone:"This song has no chapters.",
   mediaModeStatus:"Media player (does not affect game records)"
 });
@@ -101,13 +119,22 @@ Object.assign(TEXT.zh, {
   mediaVideoKeysHint:"为视频缩放、倒放、区间循环和媒体播放器操作分配按键。不会改变游戏判定或记录。",
   mediaVideoKeysReset:"↺ 恢复视频按键", mediaVideoCapture0:"请按下“放大视频”的按键。ESC取消。", mediaVideoCapture1:"请按下“缩小视频”的按键。ESC取消。", mediaVideoCapture2:"请按下“提高速度”的按键。ESC取消。", mediaVideoCapture3:"请按下“降低速度”的按键。ESC取消。", mediaVideoCapture4:"请按下“播放／暂停”的按键。ESC取消。", mediaVideoCapture5:"请按下“倒放”的按键。ESC取消。", mediaVideoCapture6:"请按下“区间循环”的按键。ESC取消。", mediaVideoCapture7:"请按下“壁纸／屏幕保护”的按键。ESC取消。",
   mediaVideoToastZoom:"视频缩放 {n}x", mediaVideoToastRate:"播放速度 {n}x",
-  mediaPip:"📌 画中画", mediaPipClose:"📌 退出画中画", mediaPipUnsupported:"此浏览器不支持画中画",
+  mediaPip:"📌 画中画", mediaPipClose:"📌 退出画中画", mediaPipUnsupported:"此浏览器不支持画中画", mediaPipHomeApp:"从主屏幕或 Dock 启动的应用中无法使用画中画（用 Safari 打开即可使用）", mediaPipFailed:"无法打开画中画（请先播放视频，然后再试一次）",
+mediaPipTitle:"📌 画中画（小窗）",
+  mediaPipHint:"画中画会把视频放在屏幕角落的小窗里，同时可以做别的事。小窗由浏览器管理，位置、大小和关闭按钮无法从页面更改（桌面版 Chrome / Edge / Safari，iPhone / iPad 的 Safari；在 iPhone / iPad 从主屏幕启动的应用、或 macOS 从 Dock 启动的应用中可能无法使用）。",
+  mediaPipKeep:"关闭媒体播放器后仍保持画中画", mediaPipHideStage:"显示画中画时，隐藏这里的视频",
+  mediaPipKeepOn:"📌 继续以画中画播放（点小窗的 ✕ 结束）",
+  mediaPipNotice:"📌 正在画中画显示", mediaPipShowHere:"也在这里显示", mediaPipHideHere:"隐藏这里的视频",
   mediaResumeRewind:"⏪ 继续播放时倒回", mediaResumeOff:"关闭", mediaResumeSet:"继续播放时倒回{s}秒",
   mediaSleepTrack:"💤 本曲结束时", mediaSleepTrackSet:"将在本曲结束时停止播放",
   mediaWakeLockTitle:"🔆 保持屏幕常亮", mediaWakeLockHint:"播放视频时防止屏幕变暗（纯音频播放不会阻止熄屏）。浏览器不支持时无效果。", mediaWakeLockToggle:"播放视频时保持屏幕常亮",
   mediaWaveTitle:"🌊 波形进度条", mediaWaveHint:"在进度条上绘制音量包络（波形），指针悬停时显示该位置的时间。材料仅来自设备内的解析缓存——没有解析结果的歌曲（长曲、轻量化设置等）保持普通进度条。", mediaWaveToggle:"在进度条上显示波形",
   mediaLyricsTitle:"🎤 歌词", mediaLyricsHint:"跟随播放位置显示内嵌歌词（ID3 USLT/SYLT、MP4 ©lyr、FLAC/Ogg LYRICS）、文件夹中同名的 .lrc 或你选择的歌词文件。同步歌词可点击某行跳转到该位置。选择的歌词按歌曲保存在本机，不会上传。", mediaLyricsNone:"没有找到这首歌的歌词。", mediaLyricsLoading:"正在读取歌词…", mediaLyricsSourceEmbedded:"来源：内嵌标签", mediaLyricsSourceFile:"来源：文件夹中的 .lrc（{name}）", mediaLyricsSourceManual:"来源：选择的文件（{name}）", mediaLyricsPlain:"※ 非同步歌词，原样显示", mediaLyricsChoose:"📄 选择歌词文件", mediaLyricsClear:"✖ 清除选择的歌词", mediaLyricsSaved:"已为这首歌保存歌词（{n} 行）", mediaLyricsTooBig:"这个歌词文件太大（上限 256KB）。", mediaLyricsReadFailed:"无法读取这个歌词文件。", mediaLyricsNeedSong:"请先播放歌曲。",
   mediaSubsTitle:"💬 字幕", mediaSubsHint:"在视频上显示你选择的 SRT/VTT 字幕文件，或文件夹中同名的 .srt/.vtt。可用“延迟”调整字幕的快慢。选择的字幕和延迟按歌曲保存在本机，不会上传。画中画时也会显示字幕。", mediaSubsNone:"没有找到这个视频的字幕。", mediaSubsLoading:"正在读取字幕…", mediaSubsSourceFile:"来源：文件夹中的字幕（{name}）", mediaSubsSourceManual:"来源：选择的文件（{name}）", mediaSubsChoose:"📄 选择字幕文件", mediaSubsClear:"✖ 清除选择的字幕", mediaSubsSaved:"已为这首歌保存字幕（{n} 条）", mediaSubsTooBig:"这个字幕文件太大（上限 512KB）。", mediaSubsReadFailed:"无法读取这个字幕文件。", mediaSubsNeedSong:"请先播放视频。", mediaSubsOn:"显示字幕", mediaSubsOffset:"延迟", mediaSubsEarlier:"− 提前", mediaSubsLater:"＋ 延后", mediaSubsReset:"↺ 0", mediaSubsOffsetNow:"当前：{s} 秒",
+mediaSubsPos:"字幕位置", mediaSubsPosBottom:"下方", mediaSubsPosMiddle:"中间", mediaSubsPosTop:"上方",
+  mediaSubsSize:"字幕大小", mediaSubsSizeSmall:"小", mediaSubsSizeNormal:"中", mediaSubsSizeLarge:"大",
+  mediaSubsAutoTitle:"ℹ 关于自动字幕",
+  mediaSubsAutoHint:"trk 不会听取声音来生成字幕（也不使用麦克风）。需要根据语音自动生成字幕时，请使用系统或浏览器的“实时字幕”：Windows 11 — Windows+Ctrl+L（22H2 以后，支持日语）；macOS — 系统设置 → 辅助功能 → 实时字幕；Chrome — 设置 → 无障碍 → 实时字幕。这些字幕显示在屏幕下方（可在系统中改为上方），所以这里的“位置”“大小”只对 trk 自己的字幕有效。最准确的方法还是准备 .srt/.vtt 文件。详情见 docs/AUTO-CAPTIONS-TRK262-2026-11-02.md。",
   mediaChapTitle:"🔖 章节", mediaChapHint:"列出 M4B/MP4 等文件内嵌的章节（chpl），点击即可跳到该位置。章节仅读取，不会写回文件或上传。不支持 iTunes 式章节轨道。", mediaChapNone:"没有找到章节。", mediaChapLoading:"正在读取章节…", mediaChapCount:"{n} 个章节", mediaChapNow:"▶ {name}", mediaChapPrev:"⏮ 上一章", mediaChapNext:"下一章 ⏭", mediaSleepChapter:"在本章结束时停止", mediaSleepChapterSet:"将在本章结束时停止（{m}）", mediaSleepChapterNone:"这首歌没有章节。",
   mediaModeStatus:"媒体播放器中（不影响游戏记录）"
 });
@@ -134,15 +161,143 @@ Object.assign(TEXT.ko, {
   mediaVideoKeysHint:"동영상 확대·축소, 역재생, 구간 반복과 미디어 플레이어 조작 키를 지정합니다. 게임 판정과 기록은 바뀌지 않습니다.",
   mediaVideoKeysReset:"↺ 동영상 키 초기화", mediaVideoCapture0:"'동영상 확대'로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture1:"'동영상 축소'로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture2:"'재생 속도 높이기'로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture3:"'재생 속도 낮추기'로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture4:"'재생／일시정지'로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture5:"'역재생'으로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture6:"'구간 반복'으로 지정할 키를 누르세요. ESC로 취소.", mediaVideoCapture7:"'배경／스크린세이버'로 지정할 키를 누르세요. ESC로 취소.",
   mediaVideoToastZoom:"동영상 확대 {n}x", mediaVideoToastRate:"재생 속도 {n}x",
-  mediaPip:"📌 그림 속 그림", mediaPipClose:"📌 그림 속 그림 종료", mediaPipUnsupported:"이 브라우저는 그림 속 그림을 지원하지 않습니다",
+  mediaPip:"📌 그림 속 그림", mediaPipClose:"📌 그림 속 그림 종료", mediaPipUnsupported:"이 브라우저는 그림 속 그림을 지원하지 않습니다", mediaPipHomeApp:"홈 화면이나 Dock에서 연 앱에서는 그림 속 그림을 쓸 수 없습니다 (Safari에서 열면 쓸 수 있습니다)", mediaPipFailed:"그림 속 그림을 열지 못했습니다 (영상을 재생한 뒤 다시 시도해 주세요)",
+mediaPipTitle:"📌 그림 속 그림 (작은 창)",
+  mediaPipHint:"그림 속 그림은 영상을 화면 구석의 작은 창으로 띄워 두고 다른 작업을 할 수 있는 기능입니다. 작은 창은 브라우저가 관리하므로 위치·크기·닫기 버튼은 페이지에서 바꿀 수 없습니다(데스크톱 Chrome / Edge / Safari, iPhone / iPad의 Safari. iPhone·iPad 홈 화면이나 macOS Dock에서 연 앱에서는 안 될 수 있습니다).",
+  mediaPipKeep:"미디어 플레이어를 닫아도 그림 속 그림을 계속", mediaPipHideStage:"그림 속 그림이 떠 있는 동안 이쪽 영상 숨기기",
+  mediaPipKeepOn:"📌 그림 속 그림으로 계속합니다 (작은 창의 ✕로 종료)",
+  mediaPipNotice:"📌 그림 속 그림으로 표시 중", mediaPipShowHere:"여기에도 표시", mediaPipHideHere:"이쪽 영상 숨기기",
   mediaResumeRewind:"⏪ 다시 재생 시 되감기", mediaResumeOff:"끔", mediaResumeSet:"다시 재생 시 {s}초 되감기",
   mediaSleepTrack:"💤 이번 곡 끝날 때", mediaSleepTrackSet:"이번 곡이 끝날 때 재생을 멈춥니다",
   mediaWakeLockTitle:"🔆 화면 켜짐 유지", mediaWakeLockHint:"동영상 재생 중 화면이 어두워지는 것을 막습니다(오디오만 재생할 때는 막지 않습니다). 지원하지 않는 브라우저에서는 아무것도 하지 않습니다.", mediaWakeLockToggle:"동영상 재생 중 화면 켜짐 유지",
   mediaWaveTitle:"🌊 파형 탐색 표시줄", mediaWaveHint:"탐색 표시줄에 음량 포락선(파형)을 그립니다. 포인터를 올리면 해당 위치의 시간이 표시됩니다. 재료는 기기 내 분석 캐시뿐이며, 분석이 없는 곡(긴 곡, 경량화 설정 등)은 일반 표시줄로 남습니다.", mediaWaveToggle:"탐색 표시줄에 파형 표시",
   mediaLyricsTitle:"🎤 가사", mediaLyricsHint:"재생 위치에 맞춰 내장 가사(ID3 USLT/SYLT, MP4 ©lyr, FLAC/Ogg LYRICS), 폴더의 같은 이름 .lrc, 또는 선택한 가사 파일을 표시합니다. 동기 가사는 줄을 클릭해 그 위치로 이동할 수 있습니다. 선택한 가사는 곡별로 기기에만 저장되며 업로드되지 않습니다.", mediaLyricsNone:"이 곡의 가사를 찾지 못했습니다.", mediaLyricsLoading:"가사를 불러오는 중…", mediaLyricsSourceEmbedded:"출처: 내장 태그", mediaLyricsSourceFile:"출처: 폴더의 .lrc ({name})", mediaLyricsSourceManual:"출처: 선택한 파일 ({name})", mediaLyricsPlain:"※ 동기화되지 않은 가사 (그대로 표시)", mediaLyricsChoose:"📄 가사 파일 선택", mediaLyricsClear:"✖ 선택한 가사 지우기", mediaLyricsSaved:"이 곡의 가사를 저장했습니다 ({n}줄)", mediaLyricsTooBig:"이 가사 파일은 너무 큽니다 (최대 256KB).", mediaLyricsReadFailed:"이 가사 파일을 읽을 수 없습니다.", mediaLyricsNeedSong:"먼저 곡을 재생해 주세요.",
   mediaSubsTitle:"💬 자막", mediaSubsHint:"선택한 SRT/VTT 자막 파일 또는 폴더의 같은 이름 .srt/.vtt를 영상 위에 표시합니다. '지연'으로 자막의 빠르기·느리기를 조정할 수 있습니다. 선택한 자막과 지연은 곡별로 기기에만 저장되며 업로드되지 않습니다. PIP 중에도 자막이 표시됩니다.", mediaSubsNone:"이 영상의 자막을 찾지 못했습니다.", mediaSubsLoading:"자막을 불러오는 중…", mediaSubsSourceFile:"출처: 폴더의 자막 ({name})", mediaSubsSourceManual:"출처: 선택한 파일 ({name})", mediaSubsChoose:"📄 자막 파일 선택", mediaSubsClear:"✖ 선택한 자막 지우기", mediaSubsSaved:"이 곡의 자막을 저장했습니다 ({n}개 큐)", mediaSubsTooBig:"이 자막 파일은 너무 큽니다 (최대 512KB).", mediaSubsReadFailed:"이 자막 파일을 읽을 수 없습니다.", mediaSubsNeedSong:"먼저 영상을 재생해 주세요.", mediaSubsOn:"자막 표시", mediaSubsOffset:"지연", mediaSubsEarlier:"− 앞당기기", mediaSubsLater:"＋ 늦추기", mediaSubsReset:"↺ 0", mediaSubsOffsetNow:"현재: {s}초",
+mediaSubsPos:"자막 위치", mediaSubsPosBottom:"아래", mediaSubsPosMiddle:"가운데", mediaSubsPosTop:"위",
+  mediaSubsSize:"자막 크기", mediaSubsSizeSmall:"작게", mediaSubsSizeNormal:"보통", mediaSubsSizeLarge:"크게",
+  mediaSubsAutoTitle:"ℹ 자동 자막 안내",
+  mediaSubsAutoHint:"trk는 소리를 듣고 자막을 만들지 않습니다(마이크도 쓰지 않습니다). 음성에서 자동 자막이 필요하면 OS나 브라우저의 라이브 캡션을 사용하세요. Windows 11 — Windows+Ctrl+L(22H2 이후, 일본어 지원), macOS — 시스템 설정 → 손쉬운 사용 → 라이브 캡션, Chrome — 설정 → 접근성 → 라이브 캡션. 이 자막은 화면 아래(OS 설정에 따라 위)에 나오므로, 여기의 ‘위치’와 ‘크기’는 trk 자막에만 적용됩니다. 가장 정확한 방법은 .srt/.vtt 파일을 준비하는 것입니다. 자세한 내용: docs/AUTO-CAPTIONS-TRK262-2026-11-02.md.",
   mediaChapTitle:"🔖 챕터", mediaChapHint:"M4B/MP4 등에 내장된 챕터(chpl) 목록입니다. 클릭하면 그 위치로 이동합니다. 챕터는 읽기 전용이며 파일에 기록하거나 업로드하지 않습니다. iTunes 방식 챕터 트랙은 지원하지 않습니다.", mediaChapNone:"챕터를 찾지 못했습니다.", mediaChapLoading:"챕터를 불러오는 중…", mediaChapCount:"챕터 {n}개", mediaChapNow:"▶ {name}", mediaChapPrev:"⏮ 이전 챕터", mediaChapNext:"다음 챕터 ⏭", mediaSleepChapter:"이번 챕터 끝에서 정지", mediaSleepChapterSet:"챕터 끝에서 정지합니다 ({m})", mediaSleepChapterNone:"이 곡에는 챕터가 없습니다.",
   mediaModeStatus:"미디어 플레이어 중 (게임 기록에 영향 없음)"
+});
+
+
+/* 🎧 trk327：曲間のつなぎ・手動キュー・再生の健全性の文言（4 言語そろえる） */
+Object.assign(TEXT.ja, {
+  mediaBuffering:"⏳ 読み込み中…",
+  mediaStalled:"⏳ 読み込みが止まっています（回線かファイルを確かめてください）",
+  mediaPlaybackFailed:"この曲を再生できませんでした（形式かファイルを確かめてください）",
+  mediaRetrying:"⟳ もう一度読み込んでいます…",
+  mediaRetry:"⟳ もう一度",
+  mediaRetryNoSource:"読み直す元のファイルがありません。曲を選び直してください。",
+  mediaResumed:"⏪ 前回の続き（{t}）から再生します",
+  mediaResumedRewind:"⏪ 前回の続き（{t}）から、{s}秒戻して再生します",
+  mediaQueueNextTitle:"⏭ 次に再生（手動）",
+  mediaQueueNextHint:"この順に鳴らします。終わったら消えます。",
+  mediaQueueRest:"ここから下は通常の順番",
+  mediaQueuePlayNext:"次に再生",
+  mediaQueueAdd:"キューの最後に足す",
+  mediaQueueRemove:"キューから外す",
+  mediaQueueAdded:"⏭ キューに入れました（{n} 曲）",
+  mediaQueuePlaylist:"💾 このキューでプレイリストを作る",
+  mediaQueuePlaylistName:"プレイリストの名前（40 文字まで）",
+  mediaQueuePlaylistDefault:"キューから作ったリスト",
+  mediaQueuePlaylistDone:"💾 プレイリスト「{name}」を作りました（{n} 曲）",
+  mediaQueuePlaylistEmpty:"キューが空です。曲を足してから作ってください。",
+  mediaQueuePlaylistFail:"プレイリストを作れませんでした（保存を確かめてください）",
+  mediaCrossfadeLabel:"🎚 曲の終わりのフェード",
+  mediaCrossfadeOff:"オフ",
+  mediaCrossfadeHint:"曲の終わりを N 秒かけて静かに閉じ、次の曲の頭を短く立ち上げます。曲は重ねません（2 本同時には鳴らしません）。既定はオフ。iPhone・iPad は音量を変えられない作りなので、この設定は効きません（音はそのまま鳴ります）。",
+  mediaCrossfadeSet:"🎚 フェード {s} 秒",
+  mediaGaplessLabel:"🎧 曲間を詰める（次の曲を先に読み込む・既定オフ）",
+  mediaGaplessHint:"端末内のファイルの曲だけ、次の曲を先に読み込んでおきます。曲間の待ちが短くなります（音は出しません）。"
+});
+Object.assign(TEXT.en, {
+  mediaBuffering:"⏳ Loading…",
+  mediaStalled:"⏳ Loading has stopped (check the connection or the file)",
+  mediaPlaybackFailed:"This track could not be played (check the format or the file)",
+  mediaRetrying:"⟳ Loading once more…",
+  mediaRetry:"⟳ Try again",
+  mediaRetryNoSource:"There is no file to reload. Choose the track again.",
+  mediaResumed:"⏪ Resuming from {t}",
+  mediaResumedRewind:"⏪ Resuming {s}s before the last position ({t})",
+  mediaQueueNextTitle:"⏭ Next up (manual)",
+  mediaQueueNextHint:"These play in this order, then leave the queue.",
+  mediaQueueRest:"Below this line, the usual order",
+  mediaQueuePlayNext:"Play next",
+  mediaQueueAdd:"Add to the end of the queue",
+  mediaQueueRemove:"Remove from the queue",
+  mediaQueueAdded:"⏭ Queued ({n} tracks)",
+  mediaQueuePlaylist:"💾 Make a playlist from this queue",
+  mediaQueuePlaylistName:"Playlist name (up to 40 characters)",
+  mediaQueuePlaylistDefault:"Made from the queue",
+  mediaQueuePlaylistDone:"💾 Created the playlist 「{name}」 ({n} tracks)",
+  mediaQueuePlaylistEmpty:"The queue is empty. Add tracks first.",
+  mediaQueuePlaylistFail:"Could not create the playlist (check the saved data)",
+  mediaCrossfadeLabel:"🎚 Fade at the end of a track",
+  mediaCrossfadeOff:"Off",
+  mediaCrossfadeHint:"Closes the end of a track over N seconds and lifts the start of the next one briefly. Tracks never overlap (two are never played at once). Off by default. iPhone and iPad do not allow a web page to change the volume, so this setting has no effect there (the track simply plays).",
+  mediaCrossfadeSet:"🎚 Fade {s}s",
+  mediaGaplessLabel:"🎧 Shorten the gap (preload the next track, off by default)",
+  mediaGaplessHint:"For files on this device only, the next track is read ahead so the wait between tracks is shorter (no sound is played)."
+});
+Object.assign(TEXT.zh, {
+  mediaBuffering:"⏳ 载入中…",
+  mediaStalled:"⏳ 载入停住了（请检查网络或文件）",
+  mediaPlaybackFailed:"无法播放此曲（请检查格式或文件）",
+  mediaRetrying:"⟳ 正在重新载入…",
+  mediaRetry:"⟳ 再试一次",
+  mediaRetryNoSource:"没有可重新载入的文件。请重新选择曲目。",
+  mediaResumed:"⏪ 从上次的位置（{t}）继续播放",
+  mediaResumedRewind:"⏪ 从上次的位置（{t}）回退 {s} 秒后继续播放",
+  mediaQueueNextTitle:"⏭ 接下来播放（手动）",
+  mediaQueueNextHint:"按此顺序播放，播完即从队列移除。",
+  mediaQueueRest:"以下为通常顺序",
+  mediaQueuePlayNext:"接下来播放",
+  mediaQueueAdd:"加到队列末尾",
+  mediaQueueRemove:"从队列移除",
+  mediaQueueAdded:"⏭ 已加入队列（{n} 首）",
+  mediaQueuePlaylist:"💾 用此队列创建播放列表",
+  mediaQueuePlaylistName:"播放列表名称（最多 40 字）",
+  mediaQueuePlaylistDefault:"由队列创建",
+  mediaQueuePlaylistDone:"💾 已创建播放列表“{name}”（{n} 首）",
+  mediaQueuePlaylistEmpty:"队列是空的。请先加入曲目。",
+  mediaQueuePlaylistFail:"未能创建播放列表（请检查保存）",
+  mediaCrossfadeLabel:"🎚 曲末淡出",
+  mediaCrossfadeOff:"关闭",
+  mediaCrossfadeHint:"用 N 秒把曲尾安静收住，并短暂抬起下一曲的开头。曲目不会重叠（不会同时播放两首）。默认关闭。iPhone・iPad 不允许网页改变音量，因此此设置不生效（曲目照常播放）。",
+  mediaCrossfadeSet:"🎚 淡出 {s} 秒",
+  mediaGaplessLabel:"🎧 缩短曲间等待（预读下一曲・默认关闭）",
+  mediaGaplessHint:"仅对本设备上的文件，提前读入下一曲，缩短曲间等待（不会出声）。"
+});
+Object.assign(TEXT.ko, {
+  mediaBuffering:"⏳ 불러오는 중…",
+  mediaStalled:"⏳ 불러오기가 멈췄습니다(연결이나 파일을 확인해 주세요)",
+  mediaPlaybackFailed:"이 곡을 재생할 수 없습니다(형식이나 파일을 확인해 주세요)",
+  mediaRetrying:"⟳ 다시 불러오는 중…",
+  mediaRetry:"⟳ 다시 시도",
+  mediaRetryNoSource:"다시 불러올 파일이 없습니다. 곡을 다시 골라 주세요.",
+  mediaResumed:"⏪ 지난 위치({t})부터 재생합니다",
+  mediaResumedRewind:"⏪ 지난 위치({t})에서 {s}초 되감아 재생합니다",
+  mediaQueueNextTitle:"⏭ 다음 재생(수동)",
+  mediaQueueNextHint:"이 순서대로 재생하고, 끝나면 목록에서 사라집니다.",
+  mediaQueueRest:"아래는 평소의 순서",
+  mediaQueuePlayNext:"다음에 재생",
+  mediaQueueAdd:"대기열 끝에 추가",
+  mediaQueueRemove:"대기열에서 빼기",
+  mediaQueueAdded:"⏭ 대기열에 넣었습니다({n}곡)",
+  mediaQueuePlaylist:"💾 이 대기열로 재생목록 만들기",
+  mediaQueuePlaylistName:"재생목록 이름(40자까지)",
+  mediaQueuePlaylistDefault:"대기열에서 만든 목록",
+  mediaQueuePlaylistDone:"💾 재생목록 「{name}」을 만들었습니다({n}곡)",
+  mediaQueuePlaylistEmpty:"대기열이 비어 있습니다. 곡을 먼저 넣어 주세요.",
+  mediaQueuePlaylistFail:"재생목록을 만들지 못했습니다(저장을 확인해 주세요)",
+  mediaCrossfadeLabel:"🎚 곡 끝 페이드",
+  mediaCrossfadeOff:"끔",
+  mediaCrossfadeHint:"곡 끝을 N초에 걸쳐 조용히 닫고, 다음 곡의 시작을 짧게 올립니다. 곡은 겹치지 않습니다(두 곡을 동시에 재생하지 않음). 기본은 끔. iPhone・iPad는 웹 페이지가 음량을 바꿀 수 없어 이 설정은 효과가 없습니다(곡은 그대로 재생됩니다).",
+  mediaCrossfadeSet:"🎚 페이드 {s}초",
+  mediaGaplessLabel:"🎧 곡 사이를 줄이기(다음 곡 미리 읽기·기본 끔)",
+  mediaGaplessHint:"이 기기의 파일에만, 다음 곡을 미리 읽어 곡 사이 대기를 줄입니다(소리는 나지 않습니다)."
 });
 
 const HOLD_MS = 650;
@@ -151,8 +306,21 @@ let overlay, dialog, powerButton;
 let mediaReturnFocus = null;   /* 🎥 基地から開いたときの戻り先（trk186） */
 let mediaOpen = false, holdTimer = 0, longPressed = false;
 let repeatMode = core.settings.mediaRepeat || "off", shuffle = !!core.settings.mediaShuffle;
+/* ❓trk227：バーの ❓謎設定を、この画面でも同じ値で使う
+   ・「リピートボタンを単曲リピートのみにする」＝選択肢を なし／1曲 の2つだけに
+   ・「シャッフルは、いまの一覧（プレイリスト）の中から選ぶ」＝🎲 の対象を一覧へ */
+const repeatOneOnly = () => core.settings.playerBarRepeatOneOnly === true;
+const shuffleInList = () => core.settings.playerBarShuffleInList === true;
+const repeatOptions = () => (repeatOneOnly()
+  ? [["off", "mediaRepeatOff"], ["one", "mediaRepeatOne"]]
+  : [["off", "mediaRepeatOff"], ["one", "mediaRepeatOne"], ["all", "mediaRepeatAll"]]);
+if (repeatOneOnly() && repeatMode === "all") repeatMode = "off";
 let mediaRate = Number(core.settings.mediaRate) || 1, sleepTimer = 0, sleepUntil = 0, tickTimer = 0;
 let seeking = false, queueFilter = "", videoBinding = null;
+/* 🎧 trk327：曲間のつなぎと、再生の健全性（待つ・詰まる・失敗する）の表示 */
+let bufferNode = null, retryNode = null, bufferTimer = 0, bufferKey = "";
+let fadeInPending = false;   /* 🎧 trk327：次の "playing" で頭を立ち上げるか（曲が変わったときだけ true） */
+let gaplessEl = null, gaplessKey = "", fadeTimer = 0, fading = false;
 let reverseActive = false, reverseLoading = false, reverseTimer = 0, reverseSource = null, reverseGain = null;
 let reverseBuffer = null, reverseBufferKey = "", reverseVideoMuted = false, reverseStartAt = 0, reverseClockAt = 0;
 let loopTimer = 0;
@@ -160,6 +328,11 @@ let loopA = null, loopB = null, loopActive = false, loopKeyDown = false;
 let wallOverlay, wallClockNode, wallDateNode, wallNode, wallStyleNode, wallClockCheck, wallPlaybackNode, wallTriggerNode, wallFileNode, wallResetNode;
 let maxNode = null;   /* 🖥 「全画面で表示」（js/video-max.js） */
 let pipNode = null, pipActive = false;                /* 📌 画中画（trk164） */
+/* 📌 trk263：画中画の案内（1行）と、「ここにも表示」を押したか（この画面だけ・保存しない） */
+let pipNotice = null, pipTextNode = null, pipHereNode = null, pipStopNode = null, pipStageShown = false;
+let pipWhy = null;                                   /* 📌 trk265：押せないときの理由（見える1行・レビュー R3） */
+let pipBusy = false;                                 /* 📌 trk266：小窓が出るのを待っている間（二度押しを防ぐ・レビュー F2） */
+let pipPrefer = "";                                  /* 📌 trk264：前回通った画中画の API（"standard" / "webkit"）。保存はしない */
 let resumeNode = null;                                /* ⏪ スマート巻き戻しの選択（trk164） */
 let startZeroNode = null;                             /* ⏮ 常に最初から再生のチェック（trk193） */
 let wakeLock = null, wakeRequested = false;           /* 🔆 Screen Wake Lock（trk164） */
@@ -167,6 +340,8 @@ let lyricsBox = null, lyricsListNode = null, lyricsSourceNode = null, lyricsFile
 let lyricsState = { key:"", request:0, data:null, active:-2, loading:false };  /* 🎤 歌詞の状態（active=-2 は「次の描画で必ず付け直す」印） */
 /* 💬 字幕（trk169）：パネル・オーバーレイ・PiP用トラックの部品と状態 */
 let subsBox = null, subsOverlay = null, subsSourceNode = null, subsFileNode = null, subsClearNode = null;
+/* 🎬 trk262：字幕の置き場所・大きさと、映像の操作を隠すタイマー */
+let subsPosNode = null, subsSizeNode = null, mediaChromeTimer = 0;
 let subsOnNode = null, subsOffsetNode = null, subsEarlierNode = null, subsLaterNode = null, subsResetNode = null;
 let subsState = { key:"", request:0, data:null, loading:false, texts:"" };
 /* 🔖 チャプター（trk170）：パネル・一覧・状態と、「チャプターの終わり」スリープの停止位置 */
@@ -629,15 +804,50 @@ function setRate(value) {
   core.saveUserPrefs();
   if (reverseActive && !reverseLoading) startReverseAt(core.video.currentTime || 0, true);
 }
+/* 🎵 trk226：下の再生バー（js/player-bar.js）と、この画面は同じ設定を共有する。
+   ここで変えたら core の合図（mediaOptions）を出し、バーの 🎲／🔁 も同じ値を見せる。
+   （イベント名は core.on に自由な名前を渡せる仕組み。新しい保存キーは増やさない） */
+function announceMediaOptions() {
+  try { if (typeof core.emit === "function") core.emit("mediaOptions"); } catch (_) {}
+}
 function setRepeat(value) {
   repeatMode = ["off", "one", "all"].includes(value) ? value : "off";
+  /* ❓trk227：単曲リピートのみの設定なら「全曲」は受けない（なしへ） */
+  if (repeatOneOnly() && repeatMode === "all") repeatMode = "off";
   core.settings.mediaRepeat = repeatMode;
-  core.saveUserPrefs(); renderMedia();
+  core.saveUserPrefs(); renderMedia(); announceMediaOptions();
 }
 function setShuffle(value) {
   shuffle = !!value;
   core.settings.mediaShuffle = shuffle;
-  core.saveUserPrefs(); renderMedia();
+  core.saveUserPrefs(); renderMedia(); announceMediaOptions();
+}
+/* バーや設定から変わった値を、この画面の手元（shuffle／repeatMode）にも写す */
+function pullMediaOptions() {
+  repeatMode = ["off", "one", "all"].includes(core.settings.mediaRepeat) ? core.settings.mediaRepeat : "off";
+  /* ❓trk227：単曲リピートのみの設定に変えたら、「全曲」は「なし」として扱い、保存も合わせる */
+  if (repeatOneOnly() && repeatMode === "all") repeatMode = "off";
+  if (core.settings.mediaRepeat !== repeatMode) { core.settings.mediaRepeat = repeatMode; core.saveUserPrefs(); }
+  shuffle = core.settings.mediaShuffle === true;
+  fillRepeatOptions();
+  renderMedia();
+}
+if (typeof core.on === "function") core.on("mediaOptions", pullMediaOptions);
+/* 🔁 の選択肢を、いまの設定に合わせて作り直す（❓trk227：単曲リピートのみなら2つだけ） */
+function fillRepeatOptions() {
+  if (!repeatNode) return;
+  const list = repeatOptions();
+  const have = Array.from(repeatNode.childNodes || []).map(o => o.value).join(",");
+  const want = list.map(([value]) => value).join(",");
+  if (have !== want) {
+    while (repeatNode.firstChild) repeatNode.removeChild(repeatNode.firstChild);
+    for (const [value, key] of list) {
+      const o = document.createElement("option");
+      o.value = value; o.dataset.i18n = key; o.textContent = tr(key);
+      repeatNode.append(o);
+    }
+  }
+  if (repeatNode.value !== repeatMode) repeatNode.value = repeatMode;
 }
 function stopSleepTimer(silent = true) {
   clearTimeout(sleepTimer); sleepTimer = 0; sleepUntil = 0;
@@ -712,21 +922,153 @@ async function setSleep(minutes) {
   }
   renderMedia();
 }
+/* 🎲 の対象（❓trk227「シャッフルは、いまの一覧（プレイリスト）の中から選ぶ」）
+   ・設定がオフ（既定）＝これまでどおり全曲から
+   ・設定がオン＝ライブラリに表示している一覧（プレイリスト）から。一覧が空なら全曲へ戻す */
+function shuffleCandidates(list) {
+  if (!shuffleInList()) return list;
+  const lib = window.Trk && window.Trk.library;
+  const pool = lib && typeof lib.shufflePool === "function" ? lib.shufflePool().filter(Boolean) : [];
+  return pool.length ? pool : list;
+}
 function mediaCandidates() {
   const list = mpSongs();
   if (!list.length) return [];
   if (shuffle) {
+    const pool = shuffleCandidates(list);
     const cur = core.currentSong && core.currentSong.key;
-    const other = list.filter(x => x.key !== cur);
-    return other.length ? other : list;
+    const other = pool.filter(x => x.key !== cur);
+    return other.length ? other : pool;
   }
   return list;
 }
-function nextMediaSong(dir = 1) {
+/* 🎧 trk327：手動の「次に再生」キュー（settings.mediaQueueNext）。空なら従来どおりの順番。
+   キューは**消費したら消える**（曲が無くなった key は黙って捨てる）。 */
+const manualQueue = () => (Array.isArray(core.settings.mediaQueueNext) ? core.settings.mediaQueueNext : []);
+function saveManualQueue(list) {
+  core.settings.mediaQueueNext = (Array.isArray(list) ? list : []).slice(0, 100);
+  core.saveUserPrefs();
+  renderQueue();
+}
+function enqueueNext(key) {
+  if (typeof key !== "string" || !key) return false;
+  const q = manualQueue().filter(k => k !== key);
+  saveManualQueue([key].concat(q));
+  showMediaStatus("mediaQueueAdded", { n: manualQueue().length });
+  return true;
+}
+function enqueueLast(key) {
+  if (typeof key !== "string" || !key) return false;
+  const q = manualQueue().filter(k => k !== key);
+  saveManualQueue(q.concat([key]));
+  showMediaStatus("mediaQueueAdded", { n: manualQueue().length });
+  return true;
+}
+function dequeueManual(key) {
+  const q = manualQueue();
+  if (!q.includes(key)) return;
+  saveManualQueue(q.filter(k => k !== key));
+}
+/* 次に鳴らす曲を「見るだけ」（キューを減らさない。先読み用） */
+function peekNextMediaSong(dir = 1) {
+  if (dir === 1) {
+    const songs = mpSongs();
+    for (const key of manualQueue()) { const it = songs.find(x => x.key === key); if (it) return it; }
+  }
   const list = mediaCandidates(); if (!list.length) return null;
   if (shuffle) return list[Math.floor(Math.random() * list.length)];
   const i = core.currentSong ? list.findIndex(x => x.key === core.currentSong.key) : -1;
   return list[(i + dir + list.length) % list.length];
+}
+function nextMediaSong(dir = 1) {
+  const list = mediaCandidates(); if (!list.length) return null;
+  if (dir === 1) {
+    const songs = mpSongs();
+    const q = manualQueue();
+    while (q.length) {
+      const key = q.shift();
+      core.settings.mediaQueueNext = q.slice(0, 100);
+      core.saveUserPrefs();
+      const it = songs.find(x => x.key === key);
+      if (it) { renderQueue(); return it; }
+    }
+  }
+  if (shuffle) return list[Math.floor(Math.random() * list.length)];
+  const i = core.currentSong ? list.findIndex(x => x.key === core.currentSong.key) : -1;
+  return list[(i + dir + list.length) % list.length];
+}
+
+/* 🎧 trk327：ギャップレス（既定オフ）。次の曲のファイルを先に読み込んでおき、曲間の待ちを詰める。
+   ・端末内のファイル（file を持つ曲）だけ。URL は先読み用に作り、次に進むか曲を変えたら捨てる。
+   ・音は出さない（muted）。読み込みと復号の準備だけを前もって行う。 */
+function disposeGapless() {
+  if (gaplessEl) {
+    const url = gaplessEl._trkUrl;
+    try { gaplessEl.removeAttribute("src"); gaplessEl.load(); } catch (_) {}
+    if (url) { try { URL.revokeObjectURL(url); } catch (_) {} }
+    gaplessEl = null;
+  }
+  gaplessKey = "";
+}
+function preloadNextForGapless() {
+  if (core.settings.mediaGapless !== true) { disposeGapless(); return; }
+  const it = peekNextMediaSong(1);
+  if (!it || !it.file || gaplessKey === it.key) return;
+  disposeGapless();
+  try {
+    const hinted = window.Trk.media && typeof window.Trk.media.withMimeHint === "function" ? window.Trk.media.withMimeHint(it.file) : it.file;
+    const url = URL.createObjectURL(hinted);
+    const el = document.createElement("audio");
+    el.preload = "auto"; el.muted = true; el.src = url; el._trkUrl = url; el.dataset.trkGapless = "1";
+    const drop = () => { if (gaplessEl === el) disposeGapless(); };
+    el.addEventListener("error", drop, { once: true });
+    el.load();
+    gaplessEl = el; gaplessKey = it.key;
+  } catch (_) { disposeGapless(); }
+}
+
+/* 🎧 trk327：クロスフェード（既定オフ）。曲の終わり N 秒をかけて静かに閉じ、次の曲の頭を短く立ち上げる。
+   **曲を重ねない**（2 本目の再生はしない）。音量は要素の volume だけを触り、設定（musicVolume）は変えない。 */
+function crossfadeSeconds() {
+  const n = Number(core.settings.mediaCrossfade);
+  return Number.isFinite(n) && n > 0 ? Math.min(12, Math.round(n)) : 0;
+}
+function baseVolume() { return Math.max(0, Math.min(1, Number(core.settings.musicVolume) || 0)); }
+function resetCrossfade() {
+  clearInterval(fadeTimer); fadeTimer = 0; fading = false;
+  if (!core.video) return;
+  try { if (!core.video.muted) core.video.volume = baseVolume(); } catch (_) {}
+}
+function fadeIn() {
+  const n = crossfadeSeconds();
+  if (!n || !core.videoReady || fading) return;
+  const target = baseVolume();
+  if (target <= 0) return;
+  let step = 0; const steps = 8;
+  fading = true;
+  clearInterval(fadeTimer);
+  try { core.video.volume = target * 0.25; } catch (_) {}
+  fadeTimer = setInterval(() => {
+    step++;
+    try { core.video.volume = target * Math.min(1, 0.25 + (0.75 * step / steps)); } catch (_) {}
+    if (step >= steps) { clearInterval(fadeTimer); fadeTimer = 0; fading = false; }
+  }, 60);
+}
+function applyFadeOut() {
+  const n = crossfadeSeconds();
+  if (!n || !core.videoReady || fading) return;
+  const d = core.video.duration;
+  if (!Number.isFinite(d) || d <= 0) return;
+  const remain = d - (core.video.currentTime || 0);
+  if (remain > n || remain <= 0 || core.video.paused) {
+    /* 🎧 trk328：終わりの N 秒から**外へ戻った**（巻き戻し・シーク）なら、下げた音量を元に戻す。
+       trk327 は戻すのが「次の曲・再生／一時停止」だけだったので、フェード中に巻き戻すと
+       音量が下がったままになっていました（0.8 → 0.28 のまま）。 */
+    if (remain > n && !core.video.muted && core.video.volume < baseVolume() - 0.001) { try { core.video.volume = baseVolume(); } catch (_) {} }
+    return;
+  }
+  const target = baseVolume() * Math.max(0, remain / n);
+  try { if (!core.video.muted) core.video.volume = Math.max(0, Math.min(1, target)); } catch (_) {}
 }
 async function playSong(it, fromStart = true) {
   if (!it || typeof selectSong !== "function") return;
@@ -745,7 +1087,17 @@ async function playSong(it, fromStart = true) {
     await window.Trk.library.selectSong(it);
   }
   if (!mediaActive() || core.currentSong !== it || !core.videoReady) { renderMedia(); return; }
-  if (fromStart) { try { core.video.currentTime = savedMediaPosition({ resume: true }); } catch (_) {} }  /* ⏪ 続きから再生のときだけ巻き戻す（trk164） */
+  if (fromStart) {
+    const pos = savedMediaPosition({ resume: true });
+    try { core.video.currentTime = pos; } catch (_) {}
+    /* 🎧 trk327：前回の続きから始めたことを言葉で出す（巻き戻しの設定が効いていることも分かる） */
+    if (pos > 5) {
+      const back = resumeRewindSeconds(core.settings.mediaResumeRewind);
+      showMediaStatus(back > 0 ? "mediaResumedRewind" : "mediaResumed", { t: mpFmt(pos), s: back });
+    }
+  }
+  disposeGapless();
+  fadeInPending = crossfadeSeconds() > 0;   /* 🎧 頭の立ち上げは「曲が変わったとき」だけ（再開のたびには掛けない） */
   core.video.muted = false; core.video.volume = core.settings.musicVolume; setRate(mediaRate);
   try { await core.video.play(); } catch (_) { showMediaStatus("mediaLoadFailed"); }
   renderMedia(); updateMediaSession();
@@ -769,6 +1121,38 @@ function seekBy(delta) {
   if (reverseActive || reverseLoading) stopReverse(false, true);
   core.video.currentTime = Math.max(0, Math.min(core.video.duration, (core.video.currentTime || 0) + delta));
   renderMedia();
+}
+/* 🎧 trk327：読み込み中・詰まり・失敗の表示と「⟳ もう一度」。
+   ・waiting＝待っている、stalled＝3 秒たっても進まない、error＝失敗（理由＋再試行）。
+   ・無期限の「読み込み中」を出しっぱなしにしない（終わったら消す・失敗したら理由を出す）。 */
+function showBuffer(key, vars) {
+  if (!bufferNode) return;
+  bufferKey = key || "";
+  if (!key) { bufferNode.hidden = true; bufferNode.textContent = ""; bufferNode.dataset.i18n = ""; return; }
+  bufferNode.hidden = false;
+  bufferNode.dataset.i18n = key;
+  bufferNode.textContent = tr(key, vars);
+}
+function clearBuffer() { clearTimeout(bufferTimer); bufferTimer = 0; showBuffer(""); if (retryNode) retryNode.hidden = true; }
+function retryPlayback() {
+  const v = core.video;
+  if (!core.videoReady && !core.mediaURL) { showBuffer("mediaRetryNoSource"); return; }
+  showBuffer("mediaRetrying");
+  try { v.load(); } catch (_) {}
+  Promise.resolve(v.play()).then(() => { clearBuffer(); renderMedia(); updateMediaSession(); })
+    .catch(() => { showBuffer("mediaPlaybackFailed"); if (retryNode) retryNode.hidden = false; });
+}
+function wirePlaybackHealth() {
+  const v = core.video;
+  v.addEventListener("waiting", () => { if (mediaActive()) showBuffer("mediaBuffering"); });
+  v.addEventListener("stalled", () => { clearTimeout(bufferTimer); bufferTimer = setTimeout(() => { if (mediaActive() && !v.paused) showBuffer("mediaStalled"); }, 3000); });
+  v.addEventListener("canplay", () => { clearBuffer(); });
+  v.addEventListener("playing", () => {
+    clearBuffer();
+    if (fadeInPending) { fadeInPending = false; resetCrossfade(); fadeIn(); }
+  });
+  v.addEventListener("error", () => { clearBuffer(); showBuffer("mediaPlaybackFailed"); if (retryNode) retryNode.hidden = false; });
+  if (retryNode) retryNode.addEventListener("click", retryPlayback);
 }
 function showMediaStatus(key, vars) {
   if (!statusNode) return;
@@ -811,12 +1195,19 @@ function updateMediaSession() {
   const s = core.currentSong || {};
   if (typeof MediaMetadata !== "undefined" && s) {
     const d = trackDisplayMeta(core.currentSong);   /* 🏷 ロック画面・通知もタグ込みの表示名に揃える（trk167） */
-    try { ms.metadata = new MediaMetadata({ title:d.title || s.title || core.baseName(core.mediaName) || "trk!", artist:d.artist || s.artist || "trk!", album:d.album || s.packName || "trk!", artwork:[{ src:"icons/icon-512.png", sizes:"512x512", type:"image/png" }] }); } catch (_) {}
+    /* 🎧 trk327：アートは OS が大きさを選ぶので**複数サイズ**を出す（1 枚だけだと出ない端末がある） */
+    try { ms.metadata = new MediaMetadata({ title:d.title || s.title || core.baseName(core.mediaName) || "trk!", artist:d.artist || s.artist || "trk!", album:d.album || s.packName || "trk!",
+      artwork:[{ src:"icons/icon-192.png", sizes:"192x192", type:"image/png" }, { src:"icons/icon-512.png", sizes:"512x512", type:"image/png" }] }); } catch (_) {}
   }
   try {
     if (core.videoReady && Number.isFinite(core.video.duration) && core.video.duration > 0 && typeof ms.setPositionState === "function") {
       ms.setPositionState({ duration:core.video.duration, playbackRate:core.video.playbackRate || 1, position:Math.max(0, Math.min(core.video.duration, core.video.currentTime || 0)) });
     }
+  } catch (_) {}
+  /* 🎧 trk327：ロック画面のボタンのアイコンは playbackState で決まる。要素の状態から毎回そろえる
+     （設定しないと「再生中なのに一時停止の絵」のような食い違いが出る） */
+  try {
+    ms.playbackState = !core.videoReady ? "none" : (core.video && core.video.paused ? "paused" : "playing");
   } catch (_) {}
 }
 async function sessionSong(dir) {
@@ -861,21 +1252,56 @@ function updateTrackText() {
 function srcLabelSafe(s) {
   try { return typeof srcLabel === "function" ? window.Trk.library.srcLabel(s) : s.source || ""; } catch (_) { return s.source || ""; }
 }
+/* 🎧 trk327：キューの 1 行（曲を選ぶ／次に再生／キューに足す）。行は div にして、
+   中に「選ぶ」ボタンと小さな操作を並べる（button の中に button を入れない）。 */
+function queueRow(it, opts) {
+  const o = opts || {};
+  const row = core.el("div", "mediaQueueRow");
+  const b = core.el("button", "mediaQueueItem" + (core.currentSong && core.currentSong.key === it.key ? " selected" : ""));
+  b.type = "button"; b.dataset.key = it.key;
+  const d = trackDisplayMeta(it);   /* 🏷 キューもタグ込みの表示名（trk167） */
+  const name = core.el("strong", "mediaQueueName", d.title || it.title || "song");
+  const meta = core.el("span", "mediaQueueMeta", [d.artist || it.artist, d.album, srcLabelSafe(it)].filter(Boolean).join(" · "));
+  b.append(name, meta);
+  b.addEventListener("click", () => playSong(it, true));
+  row.append(b);
+  if (o.manual) {
+    const rm = core.el("button", "mediaQueueTool", "✕");
+    rm.type = "button";
+    rm.setAttribute("aria-label", tr("mediaQueueRemove"));
+    rm.title = tr("mediaQueueRemove");
+    rm.addEventListener("click", () => dequeueManual(it.key));
+    row.append(rm);
+  } else {
+    const nx = core.el("button", "mediaQueueTool", "⏭");
+    nx.type = "button";
+    nx.setAttribute("aria-label", tr("mediaQueuePlayNext"));
+    nx.title = tr("mediaQueuePlayNext");
+    nx.addEventListener("click", () => enqueueNext(it.key));
+    const qa = core.el("button", "mediaQueueTool", "＋");
+    qa.type = "button";
+    qa.setAttribute("aria-label", tr("mediaQueueAdd"));
+    qa.title = tr("mediaQueueAdd");
+    qa.addEventListener("click", () => enqueueLast(it.key));
+    row.append(nx, qa);
+  }
+  return row;
+}
 function renderQueue() {
   if (!queueNode) return;
   queueNode.textContent = "";
+  const songs = mpSongs();
+  const manual = manualQueue().map(key => songs.find(x => x.key === key)).filter(Boolean);
+  if (manual.length) {
+    const head = core.el("div", "mediaQueueManualHead");
+    head.append(core.el("strong", "", tr("mediaQueueNextTitle")), core.el("span", "hint", tr("mediaQueueNextHint")));
+    queueNode.append(head);
+    for (const it of manual.slice(0, 100)) queueNode.append(queueRow(it, { manual: true }));
+    queueNode.append(core.el("div", "mediaQueueDivider", tr("mediaQueueRest")));
+  }
   const all = currentList();
   if (!all.length) { queueNode.append(core.el("div", "mediaEmpty", tr(mpSongs().length ? "mediaNoMatch" : "mediaNoSongs"))); return; }
-  for (const it of all.slice(0, 300)) {
-    const b = core.el("button", "mediaQueueItem" + (core.currentSong && core.currentSong.key === it.key ? " selected" : ""));
-    b.type = "button"; b.dataset.key = it.key;
-    const d = trackDisplayMeta(it);   /* 🏷 キューもタグ込みの表示名（trk167） */
-    const name = core.el("strong", "mediaQueueName", d.title || it.title || "song");
-    const meta = core.el("span", "mediaQueueMeta", [d.artist || it.artist, d.album, srcLabelSafe(it)].filter(Boolean).join(" · "));
-    b.append(name, meta);
-    b.addEventListener("click", () => playSong(it, true));
-    queueNode.append(b);
-  }
+  for (const it of all.slice(0, 300)) queueNode.append(queueRow(it, {}));
   if (all.length > 300) queueNode.append(core.el("div", "hint", `+ ${all.length - 300}`));
 }
 /* ================= ✨ フレーム補完（js/frame-interp.js） =================
@@ -883,21 +1309,210 @@ function renderQueue() {
    ・重い処理なので、表示しているときだけ取り込みを動かします。 */
 const interpStrengthValue = () => Math.max(0, Math.min(1, Number(core.settings.frameInterpStrength)));
 function hasVideoFrames() { return !!(core.videoReady && core.video && core.video.videoWidth > 0); }
-/* 📌 画中画（trk164）：動画を画面の隅に小さく最前面表示する。対応ブラウザだけで動く */
-function pipSupported() {
-  return !!(typeof document !== "undefined" && document.pictureInPictureEnabled && core.video && typeof core.video.requestPictureInPicture === "function");
+/* 📌 画中画（trk164 → trk264）：ブラウザーには2つの API がある。
+   標準（video.requestPictureInPicture／document.exitPictureInPicture）と、Safari の webkit
+   （video.webkitSetPresentationMode）。trk264 からは両方を見て、使えるほうで入る。 */
+function pipStandaloneApp() {
+  /* iPhone／iPad のホーム画面、macOS の Dock から起動した Web アプリ（どちらも standalone）では、
+     標準 API があっても画中画に入れない（WebKit bug 303885）。
+     この環境では要素に聞く webkitSupportsPresentationMode が唯一の正しい答え。
+     trk265（レビュー Q4）：UA では見分けない（macOS の Dock の Web アプリも同じ扱いにする）。 */
+  try {
+    if (typeof navigator !== "undefined" && navigator.standalone === true) return true;
+    return typeof matchMedia === "function" && !!matchMedia("(display-mode: standalone)").matches;
+  } catch (_) { return false; }
+}
+function pipWebkitProbe() {
+  const v = core.video;
+  if (!v || typeof v.webkitSupportsPresentationMode !== "function") return undefined;
+  try {
+    /* Safari は「最初のフレームが出るまで対応を名乗らない」ので、読み込み前の false は「分からない」にする */
+    if (!(v.readyState >= 1)) return undefined;
+    const ok = v.webkitSupportsPresentationMode("picture-in-picture");
+    return ok === true ? true : ok === false ? false : undefined;
+  } catch (_) { return undefined; }
+}
+function pipState() {
+  const v = core.video || {};
+  const probe = pipWebkitProbe();
+  return {
+    standard: typeof v.requestPictureInPicture === "function",
+    /* ホーム画面アプリでは「あるのに必ず失敗する」標準 API を、要素の答え（false）に合わせて切る */
+    standardEnabled: !!(typeof document !== "undefined" && document.pictureInPictureEnabled !== false &&
+      !(pipStandaloneApp() && probe === false)),
+    webkit: typeof v.webkitSetPresentationMode === "function",
+    webkitProbe: probe,
+    prefer: pipPrefer,
+  };
+}
+function pipSupported() { return pipBackend(pipState()) !== ""; }
+/* 押せない理由（ホーム画面アプリだけは言い方を変える） */
+function pipUnsupportedKey() {
+  return pipStandaloneApp() && pipWebkitProbe() === false ? "mediaPipHomeApp" : "mediaPipUnsupported";
+}
+/* ==== 純粋な計算（trk263：画中画を残すか・こちらの映像を隠すか） ====
+   ブラウザーを起動しないテスト（tests/trk263-pip.test.mjs）が、この範囲だけを切り出して読みます。 */
+/* メディアプレーヤーを閉じるとき、画中画を残すか（"keep"）閉じるか（"exit"）。
+   st = { keep:設定がオン, pip:いま画中画が出ている, close:手で閉じた, phase:いまの画面 } */
+function pipExitPlan(st) {
+  const v = st || {};
+  if (v.keep !== true || v.pip !== true) return "exit";
+  if (v.close !== true || v.phase !== "title") return "exit";   /* ゲーム開始では閉じる（ゲームの曲が小窓に出ないように） */
+  return "keep";
+}
+/* プレーヤー側の映像を出すか。open＝プレーヤーを開いている、pip＝画中画が出ている、
+   hideOnPip＝設定、shownHere＝「ここにも表示」を押した（この画面だけの一時的な上書き） */
+function stageVisible(st) {
+  const v = st || {};
+  if (v.open !== true) return false;
+  if (v.pip === true && v.hideOnPip === true && v.shownHere !== true) return false;
+  return true;
+}
+/* 画中画の案内（1行）を出すか */
+function pipNoticeVisible(st) {
+  const v = st || {};
+  return v.open === true && v.pip === true && v.hideOnPip === true;
+}
+/* ==== 純粋な計算 ここまで ==== */
+/* ==== 純粋な計算（trk264：Safari の画中画をどの API で動かすか） ====
+   ブラウザーを起動しないテスト（tests/trk264-pip-safari.test.mjs）が、この範囲だけを切り出して読みます。 */
+/* 2つの API のどちらを使うか（"standard" / "webkit" / ""）。
+   st = { standard:標準 API がある, standardEnabled:pictureInPictureEnabled が false でない,
+          webkit:webkitSetPresentationMode がある,
+          webkitProbe:要素に聞いた答え（true/false/undefined＝まだ分からない）,
+          prefer:前回通ったほう } */
+function pipBackend(st) {
+  const v = st || {};
+  const standard = v.standard === true && v.standardEnabled !== false;
+  /* probe が false のときだけ webkit を諦める（undefined は「まだ分からない」＝使える扱い） */
+  const webkit = v.webkit === true && v.webkitProbe !== false;
+  if (v.prefer === "webkit" && webkit) return "webkit";
+  if (v.prefer === "standard" && standard) return "standard";
+  if (standard) return "standard";   /* 標準を先に（trk264 U1）。断られたら togglePip が webkit を試す */
+  return webkit ? "webkit" : "";
+}
+/* いま小窓が出ているか（2つの API の見え方を1つにまとめる） */
+function pipRunning(st) {
+  const v = st || {};
+  return v.stdElement === true || v.webkitMode === "picture-in-picture";
+}
+/* ==== 純粋な計算（trk264）ここまで ==== */
+/* ==== 画中画の出入り（trk265：ブラウザーを起動しないテストが、この範囲を切り出して読みます） ====
+   レビュー M1：閉じる側を「どちらで入ったか」で分けない。**いま出ているか**を順に見て、両方を試す。
+   レビュー R1：webkit は Promise を返さないので、時間で決め打ちせず「変わった」の知らせを待つ。 */
+function pipActuallyOn() {
+  return pipRunning({
+    stdElement: typeof document !== "undefined" && !!document.pictureInPictureElement,
+    webkitMode: core.video ? core.video.webkitPresentationMode : "",
+  });
+}
+/* 標準 → webkit の順に、**両方**を試して閉じる（if / else にしない）。
+   Safari は webkit で入っても pictureInPictureElement が立つことがあり、
+   標準が失敗したときに webkit を試さないと、小窓が残ったまま「終了した」ことになる。 */
+async function leavePipBoth() {
+  try { if (typeof document !== "undefined" && document.pictureInPictureElement) await document.exitPictureInPicture(); } catch (_) {}
+  try {
+    const v = core.video;
+    if (v && typeof v.webkitSetPresentationMode === "function" && v.webkitPresentationMode === "picture-in-picture") v.webkitSetPresentationMode("inline");
+  } catch (_) {}
+}
+/* webkit の「変わった」を 1 回だけ待つ（上限つき）。先に待ち始めてから呼ぶので、速い知らせも取りこぼさない */
+function waitWebkitPip(ms = 2500) {
+  return new Promise(resolve => {
+    const v = core.video;
+    if (!v || typeof v.addEventListener !== "function") { resolve(false); return; }
+    let done = false;
+    const finish = ok => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try { v.removeEventListener("webkitpresentationmodechanged", onChange); } catch (_) {}
+      resolve(ok);
+    };
+    const onChange = () => { if (v.webkitPresentationMode === "picture-in-picture") finish(true); };
+    const timer = setTimeout(() => finish(pipActuallyOn()), ms);
+    v.addEventListener("webkitpresentationmodechanged", onChange);
+  });
+}
+/* Safari（webkit）で入る。webkitSetPresentationMode は Promise ではないので、
+   「変わった」の知らせを待つ（trk265・レビュー R1：時間で決め打ちしない） */
+async function pipEnterWebkit() {
+  const v = core.video;
+  if (!v || typeof v.webkitSetPresentationMode !== "function") return false;
+  const waiting = waitWebkitPip();
+  try {
+    v.webkitSetPresentationMode("picture-in-picture");
+  } catch (err) {
+    console.warn("[media] PiP（webkit）:", err);
+    return false;
+  }
+  const ok = await waiting;
+  if (ok) pipPrefer = "webkit";
+  return ok;
+}
+/* ==== 出入り（閉じる順番と待ち方） ここまで ==== */
+/* ==== 純粋な計算（trk266：押せない理由を、見える行として出すか） ====
+   ブラウザーを起動しないテスト（tests/trk266-pip-why.test.mjs）が、この範囲だけを切り出して読みます。
+   st = { ok:押せる, ready:動画を読み込んだ, key:押せない理由の言葉 } */
+function pipWhyVisible(st) {
+  const v = st || {};
+  if (v.ok === true) return false;                 /* 押せるなら出さない */
+  if (v.key !== "mediaPipHomeApp") return false;   /* 普通の非対応（Firefox など）は title だけ＝出しっぱなしにしない */
+  return v.ready === true;                         /* 読み込む前は「まだ分からない」ので、使えないと書かない */
+}
+/* ==== 純粋な計算（trk266）ここまで ==== */
+function pipIsOn() { return !!(pipActive || pipActuallyOn()); }
+/* 📌 trk263：画中画を終える（ブラウザーの ✕ でも同じ後始末を通る）。
+   trk265：閉じる順番は leavePipBoth() に寄せた（標準と webkit の両方）。 */
+async function exitPip() {
+  await leavePipBoth();
+  pipActive = pipActuallyOn();   /* まだ出ていれば true のまま（後から来るイベントが合わせる） */
+  pipStageShown = false;
+  syncMediaStage(); renderMedia();
+}
+/* 標準 API で入る */
+async function pipEnterStandard() {
+  try {
+    await core.video.requestPictureInPicture();
+    pipPrefer = "standard";
+    return true;
+  } catch (err) {
+    console.warn("[media] PiP（標準）:", err);   /* Safari は「あるのに断る」ことがあるので、失敗は控えめに */
+    return false;
+  }
+}
+/* 入る：まず pipBackend() の答え、だめならもう一方（Safari の標準 API は「あるのに断られる」ことがある） */
+async function enterPip() {
+  const st = pipState();
+  const first = pipBackend(st);
+  if (first === "standard") {
+    if (await pipEnterStandard()) return true;
+    if (st.webkit === true && st.webkitProbe !== false) return pipEnterWebkit();
+    return false;
+  }
+  if (first === "webkit") return pipEnterWebkit();
+  return false;
 }
 async function togglePip() {
+  /* 📌 trk266（F2）：小窓が出るのを待っている間（最大 2.5 秒）は、もう一度押しても何もしない。
+     待っている間に pipIsOn() はまだ false なので、そのままだと enterPip() が二重に走ってしまう。 */
+  if (pipBusy) return;
   if (!pipSupported() || !core.videoReady) return;
+  if (pipIsOn()) { await exitPip(); return; }
+  pipBusy = true;
   try {
-    if (document.pictureInPictureElement) { await document.exitPictureInPicture(); pipActive = false; }
-    else { await core.video.requestPictureInPicture(); pipActive = true; }
-  } catch (err) {
-    pipActive = false;
-    if (typeof showToast === "function") window.Trk.play.showToast(tr("mediaPipUnsupported"));
-    console.error("[media] PiP:", err);
+    const ok = await enterPip();
+    pipActive = ok || pipIsOn();   /* 📌 trk265（R1）：待ったあとに遅れて出た場合も「出ている」に合わせる */
+    if (!pipActive) {
+      pipStageShown = false;
+      /* 「非対応」と「開けなかった」は別の言葉にする（trk264 U3） */
+      if (typeof showToast === "function") window.Trk.play.showToast(tr(pipSupported() ? "mediaPipFailed" : pipUnsupportedKey()));
+    }
+  } finally {
+    pipBusy = false;   /* 例外でも必ず戻す（2 回目からは普通に押せる） */
+    syncMediaStage();
+    renderMedia();
   }
-  renderMedia();
 }
 /* 🔆 Screen Wake Lock（trk164）：動画の再生中だけ画面の消灯を防ぐ。
    音声だけの再生では防がない（端末の省電力を尊重）。非対応ブラウザでは何もしない */
@@ -1308,8 +1923,17 @@ function syncMediaStage() {
   if (!stageWrap || !stageCanvas) return;
   const FI = window.TrkFrameInterp;
   const frames = hasVideoFrames();
-  const show = mediaOpen;                       // 枠はプレーヤーを開いているときだけ
+  /* 📌 trk263：画中画を出している間は、こちらの映像を隠す（既定オン）。
+     「ここにも表示」を押したときだけ、この画面では出す（保存しない）。 */
+  const pip = pipIsOn();
+  const hideOnPip = core.settings.mediaPipHideStage !== false;
+  const show = stageVisible({ open: mediaOpen, pip, hideOnPip, shownHere: pipStageShown });
   stageWrap.hidden = !show;
+  if (pipNotice) {
+    pipNotice.hidden = !pipNoticeVisible({ open: mediaOpen, pip, hideOnPip });
+    if (pipHereNode) { const k = pipStageShown ? "mediaPipHideHere" : "mediaPipShowHere"; pipHereNode.textContent = tr(k); pipHereNode.dataset.i18n = k; }
+    if (pipTextNode) { pipTextNode.textContent = tr("mediaPipNotice"); pipTextNode.dataset.i18n = "mediaPipNotice"; }
+  }
   stageCanvas.hidden = !frames;                 // 映像が無い曲では注記だけ出す
   if (show && frames) {
     if (FI && core.settings.frameInterp !== "off") FI.attach("media", stageCanvas);
@@ -1321,9 +1945,47 @@ function syncMediaStage() {
   if (stageNote) stageNote.hidden = frames;
 }
 
+/* 🎬 trk262：映像の操作パネルの出かた（設定 videoMaxChrome）と、字幕の置き場所・大きさ。
+   判断は js/viewer-chrome.js（純粋な計算）に任せ、ここは DOM を合わせるだけ。
+   bottom／none のときは、**動画の再生中だけ**触らないと操作列を隠す（止めれば必ず出る）。 */
+function chromeApi() { return (window.Trk && window.Trk.viewerChrome) || null; }
+function mediaChromeMode() { const vc = chromeApi(); return vc ? vc.mode(core.settings && core.settings.videoMaxChrome) : "full"; }
+function playingNow() { try { return !!(core.videoReady && !core.video.paused && !core.video.ended); } catch (_) { return false; } }
+function syncMediaChrome() {
+  if (!dialog) return;
+  const vc = chromeApi();
+  if (!vc || !vc.mediaAutoHide(mediaChromeMode(), playingNow())) {
+    clearTimeout(mediaChromeTimer); mediaChromeTimer = 0;
+    dialog.classList.remove("mediaChromeIdle");
+    return;
+  }
+  if (mediaChromeTimer || dialog.classList.contains("mediaChromeIdle")) return;
+  mediaChromeTimer = setTimeout(() => {
+    mediaChromeTimer = 0;
+    if (dialog && mediaOpen) dialog.classList.add("mediaChromeIdle");
+  }, vc.IDLE_MS);
+}
+function pokeMediaChrome() {
+  if (!dialog) return;
+  clearTimeout(mediaChromeTimer); mediaChromeTimer = 0;
+  dialog.classList.remove("mediaChromeIdle");
+  syncMediaChrome();
+}
+function syncSubsLook() {
+  if (!subsOverlay) return;
+  const vc = chromeApi();
+  const pos = vc ? vc.subsPos(core.settings && core.settings.mediaSubsPos) : "bottom";
+  const size = vc ? vc.subsSize(core.settings && core.settings.mediaSubsSize) : "normal";
+  if (subsOverlay.dataset.pos !== pos) subsOverlay.dataset.pos = pos;
+  if (subsOverlay.dataset.size !== size) subsOverlay.dataset.size = size;
+  if (subsPosNode && subsPosNode.value !== pos) subsPosNode.value = pos;
+  if (subsSizeNode && subsSizeNode.value !== size) subsSizeNode.value = size;
+}
 function renderMedia() {
   if (!mediaOpen || !overlay) return;
   updateTrackText();
+  syncMediaChrome();   /* 🎬 trk262 */
+  syncSubsLook();      /* 🎬 trk262 */
   const ready = !!(core.videoReady && core.currentSong);
   const cur = ready ? (core.video.currentTime || 0) : 0, dur = ready && Number.isFinite(core.video.duration) ? core.video.duration : 0;
   if (progressNode) {
@@ -1345,11 +2007,26 @@ function renderMedia() {
     maxNode.setAttribute("aria-pressed", String(maxOn));
   }
   if (pipNode) {   /* 📌 画中画（trk164） */
-    const pipOn = pipActive || !!(typeof document !== "undefined" && document.pictureInPictureElement);
+    const pipOn = pipIsOn();
     const pipKey = pipOn ? "mediaPipClose" : "mediaPip";
     pipNode.textContent = tr(pipKey); pipNode.dataset.i18n = pipKey;
-    pipNode.disabled = !ready || !pipSupported();
-    pipNode.title = pipSupported() ? "" : tr("mediaPipUnsupported");
+    const pipOk = pipSupported();
+    pipNode.disabled = !ready || !pipOk;
+    pipNode.title = pipOk ? "" : tr(pipUnsupportedKey());
+    /* 📌 trk265（R3）→ trk266（F1）：理由を見える行で出すのは、
+       「ホーム画面や Dock のアプリだから使えない」と分かったときだけ。
+       普通の非対応（Firefox など）は今までどおり title だけ＝行が出しっぱなしにならない。 */
+    if (pipWhy) {
+      const whyKey = pipOk ? "" : pipUnsupportedKey();
+      const whyOn = pipWhyVisible({ ok: pipOk, ready, key: whyKey });
+      pipWhy.hidden = !whyOn;
+      if (whyOn) {
+        pipWhy.textContent = tr(whyKey); pipWhy.dataset.i18n = whyKey;
+        pipNode.setAttribute("aria-describedby", "mediaPipWhy");
+      } else {
+        pipNode.removeAttribute("aria-describedby");
+      }
+    }
     pipNode.classList.toggle("selected", pipOn);
     pipNode.setAttribute("aria-pressed", String(pipOn));
   }
@@ -1398,20 +2075,34 @@ function mediaExitPlan(st) {
 function closeMedia(restore = true) {
   if (!mediaOpen) return;
   if (window.TrkVideoMax && window.TrkVideoMax.isOpen()) window.TrkVideoMax.close();   /* 🖥 全画面表示も一緒に閉じる */
-  /* 📌 画中画も一緒に終える（trk164）：閉じたあとに浮き窓だけ残さない */
-  if (typeof document !== "undefined" && document.pictureInPictureElement) { try { document.exitPictureInPicture(); } catch (_) {} }
-  pipActive = false;
+  /* 📌 画中画（trk164 → trk263）：設定がオンなら、手で閉じたときは小窓を残す。
+     ゲーム開始（close:false）や、タイトル以外の画面では閉じる（ゲームの曲が小窓に出ないように）。 */
+  const keepPip = pipExitPlan({
+    keep: core.settings.mediaPipKeep !== false,
+    pip: pipIsOn(),
+    close: restore === true,
+    phase: core.phase,
+  }) === "keep";
+  if (!keepPip) {
+    pipActive = false;
+    leavePipBoth();   /* 📌 trk265（M1）：標準→webkit の順に**両方**試す（未処理の reject も出ない） */
+  }
+  pipStageShown = false;
   deactivateWall(false);
   mediaOpen = false; window.Trk.overlay.set("media", false); window._trkMediaPlayerMode = false;
   clearInterval(tickTimer); tickTimer = 0; stopSleepTimer(true); seeking = false;
+  clearTimeout(mediaChromeTimer); mediaChromeTimer = 0;   /* 🎬 trk262：隠すタイマーも止める */
+  if (dialog) dialog.classList.remove("mediaChromeIdle");
   clearInterval(loopTimer); loopTimer = 0; stopReverse(false, true); clearMediaLoop(true);
   saveMediaPosition(); core.video.playbackRate = 1;
   /* 🚪 抜け方（trk206）。既定は「そのまま流す」＝プレイヤーで聴いていた曲が曲リストでも途切れない */
-  const exitPlan = mediaExitPlan({
+  let exitPlan = mediaExitPlan({
     close: restore === true, phase: core.phase,
     reloadOnExit: core.settings.mediaReloadOnExit === true,
     previewEnabled: core.settings.previewEnabled === true,
   });
+  /* 📌 trk263：画中画を残すときは止めない（止めると小窓が止まった絵になる） */
+  if (keepPip) exitPlan = "keep";
   if (exitPlan !== "keep") core.video.pause();
   updateWakeLock();   /* 🔆 閉じたら即解放（mediaOpen=false → 不要） */
   if (stageRaf) { cancelAnimationFrame(stageRaf); stageRaf = 0; }
@@ -1419,8 +2110,10 @@ function closeMedia(restore = true) {
   if (stageWrap) stageWrap.hidden = true;
   overlay.hidden = true; document.body.classList.remove("mediaOpen");
   if (exitPlan === "reload" && typeof startPreview === "function") setTimeout(window.Trk.library.startPreview, 50);
-  /* 流し続けるときは位置を動かさず、音量だけ選曲中のプレビュー相当へ静かに戻す（library.js） */
-  else if (exitPlan === "keep" && window.Trk.library && typeof window.Trk.library.previewContinue === "function") window.Trk.library.previewContinue();
+  /* 流し続けるときは位置を動かさず、音量だけ選曲中のプレビュー相当へ静かに戻す（library.js）
+     📌 trk263：画中画で見ている間は、プレイヤーの音量のまま（小さくしない） */
+  else if (exitPlan === "keep" && !keepPip && window.Trk.library && typeof window.Trk.library.previewContinue === "function") window.Trk.library.previewContinue();
+  if (keepPip && typeof showToast === "function") window.Trk.play.showToast(tr("mediaPipKeepOn"));
   if (mediaReturnFocus && mediaReturnFocus.isConnected) mediaReturnFocus.focus();   /* 🎥 開いた入口へ焦点を戻す（trk186） */
   else if (powerButton) powerButton.focus();
 }
@@ -1434,6 +2127,7 @@ function openMedia() {
   /* ⏪ 止まっている／終わっているときだけ続き位置へ（再生中の飛び防止。再開時は巻き戻しを適用＝trk164） */
   if (core.currentSong && core.videoReady && (core.video.paused || core.video.ended)) { try { core.video.currentTime = savedMediaPosition({ resume: true }); } catch (_) {} }
   tickTimer = setInterval(renderMedia, 250); loopTimer = setInterval(checkMediaLoop, 40);
+  pokeMediaChrome();   /* 🎬 trk262：開いた直後は操作を出しておく */
   renderMedia(); updateMediaSession(); syncMediaStage();
   if (lyricsBoxOpen()) loadLyrics();   /* 🎤 開いたままだった歌詞パネルの読み直し（trk166） */
   loadSubs(true);   /* 💬 字幕はパネルが閉じていても読む（オーバーレイ表示のため・trk169） */
@@ -1459,12 +2153,23 @@ function buildMedia() {
   overlay = core.el("div", "instOverlay mediaOverlay"); overlay.id = "mediaPlayerMode"; overlay.hidden = true;
   const backdrop = core.el("div", "instBackdrop");
   dialog = core.el("section", "instDialog mediaDialog"); dialog.setAttribute("role", "dialog"); dialog.setAttribute("aria-modal", "true"); dialog.setAttribute("aria-labelledby", "mediaTitle");
+  /* 🎬 trk262：触れたら操作を出し直す（設定が bottom／none のときだけ隠れる） */
+  dialog.addEventListener("pointermove", pokeMediaChrome);
+  dialog.addEventListener("pointerdown", pokeMediaChrome);
+  dialog.addEventListener("focusin", pokeMediaChrome);
   const header = core.el("header", "instHeader mediaHeader");
   const hwrap = core.el("div"); const h = tx("h2", "mediaTitle"); h.id = "mediaTitle";
   hwrap.append(h, tx("p", "mediaSubtitle", "instSubtitle"));
   closeNode = makeButton("mediaClose", "instClose mediaExitBtn");   /* ← 曲リストに戻る（trk187・明示ボタンは即退出） */
   closeNode.addEventListener("click", () => closeMedia());
-  header.append(hwrap, closeNode);
+  /* 🎨 trk297：設定「書斎・基地にスキンのボタン」がオンのときだけ、基地の見出しに出す（押すと基地だけのダイアログ） */
+  /* 作るのは一度だけ。出し入れは remodern-ui.js の render() が hidden で行う（言語も core.js の data-i18n で替わる） */
+  const skinBtn = document.createElement("button");
+  skinBtn.type = "button"; skinBtn.className = "miniBtn remodernOpenMedia"; skinBtn.dataset.remodernOpen = "base";
+  skinBtn.dataset.i18n = "remodernOpenBtn";
+  skinBtn.textContent = tr("remodernOpenBtn");
+  skinBtn.hidden = core.settings.remodernIcons !== true;
+  header.append(hwrap, skinBtn, closeNode);
 
   const display = core.el("div", "mediaDisplay");
   titleNode = core.el("strong", "mediaDisplayTitle", tr("mediaNoTrack"));
@@ -1478,6 +2183,16 @@ function buildMedia() {
   stageNote = core.el("div", "mediaStageNote hint", tr("mediaStageNoVideo")); stageNote.dataset.i18n = "mediaStageNoVideo";
   subsOverlay = core.el("div", "mediaSubs"); subsOverlay.hidden = true;   /* 💬 字幕オーバーレイ（trk169・クリックは通す） */
   stageWrap.append(stageCanvas, subsOverlay, stageNote);
+  /* 📌 trk263：画中画を出している間の案内（1行）。映像を隠した代わりに、戻す道をここに残す */
+  pipNotice = core.el("div", "mediaPipNotice"); pipNotice.id = "mediaPipNotice"; pipNotice.hidden = true;
+  pipTextNode = tx("span", "mediaPipNotice", "mediaPipNoticeText");
+  pipHereNode = makeButton("mediaPipShowHere");
+  pipStopNode = makeButton("mediaPipClose");
+  pipHereNode.addEventListener("click", () => { pipStageShown = !pipStageShown; syncMediaStage(); });
+  pipStopNode.addEventListener("click", () => { exitPip(); });
+  pipNotice.append(pipTextNode, pipHereNode, pipStopNode);
+  /* 📌 trk265（R3）：押せないときの理由。title はタッチ端末で長押ししても出ないので、見える1行を出す */
+  pipWhy = core.el("p", "mediaPipWhy hint"); pipWhy.id = "mediaPipWhy"; pipWhy.hidden = true;
 
   const controls = core.el("div", "mediaControls");
   const prev = makeButton("mediaPrev", "mediaControlBtn");
@@ -1489,8 +2204,13 @@ function buildMedia() {
   /* 📌 画中画（trk164）：全画面の右に置く。非対応ブラウザでは無効のまま理由をタイトルで示す */
   pipNode = makeButton("mediaPip", "mediaSmallBtn");
   pipNode.addEventListener("click", togglePip);
-  core.video.addEventListener("enterpictureinpicture", () => { pipActive = true; renderMedia(); });
-  core.video.addEventListener("leavepictureinpicture", () => { pipActive = false; renderMedia(); });
+  core.video.addEventListener("enterpictureinpicture", () => { pipActive = true; pipStageShown = false; syncMediaStage(); renderMedia(); });
+  core.video.addEventListener("leavepictureinpicture", () => { pipActive = false; pipStageShown = false; syncMediaStage(); renderMedia(); });
+  /* 📌 trk264：Safari（webkit）の出入りはこちらに来る（✕ は leavepictureinpicture を出さない） */
+  core.video.addEventListener("webkitpresentationmodechanged", () => {
+    pipActive = core.video.webkitPresentationMode === "picture-in-picture";
+    pipStageShown = false; syncMediaStage(); renderMedia();
+  });
   wallNode = makeButton("mediaWallShow", "mediaSmallBtn");
   const restart = makeButton("mediaRestart", "mediaSmallBtn");
   prev.addEventListener("click", () => stepMedia(-1)); playNode.addEventListener("click", playPause); next.addEventListener("click", () => stepMedia(1)); reverseNode.addEventListener("click", toggleReverse); wallNode.addEventListener("click", toggleWall);
@@ -1498,10 +2218,18 @@ function buildMedia() {
   maxNode.addEventListener("click", () => { if (window.TrkVideoMax) window.TrkVideoMax.toggle(); });
   if (window.TrkVideoMax) window.TrkVideoMax.onChange(() => renderMedia());
   controls.append(prev, playNode, next, reverseNode, maxNode, pipNode, wallNode, restart);
+  /* 🎧 trk327：失敗したときだけ出る「⟳ もう一度」（成功したら隠す） */
+  retryNode = makeButton("mediaRetry", "mediaSmallBtn"); retryNode.hidden = true; controls.append(retryNode);
 
   const progressRow = core.el("div", "mediaProgressRow");
   progressNode = document.createElement("input"); progressNode.type = "range"; progressNode.min = "0"; progressNode.step = "0.1"; progressNode.value = "0"; progressNode.className = "mediaProgress"; progressNode.setAttribute("aria-label", tr("mediaSeek"));
   timeNode = core.el("span", "mono mediaTime", "0:00 / 0:00");
+  /* 🎧 trk327：読み込み中・詰まり・失敗の 1 行（無期限に出しっぱなしにしない） */
+  bufferNode = core.el("span", "mediaBuffer hint"); bufferNode.hidden = true;
+  bufferNode.setAttribute("role", "status"); bufferNode.setAttribute("aria-live", "polite");
+  /* 操作の列（mediaControls／mediaProgressRow）は無操作で薄くなるので、この 1 行は外に置きます
+     （読み込みが長引くときこそ見えてほしいため）。 */
+  const bufferRow = core.el("div", "mediaBufferRow"); bufferRow.append(bufferNode);
   /* 🌊 波形シークバー（trk173）：range の上に canvas を重ねる（pointer-events:none＝操作は range のまま）。
      吹き出しはホバー位置の時刻（動画フレームのサムネはデコード経路が別なので今回は見送り） */
   waveWrapNode = core.el("div", "mediaProgressWrap");
@@ -1640,7 +2368,35 @@ function buildMedia() {
   subsResetNode.addEventListener("click", () => shiftSubsOffset(-(subsState.data ? subsState.data.offsetMs : 0)));
   subsOffsetNode = core.el("span", "mono", "");
   subsOffsetRow.append(subsEarlierNode, subsResetNode, subsLaterNode, subsOffsetNode);
-  subsBox.append(subsSourceNode, subsActions, subsOnLab, subsOffsetRow);
+  /* 🎬 trk262：字幕の置き場所（下・中央・上）と大きさ（小・中・大）。trk が描く字幕だけに効く */
+  const subsPosRow = core.el("div", "mediaSubsPosRow");
+  subsPosRow.append(tx("span", "mediaSubsPos"));
+  subsPosNode = document.createElement("select");
+  for (const [value, key] of [["bottom", "mediaSubsPosBottom"], ["middle", "mediaSubsPosMiddle"], ["top", "mediaSubsPosTop"]]) {
+    const o = document.createElement("option"); o.value = value; o.dataset.i18n = key; o.textContent = tr(key); subsPosNode.append(o);
+  }
+  subsPosNode.value = (window.Trk.viewerChrome ? window.Trk.viewerChrome.subsPos(core.settings.mediaSubsPos) : "bottom");
+  subsPosNode.addEventListener("change", () => {
+    core.settings.mediaSubsPos = window.Trk.viewerChrome ? window.Trk.viewerChrome.subsPos(subsPosNode.value) : "bottom";
+    core.saveUserPrefs(); syncSubsLook();
+  });
+  subsPosRow.append(subsPosNode);
+  const subsSizeRow = core.el("div", "mediaSubsSizeRow");
+  subsSizeRow.append(tx("span", "mediaSubsSize"));
+  subsSizeNode = document.createElement("select");
+  for (const [value, key] of [["small", "mediaSubsSizeSmall"], ["normal", "mediaSubsSizeNormal"], ["large", "mediaSubsSizeLarge"]]) {
+    const o = document.createElement("option"); o.value = value; o.dataset.i18n = key; o.textContent = tr(key); subsSizeNode.append(o);
+  }
+  subsSizeNode.value = (window.Trk.viewerChrome ? window.Trk.viewerChrome.subsSize(core.settings.mediaSubsSize) : "normal");
+  subsSizeNode.addEventListener("change", () => {
+    core.settings.mediaSubsSize = window.Trk.viewerChrome ? window.Trk.viewerChrome.subsSize(subsSizeNode.value) : "normal";
+    core.saveUserPrefs(); syncSubsLook();
+  });
+  subsSizeRow.append(subsSizeNode);
+  /* ℹ 自動字幕の案内（trk262）。trk は音を聞き取らない＝OS／ブラウザーのライブキャプションを使う */
+  const subsAuto = core.el("details", "mediaSubsAuto");
+  subsAuto.append(tx("summary", "mediaSubsAutoTitle"), tx("p", "mediaSubsAutoHint", ""));
+  subsBox.append(subsSourceNode, subsActions, subsOnLab, subsOffsetRow, subsPosRow, subsSizeRow, subsAuto);
   subsBox.addEventListener("toggle", () => {
     core.settings.mediaSubsOpen = subsBox.open; core.saveUserPrefs();
     if (subsBox.open) loadSubs();
@@ -1674,7 +2430,7 @@ function buildMedia() {
   shuffleNode = makeButton("mediaShuffle", "mediaSmallBtn"); shuffleNode.addEventListener("click", () => setShuffle(!shuffle));
   const repeatLabel = core.el("label", "mediaOption"); repeatLabel.append(tx("span", "mediaRepeat"));
   repeatNode = document.createElement("select");
-  for (const [value, key] of [["off", "mediaRepeatOff"], ["one", "mediaRepeatOne"], ["all", "mediaRepeatAll"]]) { const o = document.createElement("option"); o.value = value; o.dataset.i18n = key; o.textContent = tr(key); repeatNode.append(o); }
+  fillRepeatOptions();
   repeatLabel.append(repeatNode); repeatNode.addEventListener("change", () => setRepeat(repeatNode.value));
   const rateLabel = core.el("label", "mediaOption"); rateLabel.append(tx("span", "mediaRate"));
   rateNode = document.createElement("select"); for (const v of [.5, .75, 1, 1.25, 1.5, 2]) { const o = document.createElement("option"); o.value = v; o.textContent = `${v.toFixed(2)}x`; rateNode.append(o); }
@@ -1713,12 +2469,55 @@ function buildMedia() {
     if (typeof showToast === "function") window.Trk.play.showToast(tr("mediaResumeSet", { s: core.settings.mediaResumeRewind }));
   });
   resumeLabel.append(resumeNode);
-  options.append(volumeRow, muteNode, shuffleNode, repeatLabel, rateLabel, sleepLabel, resumeLabel, zeroRow);
+  /* 🎧 trk327：曲間のつなぎ（どちらも既定オフ）。数字は言語に依らない表記 */
+  const cfLabel = core.el("label", "mediaOption"); cfLabel.append(tx("span", "mediaCrossfadeLabel"));
+  const cfNode = document.createElement("select");
+  for (const v of [0, 3, 5, 8, 12]) {
+    const o = document.createElement("option"); o.value = String(v);
+    if (v === 0) { o.dataset.i18n = "mediaCrossfadeOff"; o.textContent = tr("mediaCrossfadeOff"); } else o.textContent = `${v}s`;
+    cfNode.append(o);
+  }
+  cfNode.value = String(Math.min(12, Math.max(0, Number(core.settings.mediaCrossfade) || 0)));
+  cfNode.addEventListener("change", () => {
+    core.settings.mediaCrossfade = Math.min(12, Math.max(0, Number(cfNode.value) || 0));
+    core.saveUserPrefs(); resetCrossfade();
+    if (typeof showToast === "function") window.Trk.play.showToast(tr("mediaCrossfadeSet", { s: core.settings.mediaCrossfade }));
+  });
+  cfLabel.append(cfNode);
+  const cfHint = tx("div", "mediaCrossfadeHint", "hint");
+  const gpRow = core.el("label", "mediaOption mediaCheckRow");
+  const gpNode = document.createElement("input"); gpNode.type = "checkbox"; gpNode.id = "mediaGaplessChk";
+  const gpText = document.createElement("span"); gpText.dataset.i18n = "mediaGaplessLabel"; gpText.textContent = tr("mediaGaplessLabel");
+  gpRow.append(gpNode, gpText);
+  gpNode.checked = core.settings.mediaGapless === true;
+  gpNode.addEventListener("change", () => {
+    core.settings.mediaGapless = gpNode.checked === true;
+    core.saveUserPrefs();
+    if (core.settings.mediaGapless) preloadNextForGapless(); else disposeGapless();
+  });
+  const gpHint = tx("div", "mediaGaplessHint", "hint");
+  options.append(volumeRow, muteNode, shuffleNode, repeatLabel, rateLabel, sleepLabel, resumeLabel, zeroRow, cfLabel, cfHint, gpRow, gpHint);
 
   const queuePanel = core.el("section", "mediaQueuePanel");
   const qhead = core.el("div", "mediaQueueHead"); qhead.append(tx("h3", "mediaQueue"), tx("p", "mediaQueueHint", "hint"));
   searchNode = document.createElement("input"); searchNode.type = "search"; searchNode.placeholder = tr("mediaSearch"); searchNode.dataset.i18nPlaceholder = "mediaSearch"; searchNode.className = "mediaSearch"; searchNode.addEventListener("input", () => { queueFilter = searchNode.value; renderQueue(); });
-  queueNode = core.el("div", "mediaQueueList"); queuePanel.append(qhead, searchNode, queueNode);
+  queueNode = core.el("div", "mediaQueueList");
+  /* 🎧 trk327：いまのキューからプレイリストを作る（曲ファイルは動かさない。押したときだけ） */
+  const qSaveBtn = makeButton("mediaQueuePlaylist", "mediaSmallBtn");
+  qSaveBtn.addEventListener("click", () => {
+    /* さがすの文字が残っていても、キュー全部（手動キューの先頭＋曲リストの並び）から作ります
+       （見えている一部だけのプレイリストが、黙ってできるのを避ける） */
+    const list = manualQueue().concat(mpSongs().map(it => it.key));
+    if (!list.length) { showMediaStatus("mediaQueuePlaylistEmpty"); return; }
+    const name = window.prompt(tr("mediaQueuePlaylistName"), tr("mediaQueuePlaylistDefault"));
+    if (name === null) return;
+    const lib = window.Trk.library;
+    if (!lib || typeof lib.createPlaylistFromSongs !== "function") { showMediaStatus("mediaQueuePlaylistFail"); return; }
+    const r = lib.createPlaylistFromSongs(name, list);
+    showMediaStatus(r.ok ? "mediaQueuePlaylistDone" : "mediaQueuePlaylistFail", { n: r.count || 0, name: r.name || "" });
+  });
+  qhead.append(qSaveBtn);
+  queuePanel.append(qhead, searchNode, queueNode);
 
   const footer = core.el("footer", "instFooter mediaFooter"); footer.append(tx("span", "mediaModeStatus"), tx("span", "mediaKeyboard", "instKeyHint"));
   /* 📜 ヘッダー（← 曲リストに戻る）はスクロール面の外に置き、中身だけ .mediaBody でスクロールさせる（trk187）。
@@ -1726,6 +2525,8 @@ function buildMedia() {
   const body = core.el("div", "instBody mediaBody");
   body.append(display, stageWrap, controls, progressRow, lyricsBox, subsBox, chapBox, interpBox, loopBox, options, queuePanel, footer);
   dialog.append(header, body);
+  stageWrap.after(pipNotice);   /* 📌 trk263：映像を隠したときに代わりに出る1行（映像のすぐ下） */
+  controls.after(pipWhy);   /* 📌 trk265：押せない理由はボタンのすぐ下（見える文字で） */
   wallOverlay = core.el("section", "mediaWall"); wallOverlay.hidden = true; wallOverlay.setAttribute("role", "dialog"); wallOverlay.setAttribute("aria-modal", "true"); wallOverlay.setAttribute("aria-label", tr("mediaWall"));
   const wallTop = core.el("div", "mediaWallTop"); wallTop.append(tx("strong", "mediaWall"));
   const wallClose = makeButton("mediaWallHide", "mediaWallClose"); wallClose.addEventListener("click", () => deactivateWall(true)); wallTop.append(wallClose);
@@ -1733,6 +2534,8 @@ function buildMedia() {
   const wallHint = tx("div", "mediaWallHint", "mediaWallHintText");
   wallOverlay.append(wallTop, wallCenter, wallHint);
   overlay.append(backdrop, dialog, wallOverlay); document.body.append(overlay);
+  progressRow.after(bufferRow);   /* 🎧 trk327：読み込み中の 1 行は進捗のすぐ下（並びの本体は変えない） */
+  wirePlaybackHealth();   /* 🎧 trk327：待つ・詰まる・失敗するときの表示と再試行 */
 
   backdrop.addEventListener("click", () => closeMedia());
   overlay.addEventListener("click", e => { if (e.target === overlay) closeMedia(); });
@@ -1783,14 +2586,16 @@ function buildMedia() {
   let lastPositionSave = 0;
   for (const type of ["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "volumechange", "ratechange", "ended", "loadeddata"]) core.video.addEventListener(type, () => {
     if (type === "timeupdate" && Date.now() - lastPositionSave > 2000) { lastPositionSave = Date.now(); saveMediaPosition(); }
-    if (type === "ended") endedMedia(); else renderMedia();
+    if (type === "timeupdate") { applyFadeOut(); if (core.videoReady && core.video.duration - core.video.currentTime < 12) preloadNextForGapless(); }
+    if (type === "ended") { resetCrossfade(); disposeGapless(); endedMedia(); } else renderMedia();
   });
-  core.on("beforeLoad", () => { if (clipAbort) clipAbort(); stopReverse(false, true); clearMediaLoop(true); reverseBuffer = null; reverseBufferKey = ""; });
+  core.on("beforeLoad", () => { if (clipAbort) clipAbort(); stopReverse(false, true); clearMediaLoop(true); reverseBuffer = null; reverseBufferKey = ""; disposeGapless(); resetCrossfade(); });
   core.on("songSelected", () => { renderMedia(); if (lyricsBoxOpen()) loadLyrics(); loadSubs(true); });   /* 🎤 曲が変わったら歌詞も（trk166）💬 字幕も（trk169） */
   core.on("mediaReady", () => { if (mediaOpen) renderMedia(); updateMediaSession(); });
   core.on("songSelected", () => { loadChapters(true); });   /* 🔖 曲が変わったらチャプターも（trk170・上の歌詞/字幕の行とは別に購読） */
   core.on("songSelected", () => { mediaPlayNotedKey = ""; });   /* 🎧 新しい曲の「ちゃんと聴いた」計数は最初から（trk172・これも別購読） */
   core.on("records", renderQueue); core.on("packsChanged", renderQueue);
+  core.on("options", () => { if (mediaOpen) { pokeMediaChrome(); syncSubsLook(); } });   /* 🎬 trk262：設定の変更をその場で反映 */
   core.on("songTags", () => { renderQueue(); if (mediaOpen) renderMedia(); });   /* 🏷 タグが届いたら表示名を追従（trk167） */ core.on("language", () => {
     syncMediaOpenBtn();   /* 🎥 基地ボタンの文言も追従（trk186） */
     if (stageNote) { stageNote.textContent = tr("mediaStageNoVideo"); stageNote.dataset.i18n = "mediaStageNoVideo"; }
@@ -1883,7 +2688,28 @@ function buildMedia() {
     waveCheck.addEventListener("change", () => { core.settings.mediaWave = waveCheck.checked; core.saveUserPrefs(); drawWave(); });
     waveCheckLabel.append(waveCheck, tx("span", "mediaWaveToggle"));
     wavePanel.append(waveHeading, waveHint, waveCheckLabel);
+    /* 📌 画中画（trk263）：閉じても小窓を残す・画中画の間はこちらの映像を隠す（どちらも既定オン） */
+    const pipPanel = core.el("details", "subPanel mediaPipPanel"); pipPanel.id = "mediaPipPanel";
+    const pipHeading = tx("summary", "mediaPipTitle");
+    const pipHint = tx("div", "mediaPipHint", "hint");
+    const pipKeepLabel = core.el("label", "checkLine");
+    const pipKeepCheck = document.createElement("input"); pipKeepCheck.type = "checkbox"; pipKeepCheck.checked = core.settings.mediaPipKeep !== false;
+    pipKeepCheck.addEventListener("change", () => {
+      core.settings.mediaPipKeep = pipKeepCheck.checked; core.saveUserPrefs();
+      /* オフにしたら、いま出ている小窓は閉じる（設定に従う） */
+      if (!pipKeepCheck.checked && pipIsOn()) exitPip();
+    });
+    pipKeepLabel.append(pipKeepCheck, tx("span", "mediaPipKeep"));
+    const pipHideLabel = core.el("label", "checkLine");
+    const pipHideCheck = document.createElement("input"); pipHideCheck.type = "checkbox"; pipHideCheck.checked = core.settings.mediaPipHideStage !== false;
+    pipHideCheck.addEventListener("change", () => {
+      core.settings.mediaPipHideStage = pipHideCheck.checked; core.saveUserPrefs();
+      pipStageShown = false; syncMediaStage();
+    });
+    pipHideLabel.append(pipHideCheck, tx("span", "mediaPipHideStage"));
+    pipPanel.append(pipHeading, pipHint, pipKeepLabel, pipHideLabel);
     anchor.after(panel, wallPanel, wakePanel, wavePanel);
+    wavePanel.after(pipPanel);   /* 📌 trk263：画中画の設定は 🌊 の隣 */
     core.on("language", () => { syncVideoKeysUI(); syncWallSettingsUI(); });
     syncVideoKeysUI(); syncWallSettingsUI();
   }
@@ -1904,7 +2730,7 @@ addEventListener("DOMContentLoaded", () => {
   if (!buildMedia()) return;
   core.applyLanguage(core.settings.language);
 });
-window.TrkMediaPlayer = { open:openMedia, close:closeMedia, isOpen:mediaActive,
+window.TrkMediaPlayer = { open:openMedia, close:closeMedia, isOpen:mediaActive, play:playSong, step:stepMedia,
   /* trk164: テスト用の素の関数（DOM不要の決定だけを取り出して検証できる） */
   resumeRewindSeconds, rewindResumePosition, planSleepFade, pipSupported, wakeLockSupported,
   mediaExitPlan };

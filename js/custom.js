@@ -172,10 +172,19 @@ const PACK_FORMAT = "shadow-taiko-pack", PACK_MB = 1048576, PACK_MAX = 500 * PAC
 const packCap = (max) => (core.storageLimitsIgnored() ? Infinity : max);
 const IMG_EXT = ["png", "webp", "jpg", "jpeg"], SND_EXT = ["wav", "mp3", "ogg", "m4a"];
 const SONG_EXT = ["mp3", "m4a", "ogg", "oga", "opus", "wav", "flac", "aac", "mp4", "webm"];
-const PACK_LIMIT = { image:4, bg:8, sound:5, vrm:200, vrma:30, audio:250, chart:2 };
+/* 🔤 trk232：書体パック。同梱する書体は woff2（と woff）だけ。family は trk-Avatar-Library の契約と揃える
+   （英数字と空白・. _ - の 40 文字まで）＝ 目録の検査を通ったパックが、そのままアプリでも通る */
+const FONT_EXT = ["woff2", "woff"], FONT_FAMILY = /^[A-Za-z0-9][A-Za-z0-9 ._-]{0,39}$/, PACK_FONT_MAX = 8;
+/* 🔤 trk237：pack.json の fonts[].tags の上限（倉庫の L15 と同じ 8 個・各 16 文字） */
+const PACK_FONT_TAG_MAX = 8, PACK_FONT_TAG_LEN = 16;
+/* 書体のライセンス全文（trk233）。trk-Avatar-Library の verify-pack と同じ .txt／.md だけ */
+const LICENSE_EXT = ["txt", "md"];
+/* 🔤 trk233：書体のライセンス全文（licenseFile）も、パックに入っているなら保存する（256KB まで） */
+const PACK_LIMIT = { image:4, bg:8, sound:5, vrm:200, vrma:30, audio:250, chart:2, font:16, license:0.25 };
 const MIME = { png:"image/png", webp:"image/webp", jpg:"image/jpeg", jpeg:"image/jpeg", wav:"audio/wav", mp3:"audio/mpeg",
   ogg:"audio/ogg", oga:"audio/ogg", opus:"audio/ogg", m4a:"audio/mp4", aac:"audio/aac", flac:"audio/flac", mp4:"video/mp4",
-  webm:"video/webm", vrm:"model/gltf-binary", vrma:"model/gltf-binary", json:"application/json" };
+  webm:"video/webm", vrm:"model/gltf-binary", vrma:"model/gltf-binary", json:"application/json",
+  woff2:"font/woff2", woff:"font/woff", txt:"text/plain", md:"text/markdown;charset=utf-8" };
 const PATH_RE = /^[A-Za-z0-9_\-./]{1,120}$/;
 const safePath = (p, exts) => typeof p === "string" && PATH_RE.test(p) && !p.includes("..") && !p.startsWith("/") && exts.includes(core.extOf(p)) ? p : null;
 const pstr = (v, n) => typeof v === "string" ? v.trim().slice(0, n) : "";
@@ -236,7 +245,40 @@ function sanitizeManifest(raw) {
   const m = { format:PACK_FORMAT, version:1, name, author:pstr(raw.author, 40), description:pstr(raw.description, 200),
               license:pstr(raw.license, 400), url:/^https:\/\/[^\s"'<>]+$/.test(url) ? url : "" };
   const creditCard = sanitizeCreditCard(raw.creditCard); if (creditCard) m.creditCard = creditCard;
+  /* 📦 trk232：配る版（release）。目録の packs[].version と突き合わせて「更新あり」を出すのに使う */
+  const release = pstr(raw.release, 20);
+  if (/^\d{1,4}\.\d{1,4}(\.\d{1,4})?([-+][0-9A-Za-z.-]{1,12})?$/.test(release)) m.release = release;
   if (raw.skin && typeof raw.skin === "object") { const d = window.Trk.data.sanitizeSkinDef({ ...raw.skin, name }); if (d) m.skin = d; }
+  /* 🔤 trk232：同梱する書体。family・file・license がそろっているものだけ受け付ける
+     （file は .woff2／.woff・重複は family＋weight＋style で1つに） */
+  if (Array.isArray(raw.fonts)) {
+    const fonts = [], seen = new Set();
+    for (const r of raw.fonts.slice(0, PACK_FONT_MAX)) {
+      if (!r || typeof r !== "object") continue;
+      const family = typeof r.family === "string" ? r.family.trim() : "";
+      const file = safePath(r.file, FONT_EXT), license = pstr(r.license, 60);
+      if (!FONT_FAMILY.test(family) || !file || !license) continue;
+      const w = typeof r.weight === "number" && isFinite(r.weight) ? Math.min(900, Math.max(100, Math.round(r.weight / 100) * 100)) : 400;
+      const style = r.style === "italic" ? "italic" : "";
+      const key = `${family.toLowerCase()}|${w}|${style}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const f = { family, file, license, weight:w };
+      if (style) f.style = style;
+      /* 🔤 trk236／trk237：倉庫が pack.json にも書けるようになった「ひとこと」（60 文字）とタグ（8 個・各 16 文字）。
+         任意。目録（catalog/index.json）の値と同じ意味で、索引（trk238）が目録を読まなくても雰囲気を出せる。
+         知らない項目は今までどおり捨てる（入れても壊れない）。 */
+      const fnote = pstr(r.note, 60);
+      if (fnote) f.note = fnote;
+      const ftags = [...new Set((Array.isArray(r.tags) ? r.tags : []).slice(0, PACK_FONT_TAG_MAX).map(t => pstr(t, PACK_FONT_TAG_LEN)).filter(Boolean))];
+      if (ftags.length) f.tags = ftags;
+      /* 🔤 trk233：ライセンス全文（任意）。パックの中の .txt／.md だけ（中身は入れるときに保存する） */
+      const licenseFile = safePath(r.licenseFile, LICENSE_EXT);
+      if (licenseFile) f.licenseFile = licenseFile;
+      fonts.push(f);
+    }
+    if (fonts.length) m.fonts = fonts;
+  }
   if (raw.notes && typeof raw.notes === "object") {
     const notes = {};
     for (const k of ["don", "ka"]) {
@@ -282,25 +324,73 @@ function packIdentityFromManifest(raw) {
   return { id:"p" + core.hashString(`${man.name}|${man.author}`).toString(36), man };
 }
 function manifestPaths(m) {
-  const out = [];
-  if (m.notes) for (const k of ["don", "ka"]) if (m.notes[k] && m.notes[k].image) out.push({ path:m.notes[k].image, kind:"image" });
-  if (m.sounds) for (const k of ["don", "ka"]) if (m.sounds[k]) out.push({ path:m.sounds[k], kind:"sound" });
-  if (m.mascot && m.mascot.vrm) out.push({ path:m.mascot.vrm, kind:"vrm" });
-  if (m.mascot && m.mascot.motion) out.push({ path:m.mascot.motion, kind:"vrma" });
+  const out = [], seen = new Set();
+  /* 同じファイルを2回数えない（書体2つが同じ OFL.txt を指すことがある） */
+  const push = item => { if (seen.has(item.path)) return; seen.add(item.path); out.push(item); };
+  if (m.notes) for (const k of ["don", "ka"]) if (m.notes[k] && m.notes[k].image) push({ path:m.notes[k].image, kind:"image" });
+  if (m.sounds) for (const k of ["don", "ka"]) if (m.sounds[k]) push({ path:m.sounds[k], kind:"sound" });
+  if (m.mascot && m.mascot.vrm) push({ path:m.mascot.vrm, kind:"vrm" });
+  if (m.mascot && m.mascot.motion) push({ path:m.mascot.motion, kind:"vrma" });
+  for (const f of m.fonts || []) {
+    push({ path:f.file, kind:"font" });   /* 🔤 同梱の書体も、他のファイルと同じく保存する */
+    if (f.licenseFile) push({ path:f.licenseFile, kind:"license" });   /* 🔤 trk233：ライセンス全文も */
+  }
   for (const s of m.songs || []) {
-    out.push({ path:s.audio, kind:"audio" });
-    if (s.background) out.push({ path:s.background, kind:"bg" });
-    for (const p of Object.values(s.charts || {})) out.push({ path:p, kind:"chart" });
+    push({ path:s.audio, kind:"audio" });
+    if (s.background) push({ path:s.background, kind:"bg" });
+    for (const p of Object.values(s.charts || {})) push({ path:p, kind:"chart" });
   }
   return out;
 }
-const hasLook = m => !!(m.skin || m.notes || m.sounds || m.fx || m.mascot);
+const hasLook = m => !!(m.skin || m.notes || m.sounds || m.fx || m.mascot || m.fonts);   /* 🔤 書体だけのパックも「使える」 */
 
 /* ============ パックの保存・追加・適用 ============ */
 /* ⚠ sizeKey/sizeOf を渡すと、合計を「index のキー（数値）だけ」で数えられる（Blob を復元しない）。
    sizeOf は「size を持たない古いレコード」の移行と、件数が食い違ったときの数え直しに使う。 */
 const packDB = core.idbStore("shadow_taiko_packs", "packs", { sizeKey:"size", sizeOf:packRecordBytes });
-const packRuntime = { id:null, captions:null, noteImages:[null, null], urls:[], skinId:null, hadSounds:false };
+const packRuntime = { id:null, captions:null, noteImages:[null, null], urls:[], skinId:null, hadSounds:false, fontFaces:[] };
+/* 🔤 trk232：パックが持ち込んだ書体（FontFace）。
+   ・読めた書体だけを使う（読めないものは数えて知らせる。パック自体は使える）
+   ・--font の先頭に置くのは core.applySkin（下の window.Trk.packFont.forSkin を呼ぶ）
+   ・外すときは document.fonts.delete ＋ objectURL の後片付け（packRuntime.urls は従来どおり） */
+async function registerPackFonts(fonts, files) {
+  const list = Array.isArray(fonts) ? fonts : [];
+  const faces = [];
+  if (!list.length) return { faces, failed:0 };
+  if (typeof FontFace !== "function" || !document.fonts) return { faces, failed:list.length };   /* 書体APIが無い環境 */
+  let failed = 0;
+  for (const f of list) {
+    const blob = files && files[f.file];
+    if (!blob) { failed++; continue; }
+    const url = URL.createObjectURL(blob);
+    try {
+      const face = new FontFace(f.family, `url(${url})`, { weight:String(f.weight || 400), style:f.style || "normal", display:"swap" });
+      await face.load();
+      document.fonts.add(face);
+      packRuntime.urls.push(url); packRuntime.fontFaces.push(face); faces.push(face);
+    } catch (_) { URL.revokeObjectURL(url); failed++; }
+  }
+  return { faces, failed };
+}
+function clearPackFonts() {
+  for (const face of packRuntime.fontFaces) { try { document.fonts.delete(face); } catch (_) {} }
+  packRuntime.fontFaces = [];
+}
+function packFontFamilies() {
+  const out = [];
+  for (const face of packRuntime.fontFaces) if (!out.includes(face.family)) out.push(face.family);
+  return out;
+}
+/* core.applySkin から呼ばれる入口。パックのスキンを使っているとき（またはスキンを持たない書体パックのとき）だけ返す */
+window.Trk.packFont = {
+  forSkin(id) {
+    if (!packRuntime.fontFaces.length) return "";
+    if (packRuntime.skinId && packRuntime.skinId !== id) return "";
+    return packFontFamilies().map(f => `"${f}"`).join(",");
+  },
+  count() { return packRuntime.fontFaces.length; },
+  families: packFontFamilies,
+};
 const noteImage = lane => { const im = packRuntime.noteImages[lane]; return im && im.complete && im.naturalWidth ? im : null; };
 function packRecordBytes(record) {
   if (!record || typeof record !== "object") return 0;
@@ -316,6 +406,63 @@ function packRecordBytes(record) {
 /* 集計値（{ stored, replacing }）から、保存後の見込み合計を出す。
    同じ名前・作者のパックを更新するときは、置き換える前の分を差し引く。 */
 function packProjected(stats, incoming) { return stats.stored - stats.replacing + incoming; }
+
+/* ---------- 💾 trk234：容量の見える化と「まとめて消す」の計算（DOM を触らない） ---------- */
+/* バイト数を読みやすい単位へ（1024 進・小数1桁。1GiB 以上は2桁）。
+   ⚠ 数値でない・負の値は 0 B にする（記録が壊れていても画面を壊さない）。 */
+function packSizeText(bytes) {
+  const v = Number(bytes);
+  if (!Number.isFinite(v) || v <= 0) return "0 B";
+  if (v < 1024) return `${Math.round(v)} B`;
+  if (v < 1048576) return `${(v / 1024).toFixed(1)} KB`;
+  if (v < 1073741824) return `${(v / 1048576).toFixed(1)} MB`;
+  return `${(v / 1073741824).toFixed(2)} GB`;
+}
+/* 1件の大きさ。保存したレコードは size、一覧の控え（listInstalledPacks）は bytes を持つ。
+   どちらも無い古いレコードは files から数え直す。 */
+function packRecordSize(record) {
+  if (!record || typeof record !== "object") return 0;
+  if (Number.isFinite(record.size) && record.size >= 0) return record.size;
+  if (Number.isFinite(record.bytes) && record.bytes >= 0) return record.bytes;
+  return packRecordBytes(record);
+}
+/* 入っているパックの集計。
+   recs は { id, name, size|bytes, active } を持つ配列（packDB.all() のレコードでも listInstalledPacks の控えでもよい）。
+   cap は合計の上限（バイト）。上限なし（Infinity）なら pct は 0 で capped=false。 */
+function packUsageInfo(recs, cap, top) {
+  const list = (Array.isArray(recs) ? recs : []).filter(r => r && typeof r === "object");
+  const items = [];
+  let total = 0, unusedCount = 0, unusedBytes = 0;
+  for (const r of list) {
+    const bytes = packRecordSize(r), active = r.active === true;
+    total += bytes;
+    if (!active) { unusedCount++; unusedBytes += bytes; }
+    items.push({ id: typeof r.id === "string" ? r.id : "", name: String(r.name || ""), bytes, active });
+  }
+  const limit = Number.isFinite(cap) && cap > 0 ? cap : 0;
+  const pct = limit ? Math.min(100, Math.round((total / limit) * 100)) : 0;
+  const want = Number.isFinite(top) ? Math.max(0, Math.floor(top)) : 3;
+  const heaviest = items.slice().sort((a, b) => b.bytes - a.bytes || a.name.localeCompare(b.name)).slice(0, want);
+  return { count: list.length, total, cap: limit, capped: limit > 0, pct, unused: { count: unusedCount, bytes: unusedBytes }, heaviest };
+}
+/* まとめて消すときに、実際に消せるものだけを選び直す（画面の選択が古くても安全に）。
+   activeIds ＝ いま使っているパック。消す前に外す必要がある。 */
+function packDeletePlan(recs, ids) {
+  const want = [...new Set((Array.isArray(ids) ? ids : []).map(v => (typeof v === "string" ? v : "")).filter(Boolean))];
+  const known = new Map();
+  for (const r of Array.isArray(recs) ? recs : []) if (r && typeof r.id === "string") known.set(r.id, r);
+  const picked = [], activeIds = [];
+  let bytes = 0;
+  for (const id of want) {
+    const r = known.get(id);
+    if (!r) continue;
+    picked.push(id);
+    bytes += packRecordSize(r);
+    if (r.active === true) activeIds.push(id);
+  }
+  return { ids: picked, count: picked.length, bytes, activeIds, missing: want.length - picked.length };
+}
+/* ---------- 💾 trk234：ここまで計算（この下は画面） ---------- */
 /* 容量チェック。合計は index のキーだけで数えるので、レコード本体（Blob）を復元しない。
    ⚠ 「size を持たないレコードがある」ときは idbStore 側が自動で全件を数え直す（過小計上＝上限の素通しを防ぐ）。 */
 async function checkPackStorageCapacity(id, incoming) {
@@ -355,6 +502,8 @@ async function installPackFileSerial(file) {
     const root = mf.slice(0, mf.length - "pack.json".length);
     let raw = null;
     try { raw = JSON.parse(await (await inflateEntry(entries[mf], PACK_MB, mf)).text()); } catch (e) { if (e instanceof PackError) throw e; }
+    /* 🎨 trk300：作品ファイル（remodern の欄つき）はスキンのパックとして入れない（設定の「🎨 スキン」から読む） */
+    if (raw && typeof raw === "object" && raw.remodern) throw new PackError("packIsRemodernWork");
     const identity = packIdentityFromManifest(raw);
     if (!identity) throw new PackError("packBadManifest");
     const { id, man } = identity;
@@ -481,6 +630,9 @@ async function activatePack(id, { restore = false, skipConfirm = false } = {}) {
   if (!restore) { packSnapshot(); packRebase(); }   /* パックを当てる前の値を控える（A→Bの切り替えでは上書きせず、A中に自分で変えた項目だけ取り込む） */
   deactivatePack(false);
   packRuntime.id = id;
+  /* 🔤 書体パック（trk232）：スキンを当てる前に書体を読み込む（core.applySkin が --font の先頭に置ける） */
+  let fontFailed = 0;
+  if (m.fonts && m.fonts.length) { const r = await registerPackFonts(m.fonts, f); fontFailed = r.failed; }
   packRuntime.captions = (m.mascot && m.mascot.captions) || null;
   if (m.skin) {
     const sid = "pack_" + id, s = window.Trk.data.buildCustomSkin({ ...m.skin, mascot:m.mascot && m.mascot.vrm ? "vrm" : m.skin.mascot });
@@ -517,8 +669,12 @@ async function activatePack(id, { restore = false, skipConfirm = false } = {}) {
     whenVrmReady(api => api.loadFromPack(f[mm.vrm], { name:m.name, motion:mm.motion ? f[mm.motion] : null,
       motionBpm:mm.motionBpm, frame:mm.frame, turn:mm.turn, select:!restore }));
   }
+  /* 書体だけのパック（スキンを持たない）は、いまのスキンに書体を足す。スキンを当て直して --font を作り直す */
+  if (!m.skin && packRuntime.fontFaces.length) core.applySkin(core.settings.skin, false);
   core.settings.activePack = id; core.saveUserPrefs(); updateMascotUI();
   if (!restore) core.setStatus("packStatus", "packActivated", { name:m.name });
+  /* 読めなかった書体は、パックを使えたことを伝えたうえで知らせる（黙って効かないのを避ける） */
+  if (!restore && fontFailed) core.setStatus("packStatus", "packFontFailed", { n:fontFailed });
   await renderPackList();
   return true;
 }
@@ -539,6 +695,7 @@ function deactivatePack(persist = true) {
       }
       core.buildSkinGrid();
     }
+    clearPackFonts();   /* 🔤 書体を外す（document.fonts.delete）。URL の後片付けは下の forEach */
     packRuntime.urls.forEach(u => URL.revokeObjectURL(u));
     if (packRuntime.hadSounds) {
       /* 自分で読み込んだSEがあればそれに戻す。ただしパックの切り替え中（persist=false）は読み直さない
@@ -549,7 +706,8 @@ function deactivatePack(persist = true) {
     Object.assign(packRuntime, { id:null, captions:null, noteImages:[null, null], urls:[], skinId:null, hadSounds:false });
     if (window.ShadowTaikoVRM) window.ShadowTaikoVRM.unloadPack();
   }
-  if (persist) { core.settings.activePack = null; core.saveUserPrefs(); updateMascotUI(); core.setStatus("packStatus", "packDeactivated"); renderPackList(); }
+  if (persist) { core.settings.activePack = null; core.saveUserPrefs(); updateMascotUI(); core.setStatus("packStatus", "packDeactivated");
+    core.applySkin(core.settings.skin, false); renderPackList(); }   /* 外した書体が --font に残らないように作り直す */
 }
 async function installAndUse(file, skipConfirm = false) {
   const r = await installPackFile(file);
@@ -589,6 +747,7 @@ https://github.com/  (← 配布するときは、リポジトリのURLに書き
 ・曲：MP3／M4A／OGG／OPUS／WAV／FLAC／AAC／MP4／WebM（250MBまで）、譜面JSON（2MBまで）、1パック50曲まで
 ・譜面は MANUAL／TRUCK／ORBIT／STAGE／CATCH のどのモードでも共通で使われます。
 ・VRM：VRM 1.0 のみ（200MBまで）／モーション：.vrma（30MBまで）
+・書体：WOFF2／WOFF（1書体 16MBまで・8書体まで）。pack.json の "fonts" に family・file・license を書いてください。書体のライセンス全文（OFL.txt など）もパックに入れてください（trk232 以降、アプリが書体を読み込んで使います）。
 ・pack.json の creditCard で、作者名・肩書き・権利メモ・利用条件を名刺のように表示できます。contributors で最大12人の共同制作者も記載できます（画像は含めません）。
 ・書き出したパックには、creditCard から自動生成した CREDITS.md も入ります。trk! の一覧から共有用SVG名刺をダウンロードできます。
 ・自分に再配布の権利がある素材・曲だけを入れてください。
@@ -603,6 +762,7 @@ https://github.com/  (← 配布するときは、リポジトリのURLに書き
 - Songs: MP3/M4A/OGG/OPUS/WAV/FLAC/AAC/MP4/WebM (max 250 MB), chart JSON (max 2 MB), up to 50 songs per pack
 - Charts are shared by every mode: MANUAL / TRUCK / ORBIT / STAGE / CATCH.
 - VRM: VRM 1.0 only (max 200 MB) / Motion: .vrma (max 30 MB)
+- Fonts: WOFF2 / WOFF (max 16 MB each, up to 8). List family, file and license in "fonts" of pack.json, and include the full font license (e.g. OFL.txt) in the pack (trk232 and later load and use the fonts).
 - Use optional creditCard in pack.json to show the creator, role, rights note and terms like a name card. Add up to 12 contributors for co-creators (text only; no image asset).
 - Exported packs include a generated CREDITS.md; the pack list can also download a shareable SVG card.
 - Only include assets and songs you have the right to redistribute.
@@ -798,15 +958,177 @@ function appendPackCreditCard(parent, card, packName = "") {
   body.append(download);
   d.append(body); parent.append(d);
 }
+/* 📦 trk231：目録の一覧からも「使う・外す・消す・入っているか」を扱えるように、小さな入口を出す。
+   消すときは、使っているパックなら先に外す（外し忘れ＝設定に packPrev が残る、を防ぐ）。 */
+async function listInstalledPacks() {
+  let recs = []; try { recs = await packDB.all(); } catch (_) { return []; }
+  return recs.map(r => ({ id:r.id, name:(r.manifest && r.manifest.name) || "", author:(r.manifest && r.manifest.author) || "",
+    bytes:r.size || 0, installedAt:r.installedAt || 0, active:packRuntime.id === r.id,
+    release:(r.manifest && r.manifest.release) || "" }));   /* 📦 trk232：目録の version と比べて「更新あり」を出す */
+}
+/* 🔤 trk238：入っているパックの manifest から、書体の索引を作る（Blob＝書体本体は読まない）。
+   保存はしない。呼ぶたびに packDB の manifest から作り直すので、消した・入れ替えたパックの行は残らない。 */
+function packFontRows(recs) {
+  const rows = [];
+  for (const rec of (Array.isArray(recs) ? recs : [])) {
+    const m = (rec && rec.manifest) || {}, files = (rec && rec.files) || {};
+    for (const f of (Array.isArray(m.fonts) ? m.fonts : [])) {
+      const blob = files[f.file];
+      rows.push({
+        family: f.family, weight: Number(f.weight) || 400,
+        ...(f.style ? { style: f.style } : {}), file: f.file || "",
+        license: f.license || "", ...(f.licenseFile ? { licenseFile: f.licenseFile } : {}),
+        ...(f.note ? { note: f.note } : {}),
+        ...(Array.isArray(f.tags) && f.tags.length ? { tags: [...f.tags] } : {}),
+        bytes: blob && Number.isFinite(blob.size) ? blob.size : 0,
+        packId: (rec && rec.id) || "", packName: m.name || "", active: !!(rec && rec.active),
+      });
+    }
+  }
+  return rows;
+}
+async function listInstalledFonts() {
+  let recs = [];
+  try { recs = await packDB.all(); } catch (_) { return []; }
+  return packFontRows(recs.map(r => ({ id:r.id, manifest:r.manifest, files:r.files || {}, active: packRuntime.id === r.id })));
+}
+async function deletePackById(id) {
+  if (!confirm(tr("confirmDeletePack"))) return false;
+  let rec = null; try { rec = await packDB.get(id); } catch (_) {}
+  const wasActive = packRuntime.id === id;
+  if (wasActive) deactivatePack();
+  try { await packDB.del(id); } catch (_) { return false; }
+  core.setStatus("packStatus", "packDeleted"); await renderPackList();
+  if (rec && rec.manifest && rec.manifest.songs) core.emit("packsChanged");
+  return true;
+}
+/* 💾 trk234：まとめて消す。確認は1回で、何件・何 MB を出す。
+   ⚠ 合図（packsChanged）は**まとめて1回だけ**。1件ずつ deletePackById を呼ぶと、
+      曲を含むパックの数だけ曲リストが作り直されて重くなる。 */
+async function deletePacksByIds(ids, opts) {
+  const silent = !!(opts && opts.skipConfirm);
+  const want = [...new Set((Array.isArray(ids) ? ids : []).map(v => (typeof v === "string" ? v : "")).filter(Boolean))];
+  if (!want.length) return { ok:0, bad:0, bytes:0, cancelled:false, empty:true };
+  let recs = [];
+  try { recs = await packDB.all(); } catch (_) { recs = []; }
+  const plan = packDeletePlan(recs.map(r => ({ id:r.id, size:packRecordSize(r), active:packRuntime.id === r.id })), want);
+  if (!plan.count) { core.setStatus("packStatus", "packDeleteNone"); return { ok:0, bad:0, bytes:0, missing:plan.missing, cancelled:false }; }
+  if (!silent) {
+    const vars = { n:plan.count, size:packSizeText(plan.bytes) };
+    if (!confirm(tr(plan.activeIds.length ? "packDeleteSelectedConfirmActive" : "packDeleteSelectedConfirm", vars))) {
+      return { ok:0, bad:0, bytes:0, cancelled:true };
+    }
+  }
+  if (plan.activeIds.length) { try { deactivatePack(); } catch (_) {} }
+  let ok = 0, bad = 0, bytes = 0, hasSongs = false;
+  for (const id of plan.ids) {
+    const rec = recs.find(r => r.id === id);
+    try {
+      await packDB.del(id);
+      ok++; bytes += rec ? packRecordSize(rec) : 0;
+      if (rec && rec.manifest && rec.manifest.songs) hasSongs = true;
+    } catch (_) { bad++; }
+  }
+  packSelection.clear();
+  if (hasSongs) core.emit("packsChanged");   /* 曲の参照が変わったときだけ・1回だけ */
+  await renderPackList();
+  core.setStatus("packStatus", bad ? "packDeletedSome" : "packDeletedMany",
+    { n:ok, ok, bad, size:packSizeText(bytes) });
+  return { ok, bad, bytes, cancelled:false };
+}
+/* ❓謎設定：パックを全部消す（確認2回。1回目＝件数と合計、2回目＝DELETE と入力） */
+async function wipeAllPacks() {
+  let recs = [];
+  try { recs = await packDB.all(); } catch (_) { recs = []; }
+  const info = packUsageInfo(recs.map(r => ({ id:r.id, size:packRecordSize(r), active:packRuntime.id === r.id })), null);
+  if (!info.count) { core.setStatus("packStatus", "packWipeNone"); return { ok:0, cancelled:false }; }
+  if (!confirm(tr("packWipeConfirm", { n:info.count, size:packSizeText(info.total) }))) return { ok:0, cancelled:true };
+  const typed = typeof prompt === "function" ? String(prompt(tr("packWipeType", { n:info.count, size:packSizeText(info.total) })) || "").trim() : "";
+  if (typed !== "DELETE") { core.setStatus("packStatus", typed ? "packWipeBadWord" : null); return { ok:0, cancelled:true }; }
+  const r = await deletePacksByIds(recs.map(rec => rec.id), { skipConfirm:true });
+  core.setStatus("packStatus", "packWipeDone", { n:r.ok, size:packSizeText(r.bytes) });
+  return r;
+}
+/* 💾 trk234：容量の表示（入っているパックの合計・上限・端末の空き） */
+const packSelection = new Set();     /* まとめて消すために選んだパックの id */
+let packLastView = [];               /* 最後に描いた一覧の控え（選択の計算に使う） */
+let packEstimateSeq = 0;             /* 古い estimate() の結果で上書きしないための番号 */
+function renderPackUsage(view) {
+  const box = core.$("packUsage");
+  if (!box) return;
+  const info = packUsageInfo(view, packCap(PACK_STORE_MAX));
+  box.hidden = info.count === 0;
+  const total = core.$("packUsageTotal"), share = core.$("packUsageShare"), bar = core.$("packUsageBar"),
+    fill = core.$("packUsageFill"), free = core.$("packUsageFree"), detail = core.$("packUsageDetail");
+  const size = packSizeText(info.total);
+  if (total) total.textContent = info.capped
+    ? tr("packUsageTotal", { n:info.count, size, cap:packSizeText(info.cap) })
+    : tr("packUsageTotalNoCap", { n:info.count, size });
+  if (share) share.textContent = info.capped ? tr("packUsageShare", { pct:info.pct }) : "";
+  if (bar) bar.hidden = !info.capped;
+  if (fill) { fill.style.width = `${info.pct}%`; fill.classList.toggle("isHigh", info.pct >= 90); }
+  const parts = [];
+  if (info.unused.count) parts.push(tr("packUsageUnused", { n:info.unused.count, size:packSizeText(info.unused.bytes) }));
+  if (info.total > 0 && info.heaviest.length) parts.push(tr("packUsageHeaviest", { list:info.heaviest.map(h => `${h.name} ${packSizeText(h.bytes)}`).join(" / ") }));
+  if (detail) detail.textContent = parts.join("　");
+  /* 端末の空きは、取れたときだけ出す（取れない環境では空欄のまま） */
+  const seq = ++packEstimateSeq;
+  if (free) free.textContent = "";
+  const storage = typeof navigator !== "undefined" ? navigator.storage : null;
+  if (!storage || typeof storage.estimate !== "function") return;
+  Promise.resolve().then(() => storage.estimate()).then(est => {
+    if (seq !== packEstimateSeq || !free) return;
+    if (est && Number.isFinite(est.quota) && Number.isFinite(est.usage)) {
+      free.textContent = tr("packUsageFree", { free:packSizeText(Math.max(0, est.quota - est.usage)) });
+    }
+  }).catch(() => {});
+}
+/* 選択の数と合計を出す。0 件のときはボタンを押せなくする */
+function renderPackPick(view) {
+  const plan = packDeletePlan(view, [...packSelection]);
+  const btn = core.$("packDeletePicked"), line = core.$("packPickStatus");
+  if (btn) {
+    btn.disabled = plan.count === 0;
+    btn.textContent = plan.count
+      ? tr("packDeletePicked", { n:plan.count, size:packSizeText(plan.bytes) })
+      : tr("packDeletePickedNone");
+  }
+  if (line) line.textContent = plan.count ? tr("packSelectCount", { n:plan.count, size:packSizeText(plan.bytes) }) : "";
+}
+/* 選ぶ（all＝全部／unused＝使っていないもの／none＝解除） */
+async function pickPacks(which) {
+  if (which === "all") for (const v of packLastView) packSelection.add(v.id);
+  else if (which === "unused") { packSelection.clear(); for (const v of packLastView) if (!v.active) packSelection.add(v.id); }
+  else packSelection.clear();
+  await renderPackList();
+}
 async function renderPackList() {
   const box = core.$("packList"); let recs = [];
   try { recs = await packDB.all(); } catch (_) {}
   box.textContent = "";
+  /* 💾 trk234：容量の表示と選択の後始末（消えたパックは選択からも外す） */
+  const view = recs.map(r => ({ id:r.id, name:(r.manifest && r.manifest.name) || "", size:packRecordSize(r), active:packRuntime.id === r.id }));
+  const alive = new Set(view.map(v => v.id));
+  for (const id of [...packSelection]) if (!alive.has(id)) packSelection.delete(id);
+  packLastView = view;
+  renderPackUsage(view);
+  renderPackPick(view);
   if (!recs.length) { box.append(core.el("div", "hint", tr("packEmpty"))); return; }
   recs.sort((a, b) => (b.installedAt || 0) - (a.installedAt || 0));
   for (const r of recs) {
     const m = r.manifest, on = packRuntime.id === r.id, card = core.el("div", "packCard" + (on ? " active" : ""));
-    const head = core.el("div", "packHead"); head.append(core.el("b", "", m.name));
+    const head = core.el("div", "packHead");
+    /* 💾 trk234：まとめて消すための選択。読み上げ名はパック名（どれを選んでいるか分かるように） */
+    const pick = core.el("input", "packPick"); pick.type = "checkbox"; pick.checked = packSelection.has(r.id);
+    pick.setAttribute("aria-label", tr("packSelectOne", { name: m.name }));
+    pick.addEventListener("change", () => {
+      if (pick.checked) packSelection.add(r.id); else packSelection.delete(r.id);
+      card.classList.toggle("picked", pick.checked);
+      renderPackPick(packLastView);
+    });
+    const pickWrap = core.el("label", "packPickWrap"); pickWrap.append(pick);
+    if (packSelection.has(r.id)) card.classList.add("picked");
+    head.append(pickWrap, core.el("b", "", m.name));
     if (m.author) head.append(core.el("span", "packBy", "by " + m.author));
     head.append(core.el("span", "packBy", `${((r.size || 0) / PACK_MB).toFixed(1)} MB`));
     card.append(head);
@@ -816,9 +1138,30 @@ async function renderPackList() {
      [m.mascot && m.mascot.motion, "badgeMotion"], [m.mascot && m.mascot.captions, "badgeCaptions"]]
       .forEach(([v, k]) => { if (v) badges.append(core.el("span", "packBadge", tr(k))); });
     if (m.songs) badges.append(core.el("span", "packBadge", tr("badgeSongs", { n:m.songs.length })));
+    if (m.fonts && m.fonts.length) badges.append(core.el("span", "packBadge", tr("badgeFonts", { n:m.fonts.length })));
     if (m.creditCard) badges.append(core.el("span", "packBadge", tr("badgeCreditCard")));
     card.append(badges);
     appendPackCreditCard(card, m.creditCard, m.name);
+    /* 🔤 trk232：同梱の書体とライセンス（入れたあとでも確かめられる）
+       trk233：ライセンス全文（licenseFile）を、押したときだけ読んで出す（一覧を重くしない） */
+    if (m.fonts && m.fonts.length) {
+      const fd = core.el("details"); fd.append(core.el("summary", "", tr("packFontLabel")));
+      for (const f of m.fonts) fd.append(core.el("div", "", tr("packFontLine", { family:f.family, license:f.license })));
+      const lf = (m.fonts.find(f => f.licenseFile) || {}).licenseFile;
+      if (lf) {
+        const btn = core.el("button", "small", tr("packLicenseOpen")); btn.type = "button";
+        const out = core.el("pre", "hint packLicenseText"); out.hidden = true;
+        btn.addEventListener("click", async () => {
+          if (!out.hidden) { out.hidden = true; btn.textContent = tr("packLicenseOpen"); return; }
+          const blob = r.files && r.files[lf];
+          if (!blob) out.textContent = tr("packLicenseMissing");
+          else { try { out.textContent = (await blob.text()).slice(0, 100000); } catch (_) { out.textContent = tr("packLicenseMissing"); } }
+          out.hidden = false; btn.textContent = tr("packLicenseClose");
+        });
+        fd.append(btn, out);
+      }
+      card.append(fd);
+    }
     if (m.license || m.url) {
       const d = core.el("details"); d.append(core.el("summary", "", tr("packLicenseLabel")));
       if (m.license) d.append(core.el("div", "", m.license));
@@ -834,13 +1177,7 @@ async function renderPackList() {
     const ex = core.el("button", "", tr("packExport")); ex.type = "button";
     ex.addEventListener("click", async () => core.downloadBlob(await packToZip(m, r.files || {}), `${core.safeName(m.name)}.stpack`));
     const del = core.el("button", "", tr("packDelete")); del.type = "button";
-    del.addEventListener("click", async () => {
-      if (!confirm(tr("confirmDeletePack"))) return;
-      if (packRuntime.id === r.id) deactivatePack();
-      try { await packDB.del(r.id); } catch (_) {}
-      core.setStatus("packStatus", "packDeleted"); await renderPackList();
-      if (m.songs) core.emit("packsChanged");
-    });
+    del.addEventListener("click", () => deletePackById(r.id));
     acts.append(ex, del); card.append(acts); box.append(card);
   }
 }
@@ -848,20 +1185,324 @@ async function renderPackList() {
 /* 起動時：一覧を出して、使っていたパックを戻す（main.js から呼びます） */
 async function initPacks() {
   await renderPackList();
+  /* 📚 trk326：取り込んだ巻を、パックの復元より先に棚へ戻す */
+  try { await initSkinImports(); } catch (_) {}
   if (core.settings.activePack) await activatePack(core.settings.activePack, { restore:true });
 }
+
+/* ============ 📚 trk326：巻別スキンの受け子（R-VOL-1） ============
+   倉庫（trk-Avatar-Library）の skin-volumes/<vol>/skins.json（`trk-avatar-library-skins` v1）と、
+   単体の items/<id>.json を、画面から取り込みます。
+
+   ・検証と変換は js/library-receiver.js（純粋な道具。DOM も保存もしない）。
+   ・保存は**内蔵 291 種・カスタム 20 件枠とは別**の IndexedDB（shadow_taiko_skin_imports）。
+   ・棚では「📚 取り込んだ巻」として分け、カードに IMPORT の印を出します。
+   ・同じ ID は黙って上書きせず、件数を見せて「スキップ／上書き／キャンセル」を選ばせます。
+   ・readability: "intentional-low" と 4 言語の理由は落とさず、カードに警告と理由を出します
+     （機械の検査は「見た目の保証」ではありません。理由を読んで選ぶための表示です）。
+   ・1 ファイル 1 MiB・合計 300 種まで。上限は設定で外せません。 */
+const LR = window.Trk.libraryReceiver;
+const VOLUME_FORMAT = "trk-avatar-library-skins";   /* 倉庫の巻 JSON の書式名（目録の正本と同じ） */
+const IMPORT_VOLUME_ID = "imported";
+const importDB = core.idbStore("shadow_taiko_skin_imports", "skins", { sizeKey:"size", idKey:"shelfId" });
+const importedSkins = {};          /* 棚のキー（imp-…）→ 本体のスキン定義 */
+let pendingImport = null;          /* 重複の確認待ち（{ payload, plan, volume }） */
+let importBusy = false;
+
+const shelfIdOf = importId => `imp-${importId}`;
+const importedIds = () => Object.keys(importedSkins);
+function ensureImportVolumeGroup() {
+  const D = window.Trk.data;
+  if (!Array.isArray(D.SKIN_VOLUMES)) D.SKIN_VOLUMES = [];
+  let g = D.SKIN_VOLUMES.find(x => x && x.id === IMPORT_VOLUME_ID);
+  if (!g) { g = { id: IMPORT_VOLUME_ID, title: "📚 取り込んだ巻", ids: [] }; D.SKIN_VOLUMES.push(g); }
+  g.ids = importedIds().sort();
+  return g;
+}
+function registerImported(shelfId, def) {
+  importedSkins[shelfId] = def;
+  window.Trk.data.SKINS[shelfId] = def;
+}
+function unregisterImported(shelfId) {
+  delete importedSkins[shelfId];
+  delete window.Trk.data.SKINS[shelfId];
+}
+/* 保存から読み直して、棚へ登録する（起動時と、保存が変わったとき） */
+async function initSkinImports() {
+  let recs = [];
+  try { recs = await importDB.all(); } catch (_) { return 0; }
+  for (const rec of Array.isArray(recs) ? recs : []) {
+    if (!rec || typeof rec !== "object") continue;
+    const shelfId = typeof rec.shelfId === "string" ? rec.shelfId : "";
+    const def = rec.def;
+    if (!shelfId.startsWith("imp-") || !def || typeof def !== "object") continue;
+    if (!def.ui || typeof def.ui !== "object" || !def.game || typeof def.game !== "object") continue;
+    def.imported = true;
+    registerImported(shelfId, def);
+  }
+  ensureImportVolumeGroup();
+  renderSkinLegacyList();
+  if (importedIds().length) {
+    core.buildSkinGrid();
+    /* 前回の終わりに取り込んだスキンを使っていたなら、その見た目へ戻す（見つからなければ shadow のまま） */
+    const boot = String(core.savedSkinAtBoot || "");
+    if (boot && Object.prototype.hasOwnProperty.call(importedSkins, boot) && core.settings.skin !== boot) core.applySkin(boot);
+    renderImportedList();
+  }
+  return importedIds().length;
+}
+/* 取り込みの予告（新しい数・重複の数）。保存はまだしない */
+function importPlan(payload) {
+  const plan = { total: 0, fresh: [], duplicates: [] };
+  if (!payload || !Array.isArray(payload.skins)) return plan;
+  plan.total = payload.skins.length;
+  for (const skin of payload.skins) {
+    const shelfId = shelfIdOf(skin.id);
+    if (Object.prototype.hasOwnProperty.call(importedSkins, shelfId)) plan.duplicates.push(skin);
+    else plan.fresh.push(skin);
+  }
+  return plan;
+}
+/* 実際に保存する。mode：skip（重複を飛ばす）／overwrite（重複を上書き） */
+async function applyImport(payload, opt) {
+  const o = opt || {};
+  const mode = o.mode === "overwrite" ? "overwrite" : "skip";
+  const volume = typeof o.volume === "string" ? o.volume.slice(0, 40) : "";
+  const plan = importPlan(payload);
+  const incoming = mode === "overwrite" ? plan.fresh.concat(plan.duplicates) : plan.fresh;
+  const room = Math.max(0, LR.SKIN_IMPORT_MAX - importedIds().length);
+  const take = incoming.slice(0, room);
+  const at = Date.now();
+  let saved = 0, failed = 0;
+  for (const skin of take) {
+    const shelfId = shelfIdOf(skin.id);
+    const def = LR.volumeSkinToDef(skin, { volume, at });
+    def.importedAt = at;
+    let size = 0;
+    try { size = JSON.stringify(def).length; } catch (_) {}
+    try { await importDB.put(shelfId, { shelfId, importId: skin.id, volume, size, def }); registerImported(shelfId, def); saved++; }
+    catch (_) { failed++; }
+  }
+  ensureImportVolumeGroup();
+  /* 入れたものがすぐ見えるように、棚の巻を「📚 取り込んだ巻」へ（保存は既存の設定キーだけ） */
+  if (saved) { try { core.settings.skinShelfVol = IMPORT_VOLUME_ID; core.saveUserPrefs(); } catch (_) {} }
+  core.buildSkinGrid();
+  renderImportedList();
+  return {
+    ok: failed === 0, mode, saved, failed, volume,
+    fresh: plan.fresh.length, duplicates: plan.duplicates.length,
+    skipped: Math.max(0, incoming.length - take.length) + (mode === "skip" ? plan.duplicates.length : 0),
+    capped: incoming.length > take.length, total: plan.total
+  };
+}
+async function removeImported(shelfId) {
+  if (!Object.prototype.hasOwnProperty.call(importedSkins, shelfId)) return false;
+  try { await importDB.del(shelfId); } catch (_) { return false; }
+  unregisterImported(shelfId);
+  ensureImportVolumeGroup();
+  if (core.settings.skin === shelfId) core.applySkin("shadow");
+  core.buildSkinGrid();
+  renderImportedList();
+  return true;
+}
+async function clearImported() {
+  const ids = importedIds();
+  let removed = 0;
+  for (const shelfId of ids) {
+    try { await importDB.del(shelfId); } catch (_) { continue; }
+    unregisterImported(shelfId); removed++;
+  }
+  ensureImportVolumeGroup();
+  if (core.settings.skin && !Object.prototype.hasOwnProperty.call(window.Trk.data.SKINS, core.settings.skin)) core.applySkin("shadow");
+  core.buildSkinGrid();
+  renderImportedList();
+  return removed;
+}
+
+/* ---------- 📚 trk326（R-SKIN-1）：旧配色（legacyColors）を使うスキンの一覧 ----------
+   目録の新配色が既定。旧配色を持つスキンだけを並べ、オンにしたスキルだけがこの端末で従来の色になる。
+   保存は settings.skinLegacy（知っている ID だけ・最大 300）。ほかの端末・書き出しには乗らない設定です。 */
+function renderSkinLegacyList() {
+  const box = core.$("skinLegacyBox"), list = core.$("skinLegacyList");
+  if (!box || !list) return;
+  const skins = window.Trk.data.SKINS || {};
+  const ids = Object.keys(skins).filter(id => skins[id] && skins[id].legacyUi).sort((a, b) => {
+    const A = skins[a].label || {}, B = skins[b].label || {};
+    return String(A[lang] || A.en || a).localeCompare(String(B[lang] || B.en || b), lang);
+  });
+  box.hidden = ids.length === 0;
+  list.textContent = "";
+  const chosen = Array.isArray(core.settings.skinLegacy) ? core.settings.skinLegacy : [];
+  for (const id of ids) {
+    const s = skins[id];
+    const label = core.el("label", "check");
+    const input = core.el("input"); input.type = "checkbox"; input.dataset.skinLegacy = id;
+    input.checked = chosen.includes(id);
+    input.addEventListener("change", () => {
+      const now = new Set(Array.isArray(core.settings.skinLegacy) ? core.settings.skinLegacy : []);
+      if (input.checked) now.add(id); else now.delete(id);
+      core.settings.skinLegacy = [...now].slice(0, 300);
+      core.saveUserPrefs();
+      core.applySkin(core.settings.skin, false);
+      core.setStatus("skinLegacyStatus", input.checked ? "skinLegacyOn" : "skinLegacyOff");
+    });
+    const name = core.el("span", "", String((s.label && (s.label[lang] || s.label.en)) || id));
+    label.append(input, name);
+    list.append(label);
+  }
+}
+
+/* ---------- 画面（設定 → 🎨 見た目 → 📚 取り込んだ巻） ---------- */
+function importStatus(key, vars) { core.setStatus("skinImportStatus", key, vars || null); }
+function syncImportActions() {
+  const row = core.$("skinImportActions");
+  if (row) row.hidden = !pendingImport;
+}
+function importSummaryText(plan, capped) {
+  return tr("skinImportPreview", {
+    n: plan.total, add: plan.fresh.length, dup: plan.duplicates.length,
+    room: Math.max(0, LR.SKIN_IMPORT_MAX - importedIds().length),
+    max: LR.SKIN_IMPORT_MAX, capped: capped ? tr("skinImportCappedNote") : ""
+  });
+}
+function showImportErrors(errors) {
+  const box = core.$("skinImportErrors");
+  if (!box) return;
+  box.textContent = "";
+  for (const line of (Array.isArray(errors) ? errors : []).slice(0, 6)) box.append(core.el("div", "hint", String(line)));
+  box.hidden = !box.children.length;
+}
+function renderImportedList() {
+  const box = core.$("skinImportList");
+  const summary = core.$("skinImportSummary");
+  const clearBtn = core.$("skinImportClear");
+  const ids = importedIds();
+  if (clearBtn) clearBtn.disabled = ids.length === 0;
+  if (summary) {
+    summary.hidden = ids.length === 0;
+    summary.textContent = ids.length ? tr("skinImportCount", { n: ids.length, max: LR.SKIN_IMPORT_MAX }) : "";
+  }
+  if (!box) return;
+  box.textContent = "";
+  const labelOf = shelfId => {
+    const def = importedSkins[shelfId];
+    const label = def && def.label ? (def.label[lang] || def.label.en || def.label.ja) : shelfId;
+    return String(label || shelfId);
+  };
+  for (const shelfId of ids.slice().sort((a, b) => labelOf(a).localeCompare(labelOf(b), lang))) {
+    const def = importedSkins[shelfId];
+    const row = core.el("div", "skinImportRow");
+    const name = core.el("b", "", labelOf(shelfId));
+    const meta = core.el("small", "", (def && def.importVolume ? `📚 ${def.importVolume} ／ ` : "") + `id: ${(def && def.importId) || shelfId.slice(4)}`);
+    row.append(name, meta);
+    if (def && def.readability === "intentional-low") row.append(core.el("small", "skinHoldback", tr("skinLowReadTag")));
+    const rm = core.el("button", "miniBtn", tr("skinImportRemove"));
+    rm.type = "button";
+    rm.addEventListener("click", () => { removeImported(shelfId).catch(() => importStatus("skinImportRemoveFail")); });
+    row.append(rm);
+    box.append(row);
+  }
+}
+async function readImportFile(file) {
+  pendingImport = null; syncImportActions(); showImportErrors([]);
+  if (!file) return;
+  if (typeof file.size === "number" && file.size > LR.SKIN_IMPORT_FILE_MAX) { importStatus("skinImportTooBig", { max: 1 }); return; }
+  let raw = null;
+  try { raw = JSON.parse(await file.text()); } catch (_) { importStatus("skinImportBadJson"); return; }
+  const res = LR.validateVolumePayload(raw);
+  if (!res.ok) { importStatus("skinImportBad", { n: res.errors.length }); showImportErrors(res.errors); return; }
+  const volume = (raw && typeof raw.volume === "string" && raw.volume) || (raw && typeof raw.title === "string" && raw.title) || "";
+  const plan = importPlan(res);
+  /* 重複があるときは、保存する前に件数を見せて選ばせる（黙って上書きしない） */
+  if (plan.duplicates.length) {
+    pendingImport = { payload: res, plan, volume };
+    const box = core.$("skinImportPreview");
+    if (box) { box.textContent = importSummaryText(plan, false); box.hidden = false; }
+    importStatus("skinImportNeedChoice", { n: plan.total, add: plan.fresh.length, dup: plan.duplicates.length });
+    syncImportActions();
+    return;
+  }
+  const r = await applyImport(res, { mode: "skip", volume });
+  importStatus(r.ok ? "skinImportDone" : "skinImportPartly", { n: r.saved, dup: r.duplicates, max: LR.SKIN_IMPORT_MAX });
+}
+function wireSkinImports() {
+  const btn = core.$("skinImportBtn"), file = core.$("skinImportFile");
+  if (btn && file) {
+    btn.addEventListener("click", () => file.click());
+    file.addEventListener("change", async () => {
+      if (importBusy) return;
+      const f = file.files && file.files[0];
+      file.value = "";
+      if (!f) return;
+      importBusy = true;
+      try { await readImportFile(f); } finally { importBusy = false; }
+    });
+  }
+  const skip = core.$("skinImportSkip"), over = core.$("skinImportOverwrite"), cancel = core.$("skinImportCancel");
+  if (skip) skip.addEventListener("click", async () => {
+    if (!pendingImport) return;
+    const pending = pendingImport;
+    pendingImport = null; syncImportActions();
+    const r = await applyImport(pending.payload, { mode: "skip", volume: pending.volume });
+    importStatus(r.ok ? "skinImportDone" : "skinImportPartly", { n: r.saved, dup: r.duplicates, max: LR.SKIN_IMPORT_MAX });
+  });
+  if (over) over.addEventListener("click", async () => {
+    if (!pendingImport) return;
+    const pending = pendingImport;
+    pendingImport = null; syncImportActions();
+    const r = await applyImport(pending.payload, { mode: "overwrite", volume: pending.volume });
+    importStatus(r.ok ? "skinImportDone" : "skinImportPartly", { n: r.saved, dup: r.duplicates, max: LR.SKIN_IMPORT_MAX });
+  });
+  if (cancel) cancel.addEventListener("click", () => {
+    pendingImport = null; syncImportActions();
+    const box = core.$("skinImportPreview"); if (box) box.hidden = true;
+    const errs = core.$("skinImportErrors"); if (errs) { errs.textContent = ""; errs.hidden = true; }
+    importStatus("skinImportCancelled");
+  });
+  on("language", renderSkinLegacyList);
+  const clear = core.$("skinImportClear");
+  if (clear) clear.addEventListener("click", async () => {
+    if (!importedIds().length) return;
+    if (!confirm(tr("skinImportClearConfirm", { n: importedIds().length }))) return;
+    const n = await clearImported();
+    importStatus("skinImportCleared", { n });
+  });
+}
+wireSkinImports();
 
 /* ============ イベント ============ */
 core.$("packFile").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) installAndUse(f); });
 core.$("songPackFile").addEventListener("change", e => { const f = e.target.files[0]; e.target.value = ""; if (f) installAndUse(f); });
 core.$("packOffBtn").addEventListener("click", () => deactivatePack());
+/* 💾 trk234：容量の表示と、まとめて消す（確認は1回・曲リストへの合図は1回） */
+[["packPickAll", "all"], ["packPickUnused", "unused"], ["packPickNone", "none"]].forEach(([id, which]) => {
+  const b = core.$(id);
+  if (b) b.addEventListener("click", () => { pickPacks(which).catch(e => console.error(e)); });
+});
+{
+  const picked = core.$("packDeletePicked");
+  if (picked) picked.addEventListener("click", () => { deletePacksByIds([...packSelection]).catch(e => console.error(e)); });
+  const wipe = core.$("packWipeBtn");
+  if (wipe) wipe.addEventListener("click", () => { wipeAllPacks().catch(e => console.error(e)); });
+}
 core.$("packBuildBtn").addEventListener("click", () => { buildPack().catch(e => { console.error(e); core.setStatus("packStatus", "packBadZip"); }); });
 core.$("spBuildBtn").addEventListener("click", () => { buildSongPack().catch(e => { console.error(e); core.setStatus("spStatus", "packBadZip"); }); });
 on("language", renderPackList);
-addEventListener("drop", e => {      // .stpack / .zip は他の処理より先に受け取る
-  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-  if (!f || !/\.(stpack|zip)$/i.test(f.name)) return;
+addEventListener("drop", e => {      // .stpack / .zip / .stlib は他の処理より先に受け取る
+  const list = e.dataTransfer && e.dataTransfer.files ? [...e.dataTransfer.files] : [];
+  const f = list[0];
+  if (!f || !/\.(stpack|zip|stlib)$/i.test(f.name)) return;
+  /* 📦 trk231：目録＋パックをまとめて落としたときは、目録の側（js/pack-catalog.js）に任せる */
+  if (list.length > 1 || list.some(x => /\.json$/i.test(x.name))) return;
   e.preventDefault(); e.stopImmediatePropagation();
+  /* 📦 trk235：セット（.stlib・中に目録が入った .zip）は、目録の側へ渡す。
+     セットでなければ false が返るので、今までどおり 1 本のパックとして入れる（.stpack は今までどおり） */
+  const cat = window.Trk && window.Trk.packCatalog;
+  if (/\.(stlib|zip)$/i.test(f.name) && cat && typeof cat.tryImportSet === "function") {
+    const fallback = () => { if (core.phase === "title") installAndUse(f); };
+    cat.tryImportSet(f).then(taken => { if (!taken) fallback(); }).catch(fallback);
+    return;
+  }
   if (core.phase !== "title") return;
   installAndUse(f);
 }, true);
@@ -885,7 +1526,17 @@ window.syncNoteUI = syncNoteUI;
 window.updateMascotUI = updateMascotUI;
 /* 領域（window.Trk.custom）：公開名の正規の場所。旧名（window.X）は別名として残す（利用者の決定） */
 window.Trk = window.Trk || {};
-window.Trk.custom = Object.assign(window.Trk.custom || {}, { initPacks, noteImage, packDB, packRuntime, packIdentityFromManifest, skinShelf, syncNoteUI, updateMascotUI, installAndUse });
+window.Trk.custom = Object.assign(window.Trk.custom || {}, { initPacks, noteImage, packDB, packRuntime, packIdentityFromManifest, skinShelf, syncNoteUI, updateMascotUI, installAndUse,
+  /* 📦 trk231：目録の一覧（js/pack-catalog.js）から使う入口 */
+  activatePack, deactivatePack, deletePackById, listInstalledPacks,
+  /* 💾 trk234：容量の表示と、まとめて消す（目録の一覧と ❓謎設定からも使う） */
+  packSizeText, packUsageInfo, packDeletePlan, deletePacksByIds, wipeAllPacks,
+  /* 🔤 trk238：入れている書体の索引（目録の一覧の「🔤 入れている書体」が使う） */
+  packFontRows, listInstalledFonts });
+/* 📚 trk326：巻別スキンの受け子（R-VOL-1）。既存の公開名の並びは崩さず、あとから足す */
+Object.assign(window.Trk.custom, { initSkinImports, importVolumePayload: applyImport, planVolumeImport: importPlan,
+  importedSkins, removeImported, clearImported, VOLUME_FORMAT, renderSkinLegacyList,
+  validateVolumePayload: payload => (window.Trk.libraryReceiver ? window.Trk.libraryReceiver.validateVolumePayload(payload) : null) });
 Object.defineProperty(window.Trk.custom, "getPackSongs", { configurable:true, get:() => getPackSongs, set:v => { getPackSongs = v; } });
 Object.defineProperty(window.Trk.custom, "installPackFile", { configurable:true, get:() => installPackFile, set:v => { installPackFile = v; } });
 Object.defineProperty(window.Trk.custom, "renderPackList", { configurable:true, get:() => renderPackList, set:v => { renderPackList = v; } });
