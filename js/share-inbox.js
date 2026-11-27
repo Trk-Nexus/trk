@@ -2,7 +2,8 @@
 /* ============================================================================
    trk! share-inbox.js — 📥 OSの共有／「このアプリで開く」の受け口（trk165）
    ・share_target（Android Chrome等）：Service Worker（sw.js の handleShareTarget）が
-     POSTで受け取ったファイルを CacheStorage「trk-share-inbox-v1」に一時保存する。
+     POSTで受け取ったファイルを CacheStorage「trkPWA-trk-share-inbox-v1@<置き場所の印>」に一時保存する
+     （trk252 から `trkPWA-` 始まり。名前の組み方は sw.js の CACHE_KEY_PREFIX と必ずそろえる）。
      ここは起動時にそれを読んで、**既存の取り込み経路**へ渡すだけ：
        曲 → Trk.library.addSongFiles ／ 動画 → Trk.library.addVideoFiles
        CBZ・ZIP → Trk.study.importArchives（pack.json が入った ZIP はパック扱い）
@@ -41,6 +42,18 @@ Object.assign(TEXT.ko, {
 });
 
 const SHARE_CACHE = "trk-share-inbox-v1";
+/* 🧭 trk223（2026-10-31 レビュー④）：CacheStorage はオリジンで共有なので、同じホストに /trk/ と
+   /trk/ の2つを置くと、共有の一時置き場も取り違えます。sw.js と同じ規則で、置き場所の印を付けます
+   （sw.js の scopeTagOf() と同じ計算。片方だけ直さないこと）。 */
+function shareScopeTag(pathname) {
+  const path = String(pathname || "/").replace(/\/+$/, "");
+  if (!path) return "root";
+  return path.slice(1).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "root";
+}
+function shareScopePath() {
+  try { return new URL(".", document.baseURI).pathname; } catch (_) { return "/"; }
+}
+const SHARE_CACHE_NAME = `trkPWA-${SHARE_CACHE}@${shareScopeTag(shareScopePath())}`;   /* trk252: sw.js の CACHE_KEY_PREFIX と必ずそろえる（上流の `trk-` 掃除の射程から外れるための接頭辞） */
 const PACK_JSON_RE = /(^|\/)pack\.json$/;   /* custom.js の installPackFileSerial と同じ探し方 */
 
 function shareToast(key, vars) {
@@ -119,7 +132,7 @@ async function drainShareInbox() {
   const prefix = shareInboxPrefix();
   if (!prefix) return 0;
   let cache;
-  try { cache = await caches.open(SHARE_CACHE); } catch (_) { return 0; }
+  try { cache = await caches.open(SHARE_CACHE_NAME); } catch (_) { return 0; }
   let keys;
   try { keys = await cache.keys(); } catch (_) { return 0; }
   const inbox = keys.filter(req => { try { return new URL(req.url).pathname.startsWith(prefix); } catch (_) { return false; } });

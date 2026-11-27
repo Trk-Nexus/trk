@@ -1,0 +1,188 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+/* ============ 🎨 trk-re-modern：領域ごとの選択（段階1・純粋な道具） ============
+
+   設計：docs/REMODERN-DESIGN-DRAFT-2026-11-06.md（D1＝書斎・基地の見た目まで、D4＝既存の表示は変えない）
+
+   ・領域は 3 つ：共通（common）・書斎（study）・基地（base）
+   ・各領域の状態：{ mode, work }
+       keep   … 現状維持（既定。作品を使わない）
+       follow … 共通で選んだ作品に連動（その領域に対応していれば）
+       own    … この領域だけ独立の作品を選ぶ
+     common は keep か own のみ（follow は持たない）
+   ・未知の値・壊れた値は keep に落とす。利用者の保存データは勝手に消さない
+     （未知の作品 ID は保存したまま、表示だけ既存の表示に落とす）
+   ・適用は 1 つの領域だけを変える。他の領域・読書・再生・共通ノーツには触れない
+   ・戻す操作は、適用直前の状態へ戻す。ただし適用後に利用者が変えていれば、上書きせず「競合」と返す
+   ・🔤 trk326（R-REM-3）：書斎（study）と基地（base）は**独立のオプトイン**。既定はオフ（作品の配色を当てない）。
+     利用者が「書斎にも当てる」「基地にも当てる」をオンにした領域だけ own / follow が効く。
+     オフの領域は、利用者が元々選んでいた読書テーマ・ノーツ設定のまま（resolve が keep を返す）。
+     optIn を渡さない呼び出し（trk296〜の純粋な道具としての使い方）は、これまでどおり全領域を対象にする。
+
+   この道具は DOM を使わない。画面への組み込みは次の段階。 */
+(function () {
+  "use strict";
+
+  const REGIONS = Object.freeze(["common", "study", "base"]);
+  const MODES = Object.freeze(["keep", "follow", "own"]);
+  const COMMON_MODES = Object.freeze(["keep", "own"]);
+  const WORK_ID = /^trk-re-modern-[a-z0-9][a-z0-9-]{0,63}$/;
+
+  /* 作品の値は許可リストで検証する（任意の JS・HTML・CSS・URL は持たない） */
+  const HEX = /^#[0-9a-fA-F]{6}$/;
+  const HEADING_FONTS = Object.freeze(["system", "dotgothic"]);
+
+  const DEFAULT_REGION = Object.freeze({ mode: "keep", work: null });
+
+  function defaultState() {
+    return { version: 1, common: { ...DEFAULT_REGION }, study: { ...DEFAULT_REGION }, base: { ...DEFAULT_REGION } };
+  }
+
+  /* 作品の定義を検証する。不正なら理由を返す（例外は投げない） */
+  function validateWork(work) {
+    if (!work || typeof work !== "object") return { ok: false, reason: "not-object" };
+    if (typeof work.id !== "string" || !WORK_ID.test(work.id)) return { ok: false, reason: "bad-id" };
+    if (!Array.isArray(work.regions) || work.regions.length === 0) return { ok: false, reason: "bad-regions" };
+    if (!work.regions.every(r => REGIONS.includes(r))) return { ok: false, reason: "unknown-region" };
+    const colors = work.colors || {};
+    for (const key of Object.keys(colors)) {
+      if (typeof colors[key] !== "string" || !HEX.test(colors[key])) return { ok: false, reason: "bad-color" };
+    }
+    if (work.heading !== undefined) {
+      const h = work.heading;
+      if (!h || typeof h !== "object" || !HEADING_FONTS.includes(h.font)) return { ok: false, reason: "bad-heading-font" };
+    }
+    return { ok: true, reason: null };
+  }
+
+  /* 保存された状態を読む。壊れていても必ず使える形を返し、直した箇所を warnings に残す */
+  function normalize(raw) {
+    const warnings = [];
+    const out = defaultState();
+    if (!raw || typeof raw !== "object") return { state: out, warnings };
+    for (const region of REGIONS) {
+      const item = raw[region];
+      if (!item || typeof item !== "object") continue;
+      const allowed = region === "common" ? COMMON_MODES : MODES;
+      let mode = item.mode;
+      if (!allowed.includes(mode)) {
+        warnings.push({ region, reason: "bad-mode" });
+        mode = "keep";
+      }
+      const work = typeof item.work === "string" && WORK_ID.test(item.work) ? item.work : null;
+      if (item.work != null && work === null) warnings.push({ region, reason: "bad-work-id" });
+      out[region] = { mode, work: mode === "keep" ? null : work };
+    }
+    return { state: out, warnings };
+  }
+
+  /* 🔤 trk326（R-REM-3）：オプトインの保存を読む。書斎・基地だけを持ち、既定はどちらも false */
+  const OPT_IN_REGIONS = Object.freeze(["study", "base"]);
+  function defaultOptIn() { return { study: false, base: false }; }
+  function normalizeOptIn(raw) {
+    const out = defaultOptIn();
+    if (!raw || typeof raw !== "object") return out;
+    for (const region of OPT_IN_REGIONS) if (raw[region] === true) out[region] = true;
+    return out;
+  }
+  /* 1 つの領域のオプトインを変える（知らない領域は何もしない） */
+  function regionOptIn(optIn, region, on) {
+    const out = normalizeOptIn(optIn);
+    if (!OPT_IN_REGIONS.includes(region)) return out;
+    out[region] = on === true;
+    return out;
+  }
+  function studyOptIn(optIn, on) { return regionOptIn(optIn, "study", on); }
+  function baseOptIn(optIn, on) { return regionOptIn(optIn, "base", on); }
+
+  /* 作品の一覧（catalog：id → 作品）から、領域ごとの実際の表示を決める。
+     🔤 trk326：optIn を渡したときだけ、書斎・基地のオプトインを見る（オフなら keep に落とす） */
+  function resolve(state, catalog, optIn) {
+    const s = normalize(state).state;
+    const works = catalog || {};
+    const commonWork = s.common.mode === "own" && s.common.work ? works[s.common.work] : null;
+    const result = {};
+    for (const region of REGIONS) {
+      const item = s[region];
+      if (item.mode === "keep") {
+        result[region] = { source: "keep", work: null, fallback: null };
+        continue;
+      }
+      const wantId = item.mode === "follow" ? (commonWork ? commonWork.id : null) : item.work;
+      const work = wantId ? works[wantId] : null;
+      if (!wantId) {
+        result[region] = { source: "keep", work: null, fallback: item.mode === "follow" ? "no-common-work" : "no-work" };
+      } else if (!work) {
+        /* 未知の作品：保存は残し、表示だけ既存へ */
+        result[region] = { source: "keep", work: null, fallback: "unknown-work", wanted: wantId };
+      } else if (!work.regions.includes(region)) {
+        result[region] = { source: "keep", work: null, fallback: "unsupported-region", wanted: wantId };
+      } else {
+        result[region] = { source: item.mode, work: work.id, fallback: null };
+      }
+    }
+    /* 🔤 trk326：オプトインがオフの領域は、作品の配色を当てない（元の読書テーマ・ノーツのまま） */
+    if (optIn && typeof optIn === "object") {
+      const o = normalizeOptIn(optIn);
+      for (const region of OPT_IN_REGIONS) {
+        if (o[region] === true) continue;
+        if (result[region].source === "keep") continue;
+        result[region] = { source: "keep", work: null, fallback: "region-opt-out", wanted: result[region].work, optOut: true };
+      }
+    }
+    return result;
+  }
+
+  /* 1 つの領域だけを変える（他の領域はそのまま） */
+  function setRegion(state, region, mode, work) {
+    if (!REGIONS.includes(region)) throw new Error("unknown region");
+    const s = normalize(state).state;
+    const allowed = region === "common" ? COMMON_MODES : MODES;
+    if (!allowed.includes(mode)) throw new Error("bad mode");
+    if (mode !== "keep" && work != null && !WORK_ID.test(work)) throw new Error("bad work id");
+    const next = { ...s };
+    next[region] = { mode, work: mode === "keep" ? null : (work || null) };
+    return next;
+  }
+
+  /* 適用：直前の領域の状態を覚えておく（戻すため） */
+  function apply(state, region, mode, work) {
+    const before = normalize(state).state[region];
+    const after = setRegion(state, region, mode, work);
+    return { state: after, snapshot: { region, before: { ...before }, after: { ...after[region] } } };
+  }
+
+  /* 戻す：適用後のまま（＝利用者が触っていない）なら直前へ戻す。変わっていれば上書きしない */
+  function revert(state, snapshot) {
+    const current = normalize(state).state;
+    const { region, before, after } = snapshot;
+    const now = current[region];
+    if (now.mode !== after.mode || now.work !== after.work) {
+      return { state: current, conflict: true };
+    }
+    return { state: { ...current, [region]: { ...before } }, conflict: false };
+  }
+
+  /* 直前の状態（戻すための記録）を検査する。壊れていれば null（＝戻せない）。作品 ID は検査する */
+  function sanitizeSnapshot(raw) {
+    if (!raw || typeof raw !== "object" || !REGIONS.includes(raw.region)) return null;
+    const allowed = raw.region === "common" ? COMMON_MODES : MODES;
+    const pick = x => {
+      if (!x || typeof x !== "object" || !allowed.includes(x.mode)) return null;
+      const work = typeof x.work === "string" && WORK_ID.test(x.work) ? x.work : null;
+      return { mode: x.mode, work: x.mode === "keep" ? null : work };
+    };
+    const before = pick(raw.before), after = pick(raw.after);
+    return before && after ? { region: raw.region, before, after } : null;
+  }
+
+  /* 🎨 trk309：未確認の作品に色を当てるか。既定は当てない（依頼者の決定）。
+     開発用の切り替え（settings.remodernDevPaint）を入れたときだけ当てる。題字・書斎・基地の外枠の共通の判定 */
+  function mayPaint(status, devOn) {
+    return status === "registered" || devOn === true;
+  }
+
+  const api = { mayPaint, REGIONS, MODES, COMMON_MODES, HEADING_FONTS, WORK_ID, OPT_IN_REGIONS, defaultState, validateWork, normalize, resolve, setRegion, apply, revert, sanitizeSnapshot,
+    /* 🔤 trk326（R-REM-3）：書斎・基地の独立オプトイン */
+    defaultOptIn, normalizeOptIn, regionOptIn, studyOptIn, baseOptIn };
+  if (typeof globalThis !== "undefined") globalThis.TrkReModernRegions = api;
+})();

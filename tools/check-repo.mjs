@@ -241,7 +241,8 @@ if (/棚スキン11種|・11種類/.test(read("css/style.css") + skins)) {
   fail("stale shelf skin count (11) remains in source comments");
 }
 
-// Overall look skins: 33 presets in data.js (incl. the locked 🎓 reward skin, 3 見やすさ skins and 6 生活 skins, 4 ゲーム画面 skins) + 4 Miku skins = 44.
+// Overall look skins: 49 presets in data.js (incl. the locked 🎓 reward skin, 3 見やすさ skins and 6 生活 skins, 4 ゲーム画面 skins, 9 書体 skins from trk228) + 4 Miku skins + 62 Wizard skins (js/skins-wizard.js) + 176 volume skins (js/skins-volumes.js) = 291.
+// 📚 trk274：どちらも tools/import-skin-catalog.mjs が trk-Avatar-Library の目録から作る（手で書かない）。
 const dataJs = read("js/data.js");
 const skinsStart = dataJs.indexOf("const SKINS = {");
 const skinsEnd = dataJs.indexOf("\n};", skinsStart);
@@ -250,8 +251,31 @@ if (skinsStart < 0 || skinsEnd < 0) {
 } else {
   const presetCount = (dataJs.slice(skinsStart, skinsEnd).match(/label:\{ja:/g) || []).length;
   const mikuCount = (read("js/characters/miku.js").match(/^ {2}(?:window\.Trk\.data\.)?SKINS\.[A-Za-z0-9]+ = \{/gm) || []).length;
-  if (presetCount + mikuCount !== 44) fail(`expected 44 overall skins, found ${presetCount + mikuCount}`);
-  else ok("overall skin count is 44");
+  /* 🧙 trk269・trk270：Wizard（62 種）と 📚 trk274：巻別（176 種）は別ファイル（目録から生成）。数え方だけ足す */
+  const wizardText = read("js/skins-wizard.js");
+  const volumeText = read("js/skins-volumes.js");
+  const countSkins = t => (t.match(/^ {2}S\["[A-Za-z0-9_.-]+"\] = \{/gm) || []).length;
+  const wizardCount = countSkins(wizardText);
+  const volumeCount = countSkins(volumeText);
+  const totalSkins = presetCount + mikuCount + wizardCount + volumeCount;
+  if (totalSkins !== 291) fail(`expected 291 overall skins, found ${totalSkins}`);
+  else ok("overall skin count is 291 (53 built-in + 62 wizard + 176 volumes)");
+  if (wizardCount !== 62) fail(`js/skins-wizard.js has ${wizardCount} skins (expected 62)`);
+  if (volumeCount !== 176) fail(`js/skins-volumes.js has ${volumeCount} skins (expected 176)`);
+  if (!/tools\/import-skin-catalog\.mjs/.test(wizardText)) fail("js/skins-wizard.js does not say how it was generated");
+  else ok("wizard skins say where they came from (import tool)");
+  if (!/tools\/import-skin-catalog\.mjs/.test(volumeText)) fail("js/skins-volumes.js does not say how it was generated");
+  else ok("volume skins say where they came from (import tool)");
+  /* 📚 巻の目録（13 巻）が 291 種を重複なく覆っていること。棚の絞り込みがこれで動く */
+  if (!/SKIN_VOLUMES = \[/.test(volumeText)) fail("js/skins-volumes.js does not publish SKIN_VOLUMES");
+  else {
+    const counts = [...volumeText.matchAll(/\{id:"([a-z0-9-]+)",title:"[^"]*",ids:\[([^\]]*)\]\}/g)]
+      .map(m => [m[1], (m[2].match(/"/g) || []).length / 2]);
+    const covered = counts.reduce((sum, [, n]) => sum + n, 0);
+    if (counts.length !== 13) fail(`SKIN_VOLUMES should have 13 volumes, found ${counts.length}`);
+    else if (covered !== 291) fail(`SKIN_VOLUMES covers ${covered} skins (expected 291)`);
+    else ok("SKIN_VOLUMES lists 13 volumes covering 291 skins");
+  }
   /* 🎓 ごほうびスキン（グラデュエーション）は、スタンプ5つで解禁まで鍵がかかっていること */
   if (!/graduation:\s*\{[\s\S]*?locked:\s*true/.test(dataJs.slice(skinsStart, skinsEnd)) ||
       !read("js/core.js").includes("SKINS[id].locked && !settings.skinGradUnlocked")) fail("graduation reward-skin lock is missing");
@@ -2417,7 +2441,7 @@ if (!read("js/main.js").includes("guideEggKind") ||
   if (!manifestOk) fail("manifest share_target / file_handlers (trk165) are missing or malformed");
   else if (!html.includes(shareTag) || html.indexOf(shareTag) < html.indexOf('<script src="js/backup.js"></script>')) fail("js/share-inbox.js must load after js/backup.js (all import entry points ready)");
   else if (!sw.includes("async function handleShareTarget(request)") || !sw.includes('const SHARE_CACHE = "trk-share-inbox-v1"') ||
-           !sw.includes("key !== SHARE_CACHE") || !sw.includes('if (request.method === "POST")') ||
+           !sw.includes("key === SHARE_CACHE_NAME") || !sw.includes('if (request.method === "POST")') ||
            !sw.includes('new URL("share-target/", SCOPE).pathname')) fail("sw.js share-target POST handling / inbox-cache whitelist is missing");
   else if (!share.includes("async function routeInboundFiles(files)") || !share.includes("addSongFiles(groups.audio)") ||
            !share.includes("addVideoFiles(groups.video)") || !share.includes("importArchives(groups.book)") ||
@@ -2760,17 +2784,21 @@ if (!read("js/main.js").includes("guideEggKind") ||
     truck.includes('if (m === "truck") return settings.swayTruck !== false;') &&
     truck.includes('if (m === "orbit") return settings.swayOrbit !== false;') &&
     truck.includes("if (reduceMotion.matches || !swayModeOn()) return 0;") &&
+    /* 🛣 trk282：TRUCK の揺れは既定オン。ただし道は「おまかせ」＝8 割は高速道路（静止） */
     truck.includes('settings.swayTruck = prefs.swayTruck !== false;') &&
+    truck.includes('settings.swayRoad = pick(prefs.swayRoad, ROAD_IDS, "auto");') &&
+    truck.includes('const ROAD_WEIGHTS = [["mountain", 5], ["up", 5], ["down", 5], ["coast", 5], ["highway", 80]];') &&
     truck.includes('settings.swayOrbit = prefs.swayOrbit !== false;') &&
     truck.includes("settings.swayAllModes = prefs.swayAllModes === true;");
   const uiOk = html.includes('id="swayTruck"') && html.includes('id="swayAllModes"') &&
+    html.includes('id="swayRoad"') && html.includes('<option value="coast"') &&
     modes.includes('makeCheck("swayOrbit", "swayOrbit", "swayOrbit")') &&
     main.includes('["swayAllModes", "swayAllModes"]') &&
     ["ja", "en", "zh", "ko"].every(l => options.includes(`swayAllModes:"`)) &&
     (options.match(/swayAllModes:"/g) || []).length >= 4;
   if (!swayOk) fail("lane sway gating (TRUCK / ORBIT by default, mystery override) is broken");
   else if (!uiOk) fail("lane sway options (TRUCK / ORBIT checkboxes + ❓ mystery switch) are missing");
-  else ok("lane sway defaults to TRUCK / ORBIT with per-mode off switches; ❓ mystery switch overrides all modes");
+  else ok("lane sway: TRUCK draws a road per run (trk282; 80% motorway = still) and ORBIT is on, each with its own switch; ❓ mystery switch overrides all modes");
 }
 
 // ✨ Frame interpolation (js/frame-interp.js): opt-in motion-compensated
@@ -2937,6 +2965,42 @@ const cacheMatch = sw.match(/CACHE\s*=\s*["']([^"']+)["']/);
 if (!cacheMatch) fail("sw.js cache name could not be read");
 else if (!/^trk-v\d{4}\.\d{1,2}\.\d{1,2}[-\w]*$/.test(cacheMatch[1])) fail(`unexpected service-worker cache name: ${cacheMatch[1]}`);
 else ok(`service-worker cache: ${cacheMatch[1]}`);
+
+/* 🔒 trk256（M1）：GitHub Actions の `uses:` は 40 桁の commit SHA に固定する（docs/SECURITY-CHECKLIST.md §C-4）。
+   タグ（`@v4`）は動くので、上流が乗っ取られたときに中身が差し替わる余地を残さない。 */
+for (const rel of [".github/workflows/check.yml", ".github/workflows/pages.yml"]) {
+  if (!exists(rel)) continue;
+  const text = read(rel);
+  const lines = text.split("\n").filter(line => /^\s*uses:\s*\S+/.test(line));
+  const bad = lines.filter(line => !/^\s*uses:\s*[\w.-]+\/[\w.-]+@[0-9a-f]{40}(\s*#\s*v[\d.]+)?\s*$/.test(line));
+  if (!lines.length) fail(`${rel} has no uses: lines`);
+  else if (bad.length) fail(`${rel} has an unpinned action: ${bad[0].trim()}`);
+  else ok(`${rel}: ${lines.length} actions pinned to a commit SHA`);
+}
+
+/* 📱 trk256（M2）：mobile-web は docs を丸ごと写さない（利用者向けの guide と ADDONS だけ）。 */
+if (exists("tools/prepare-mobile-web.mjs")) {
+  const mobile = read("tools/prepare-mobile-web.mjs");
+  const copiesWholeDocs = /const\s+directories\s*=\s*\[[^\]]*"docs"/s.test(mobile);
+  const hasGuide = /docsDirectories\s*=\s*\[[^\]]*"docs\/guide"/s.test(mobile);
+  const hasAddons = /docsFiles\s*=\s*\[[^\]]*"docs\/ADDONS\.md"/s.test(mobile);
+  if (copiesWholeDocs) fail("tools/prepare-mobile-web.mjs copies the whole docs/ directory");
+  else if (!hasGuide || !hasAddons) fail("tools/prepare-mobile-web.mjs does not list docs/guide and docs/ADDONS.md");
+  else ok("mobile-web ships only the user-facing docs (guide + ADDONS)");
+}
+
+/* 🧾 trk256（S5・S6）：docs/HANDOFF.md §1.5 の「Service Worker」の行が、sw.js の CACHE とずれていないか。
+   §1.5 は「いまの状態」を1枚で見る場所なので、版を上げたときに書き忘れると嘘になる（trk246→trk255 で実際にずれた）。 */
+if (cacheMatch && exists("docs/HANDOFF.md")) {
+  const handoff = read("docs/HANDOFF.md");
+  const from = handoff.indexOf("## 1.5 ");
+  const to = handoff.indexOf("\n## 2. ", from);
+  const section = from >= 0 ? handoff.slice(from, to > from ? to : undefined) : "";
+  const listed = (section.match(/trk-v\d{4}\.\d{1,2}\.\d{1,2}-trk\d+/) || [])[0] || "";
+  if (!listed) fail("docs/HANDOFF.md §1.5 does not name the current service-worker cache");
+  else if (listed !== cacheMatch[1]) fail(`docs/HANDOFF.md §1.5 cache is ${listed} but sw.js says ${cacheMatch[1]}`);
+  else ok(`docs/HANDOFF.md §1.5 cache matches sw.js (${listed})`);
+}
 
 for (const rel of [
   "docs/HANDOFF.md",

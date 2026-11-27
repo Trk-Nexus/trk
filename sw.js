@@ -1,15 +1,152 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /* trk! offline shell: network first, cached same-origin app files as a fallback.
    Exception: the hash-pinned vendor files (assets/vendor, tools/vendor-lock.json) are cache-first,
-   but a cached copy is used only when its SHA-384 matches the pin below. */
-const CACHE = "trk-v2026.10.29-trk219";
+   but a cached copy is used only when its SHA-384 matches the pin below.
+
+   📱 trk220（iPhone のホーム画面アプリ）: install のときに、アプリの殻（index.html と、
+   その index.html が読み込む CSS・JS・アイコン）を先にキャッシュします。これまでは
+   「一度も開いていない画面は、オフラインだと 503」でした。殻だけを先に入れるので、
+   未使用の 3D（assets/vendor）・同梱デモ音源・docs は、使ったときに初めて入ります。
+   殻の一覧は index.html から読むので、ファイルを足してもこのファイルの直しは要りません。
+
+   🖥 trk221: PC でもスマホ型の画面（js/mobile-shell.js）と、画面の下の再生バー
+   （js/player-bar.js・css/player-bar.css）を足しました。どちらも index.html が読み込むので、
+   殻の先読みには自動で入ります（このファイルの一覧を手で直す必要はありません）。
+
+   🖥 trk222: 拡大率などの設定の配線（js/ui-prefs.js）と、エフェクト欄のタブ分け（CSS）を足しました。
+   これも index.html が読み込むので、殻の先読みは自動で追随します。
+
+   🧭 trk223（2026-10-31 レビュー④）：キャッシュの名前は「版＋置き場所（スコープ）」にしました。
+   同じホストで /trk/ と /trk/ のように2つの trk! を公開すると、CacheStorage はオリジンで共有なので、
+   版の名前だけだと片方の更新がもう片方のオフライン用キャッシュまで消してしまいます。
+
+   🧭 trk224（2026-10-31 レビュー F1）：js/zip-io.js の配布ZIPの時刻を UTC で書くように直したので、
+   アプリ本体が変わった版として名前を上げます（古い殻を持っている人の画面が、直る前のJSに留まらないように）。
+
+   🧭 trk225（2026-10-31）：下の再生バーの置き場所（画面のいちばん下／操作パネルの上）と、
+   「隠さない」設定を足しました。js/player-bar.js・css/player-bar.css・index.html が変わったので、
+   これまでどおり版の名前を上げます。
+
+   📦 trk235（2026-11-01）：セット（`.stlib` / `.zip`）を選ぶだけで目録とパックをまとめて入れる
+   入口を足しました。js/pack-catalog.js・js/custom.js・index.html が変わったので、名前を上げます。
+
+   🔤 trk236〜238（2026-11-01）：目録の「ひとこと・対応字数・タグ」を読み、タグで絞り、
+   入っている書体の索引（🔤 入れている書体）を出すようにしました。同じ 3 つが変わったので、また上げます。
+
+   📦 trk239（2026-11-01）：セットの 2 分割（r6）に備えて、入れる前に聞く数を
+   「これから入る分」だけにしました（すでに入っていて版も同じものは飛ばす）。js/pack-catalog.js が変わったので、また上げます。
+
+   🧺 trk241（2026-11-01）：スキンの棚を、要るものだけ見える形に作り直しました（カードから ⭐／🚫、
+   隠した数を棚の下に出して 1 タップで戻す、整理の一覧に さがす・絞る・まとめて）。
+   js/core.js・js/i18n.js・index.html・css/style.css が変わったので、名前を上げます。
+
+   🔄 trk242（2026-11-01）：**新しい版の知らせ**（js/sw-update.js）を足しました。登録は main.js から
+   この知らせの側へ移し、帯・設定の「🔄 アプリの更新」・30分に1回の確認を足しています。
+   index.html・css/style.css・js/main.js が変わったので、また上げます。
+
+   🔍 trk243（2026-11-01）：**設定のさがす**（js/settings-find.js）を足しました。設定のパネルが
+   19 枚になり、目で探すしかなかったためです。index.html・css/style.css が変わったので、また上げます。
+
+   🔤 trk253（2026-11-02・レビュー対応）：🔤 の**組み合わせの説明と実物の食い違い**（「雑誌の飾り」）と、
+   保存値の `preset` が段階名以外も通していた点を直しました。js/typography.js が変わっているので上げます。
+   設定の**消し合い**（同じオリジンの安定版 `/trk/` が保存すると開発版の設定が消える）は、
+   うち側は trk247 ですでに「足すだけ」に直っています。上流側へは `tools/backport-trk-scope-tag.mjs` の
+   ④ で当てる形にしました（この作業セッションからは ref が作れず PR を代行できていません）。
+   🔁 trk254（2026-11-02・返事15 をうけて）：🔤 の写しを**目録から機械的に作り直す**道具
+   （tools/sync-typography-catalog.mjs）を入れ、r9 の直し（雑誌の飾りの見出しを TrkHinaMincho 400・
+   電子ゲームの注記を角ゴ・4組の説明・14組の trkUse）を反映しました。js/typography.js が変わっているので上げます。
+   🔤 trk255（2026-11-02・判断項目 U1〜U7）：🔤 に「この組が合う曲」を1行出し（U1）、
+   更新の帯の「あとで」を24時間覚え＋設定に「知らせを出す」を置き（U2）、いまの版を設定だけに表示し（U3）、
+   表示の密度を下の再生バーにも効かせ（U4）、設定のさがすを `/` で開けるようにし（U5）、
+   英語だけだった読み上げ名13個を4言語にそろえました（U7）。js と css が変わっているので上げます。
+   🧹 trk256（2026-11-02・小粒 A/B）：オフラインでも注意書き・クレジット・追加機能の説明を開けるよう
+   先読みに3本足し（S2）、JS が止まっているときの案内を1枚置き（S3）、README の起動手順と
+   HANDOFF §1.5 の数字を直し、「13行」の食い違いを正しました（S4〜S6）。
+   配布物まわりは Actions の SHA 固定と mobile-web の docs 削減（M1・M2）。
+   🗓 trk258（2026-11-02・r10 の受け皿）：目録の版（index.json の updatedAt）を一覧に出し（R3）、
+   セットの要約を「これから入る分」にそろえ（R4・r10 を r9 の上に入れると 1 本だけ飛ぶ）、
+   画面のタップ鍵に読み上げ名を足し、check:a11y に「ボタンの名前」の検査を入れた（R5）。
+   🗓 trk259（2026-11-02・レビュー後の手当て）：目録の版を **端末の日付** に直し（朝 9 時前の更新が前日になる）、
+   セットの進捗の分母を「これから入る分」にそろえ、a11y の許可リストに **根拠の式** を付けた。
+   🚑 trk260（2026-11-02・起動しない不具合の修正）：js/core.js が読み込み時に TDZ で止まり、
+   **開いた直後が「枠だけ・文字なし・ボタンが効かない」** になっていた（trk245〜trk259 の配布物）。
+   最初の fitStage() をファイルの最後へ移しました。詳しくは docs/FIX-TRK260-BOOT-2026-11-02.md。
+   🎹 trk261（2026-11-02・シンセの鍵盤）：25／49／61／88 鍵を選べるようにし、幅の合わせ方
+   （fit／scroll／shrink）も設定に。キー割り当ては音番号で持つ形へ移行（旧データは自動で読み替え）。
+   MIDI キーボード（Web MIDI）の入力に対応しました。詳しくは docs/SYNTH-TRK261-2026-11-02.md。
+   🎬 trk262（2026-11-02・映像の操作パネルと字幕の置き場所）：🖥 全画面と ▶ メディアプレーヤーの映像で、
+   操作パネルの出かた（触れると上下／触れると下だけ／下だけ常に／出さない）を選べるようにしました。
+   字幕は置き場所（下・中央・上）と大きさ（小・中・大）を設定に。純粋な計算は js/viewer-chrome.js。
+   自動字幕は trk では作らず、案内文書（docs/AUTO-CAPTIONS-TRK262-2026-11-02.md）と字幕パネルの ℹ にまとめました。
+   📌 trk263（2026-11-02・画中画）：メディアプレーヤーを閉じても画中画（小窓）を残せるようにしました（既定オン）。
+   残すときは再生を続け、音量も下げません。画中画を出している間は、プレーヤー側の映像を隠します（既定オン）。
+   詳しくは docs/VIEWER-TRK263-2026-11-02.md。
+   📌 trk264（2026-11-02・Safari の画中画）：Safari の webkitSetPresentationMode でも入れるようにしました。
+   標準 API を先に試し、断られたら webkit へ。iPhone／iPad のホーム画面アプリでは押せない理由を出します。
+   詳しくは docs/VIEWER-TRK264-2026-11-02.md。
+   📌 trk265（2026-11-03・trk264 レビューの手当て）：画中画を閉じるとき、標準と webkit の**両方**を順に試します
+   （Safari で標準が失敗すると小窓が残る不具合）。入るときは時間で決め打ちせず「変わった」の知らせを待ちます。
+   押せないときは、ボタンのすぐ下に見える理由を出します。詳しくは docs/VIEWER-TRK265-2026-11-03.md。
+   📌 trk266（2026-11-03・trk265 レビューの小さな推奨）：理由の行は「ホーム画面や Dock のアプリ」のときだけに
+   しました（Firefox で出しっぱなしにならない）。小窓を待つ間の二度押しを無視し、説明文に Dock を足しました。
+   詳しくは docs/VIEWER-TRK266-2026-11-03.md。
+   📚 trk326（2026-11-27・Avatar 倉庫の受け子）：巻別スキンの取り込み（R-VOL-1）を足し、
+   js/library-receiver.js（検証と変換）・js/custom.js（保存と画面）・js/core.js（棚の「📚 取り込んだ巻」）・
+   index.html・css/style.css・js/i18n.js が変わったので、名前を上げます。
+   🎧 trk327（2026-11-27・メディアプレイヤーの点検表 P1）：ロック画面の再生状態と絵、読み込み中／詰まり／
+   失敗の表示と「⟳ もう一度」、キュー編集（次に再生・最後へ・外す）と「このキューでプレイリストを作る」、
+   続きから再生の知らせ、曲間のつなぎ（ギャップレス／フェード・どちらも既定オフ）を足しました。
+   js/media-player-mode.js・js/core.js・js/library.js・css/style.css・index.html が変わったので、名前を上げます。
+   🧾 trk328（2026-11-27・安定版を出す前の 2 つの修正）：外部レビューの M1（生成の道具が、その生成物に
+   居ない差し戻し ID まで書いていた）と M3（フェードの途中で巻き戻すと音量が下がったまま）を直し、
+   推奨の 1 行（iOS ではフェードが効かない・更新直後に崩れたら開き直す）を足しました。
+   tools/import-skin-catalog.mjs・js/media-player-mode.js・js/i18n.js が変わったので、名前を上げます。 */
+const CACHE = "trk-v2026.11.27-trk328";
 const CACHE_PREFIX = "trk-";
+/* 🧭 trk252（2026-11-02）：CacheStorage に**実在させる名前**には `trkPWA-` を先頭に付けるようにしました。
+   同じオリジンに別の trk!（上流 `/trk/` など）が在ると、相手が「`trk-` 始まりは全部消す」旧式の掃除を
+   している場合、うちの殻・3Dの vendor・共有受け口まで一緒に消えます（trk223 は**こちら側**の取り違えを止めました）。
+   2026-11-02 に上流 `trk` も同じ組織へ移って同じオリジンに並ぶことになったので、
+   名前を `trk-` 始まりから逃がして二重に防ぐことにしました（上流側の掃除にも同じ印を見る修正を
+   `tools/backport-trk-scope-tag.mjs` で当てられるようにしています＝2026-11-02 時点で上流への PR は未作成。
+   この作業セッションの GitHub App が `Trk-Nexus/trk` に ref を作れません）。
+   版名そのもの（下の CACHE）は従来の `trk-v…-trk…` のままにしています（tools と tests がそこを見る）。 */
+const CACHE_KEY_PREFIX = "trkPWA-";
 const SCOPE = new URL(self.registration.scope);
 const VENDOR_PREFIX = "assets/vendor/";
+
+/* 「置き場所」を名前に入れるための印（/trk/ → trk、ルート / → root）。
+   ページ側（js/share-inbox.js）にも同じ関数が要ります（共有の受け口の名前を合わせるため）。 */
+function scopeTagOf(pathname) {
+  const path = String(pathname || "/").replace(/\/+$/, "");
+  if (!path) return "root";
+  return path.slice(1).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "root";
+}
+const SCOPE_TAG = scopeTagOf(SCOPE.pathname);
+/* 版ごとのキャッシュ（自分のスコープの分だけを片付ける） */
+const CACHE_NAME = `${CACHE_KEY_PREFIX}${CACHE}@${SCOPE_TAG}`;
+/* 🧊 3Dの vendor（ハッシュ固定）は、版を上げても捨てない（オフラインのMMDが消えないように）。
+   中身は VENDOR_PINS と照合してから使うので、古いコピーが残っても安全側です。 */
+const VENDOR_CACHE_BASE = "trk-vendor-v1";
+const VENDOR_CACHE = `${CACHE_KEY_PREFIX}${VENDOR_CACHE_BASE}@${SCOPE_TAG}`;
+/* 殻の先読みで、index.html から拾えないもの（アプリが後から fetch する小さなJSON）。
+   🗂 trk256（S2）：アプリからリンクしている書類（注意書き・追加機能の説明）も入れる。
+   これを入れないと、**初回オフラインでリンクを押したときアプリが再表示**され、書類が読めません。
+   3 つで 36 KB ほどです（残りの docs は容量が大きいので入れません）。 */
+const PRECACHE_EXTRA = ["verified.json", "assets/mmd/lat-miku/preset.json",
+  "credits.html", "privacy.html", "docs/ADDONS.md", "data/re-modern-registry.json",
+  /* 🔤 trk315：題字の書体のライセンス全文（導入欄から開く）。オフラインでも読めるように先読みする */
+  "fonts/licenses/Galmuri11-OFL.txt", "fonts/licenses/DotGothic16-OFL.txt", "fonts/licenses/NeoDunggeunmo-LICENSE.txt", "fonts/licenses/PressStart2P-OFL.txt"];
+/* docs/ は丸ごと先読みしない（容量）。ここに書いたものだけ例外で入れる */
+const PRECACHE_ALLOW = ["docs/ADDONS.md"];
+/* 電波が弱いときに待ち続けない（ナビゲーションだけ・3秒でキャッシュへ切り替える） */
+const NAV_TIMEOUT_MS = 3000;
 /* 📥 share_target（trk165）：OSの共有シートで受け取ったファイルの一時置き場。
    名前が trk- 始まりでもバージョン別キャッシュではないので、activate の掃除から除外する（下記）。
    中身は js/share-inbox.js が起動時に読んで、既存の取り込み経路へ渡したあと消す。 */
 const SHARE_CACHE = "trk-share-inbox-v1";
+/* 共有の一時置き場もスコープごとに分ける（別の trk! が取り違えないように） */
+const SHARE_CACHE_NAME = `${CACHE_KEY_PREFIX}${SHARE_CACHE}@${SCOPE_TAG}`;
 const SHARE_PATH = new URL("share-target/", SCOPE).pathname;
 const SHARE_INBOX_PREFIX = new URL("share-inbox/", SCOPE).pathname;
 
@@ -118,14 +255,81 @@ const VENDOR_PINS = {
 };
 // END VENDOR PINS
 
+/* アプリの殻（index.html が読み込んでいる CSS・JS・アイコン）を先にキャッシュする。
+   ・一覧は index.html から読む（ファイルを足しても、このファイルを直さなくてよい）
+   ・1つ失敗しても、ほかを止めない（オフラインで欠けるのはその1つだけ）
+   ・ブラウザの HTTP キャッシュをそのまま使うので、初回の通信を二重にしない
+   ・assets/vendor（重い 3D）と、容量の大きいメディアは入れない */
+const PRECACHE_SKIP = ["assets/vendor/", "assets/optional-demo-audio/", "docs/", "tools/"];
+function precacheWanted(url) {
+  const rest = url.pathname.slice(SCOPE.pathname.length);
+  if (!rest) return false;
+  if (PRECACHE_ALLOW.includes(rest)) return true;   /* 例外（docs/ADDONS.md など） */
+  return !PRECACHE_SKIP.some(prefix => rest.startsWith(prefix));
+}
+async function precacheShell() {
+  const cache = await caches.open(CACHE_NAME);
+  const indexUrl = new URL("index.html", SCOPE).href;
+  /* 🧭 trk223（レビュー推奨）：Pages は max-age=600 を返すので、更新直後に古い JS を殻へ入れてしまう。
+     先読みのときだけ、ブラウザの HTTP キャッシュを作り直す（no-cache）。 */
+  const response = await fetch(indexUrl, { cache: "no-cache" });
+  if (!response.ok) return;
+  await cache.put(indexUrl, response.clone());
+  /* スコープの根（./）で開かれたときのために、同じ中身を根の URL でも入れておく。
+     ナビゲーションのオフライン時の控え（fetch の最後）がこれで見つかる。 */
+  await cache.put(new URL("./", SCOPE).href, response.clone());
+  const html = await response.text();
+  const urls = new Set();
+  for (const m of html.matchAll(/<script\b[^>]*\bsrc=["']([^"'#?]+)["']/gi)) urls.add(m[1]);
+  for (const m of html.matchAll(/<link\b[^>]*\bhref=["']([^"'#?]+)["']/gi)) urls.add(m[1]);
+  for (const rel of PRECACHE_EXTRA) urls.add(rel);
+  await Promise.all([...urls].map(async ref => {
+    let url;
+    try { url = new URL(ref, indexUrl); } catch { return; }
+    if (url.origin !== SCOPE.origin || !url.pathname.startsWith(SCOPE.pathname) || !precacheWanted(url)) return;
+    try {
+      const res = await fetch(url.href, { cache: "no-cache" });
+      if (res.ok && res.type === "basic") await cache.put(url.href, res);
+    } catch { /* 通信できない・容量が足りない：そのファイルだけオフラインで欠ける */ }
+  }));
+}
+
 self.addEventListener("install", event => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil((async () => {
+    try { await precacheShell(); } catch { /* 殻が入らなくても、今までどおり通信優先で動く */ }
+    await self.skipWaiting();
+  })());
 });
+
+/* そのキャッシュが「このスコープのもの」か。
+   trk223：名前の末尾が @<自分のスコープ> なら自分のもの。@ が付いているのに別のタグなら、ほかの trk! のもの。
+   @ が付いていない古い形（trk222 以前）は、中身に自分のパスの URL があるかで見分ける
+   （ルート / に置いたアプリは、同じオリジンに別の trk! を置けないので自分のものとみなす）。 */
+async function cacheIsOurs(key) {
+  if (key === CACHE_NAME || key === VENDOR_CACHE || key === SHARE_CACHE_NAME) return true;
+  if (key.includes("@")) return key.endsWith(`@${SCOPE_TAG}`);
+  if (SCOPE_TAG === "root") return true;
+  try {
+    const cache = await caches.open(key);
+    const requests = await cache.keys();
+    return requests.some(req => {
+      try { return new URL(req.url).pathname.startsWith(SCOPE.pathname); } catch { return false; }
+    });
+  } catch { return false; }
+}
 
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE && key !== SHARE_CACHE).map(key => caches.delete(key)));
+    const old = [];
+    for (const key of keys) {
+      /* 掃除するのは「うちの旧名（trkPWA-…）」と「旧方式の trk-…（うちのスコープ印が付いたもの）」だけ。
+         cacheIsOurs() が中身の見通しまで見て判別するので、別の trk! の無印 `trk-…` には触らない */
+      if (!key.startsWith(CACHE_PREFIX) && !key.startsWith(CACHE_KEY_PREFIX)) continue;
+      if (key === CACHE_NAME || key === VENDOR_CACHE || key === SHARE_CACHE_NAME) continue;
+      if (await cacheIsOurs(key)) old.push(key);
+    }
+    await Promise.all(old.map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -177,7 +381,7 @@ async function handleShareTarget(request) {
       }
     }
     if (!files.length) return Response.redirect(`${home}?shared=empty`, 303);
-    const cache = await caches.open(SHARE_CACHE);
+    const cache = await caches.open(SHARE_CACHE_NAME);
     const stamp = Date.now();
     let saved = 0, failed = 0;
     for (let i = 0; i < files.length; i++) {
@@ -195,6 +399,31 @@ async function handleShareTarget(request) {
   } catch {
     return Response.redirect(`${home}?shared=error`, 303);
   }
+}
+
+/* 時間を区切って取りに行く（ms が 0 なら今までどおり待つ）。
+   中断したときは例外（AbortError）になるので、呼び出し側の catch がキャッシュへ落とす。 */
+async function fetchWithTimeout(request, ms) {
+  if (!ms || typeof AbortController !== "function") return fetch(request, { cache: "no-cache" });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(request, { cache: "no-cache", signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+/* 自分のスコープのキャッシュからだけ探す（ほかの trk! のキャッシュを読まない） */
+async function matchOwned(request, pinned) {
+  const names = pinned ? [VENDOR_CACHE, CACHE_NAME] : [CACHE_NAME, VENDOR_CACHE];
+  for (const name of names) {
+    try {
+      const cache = await caches.open(name);
+      const hit = await cache.match(request);
+      if (hit) return hit;
+    } catch { /* storage may be unavailable */ }
+  }
+  return null;
 }
 
 self.addEventListener("fetch", event => {
@@ -220,17 +449,19 @@ self.addEventListener("fetch", event => {
     /* セーフモードのクライアントは、固定された vendor でもキャッシュを読まない（F-19） */
     if (pinned && !safeClient) {
       try {
-        const cache = await caches.open(CACHE);
+        const cache = await caches.open(VENDOR_CACHE);
         const hit = await cache.match(request);
         if (hit && await pinnedMatches(hit, pinned)) return hit;
       } catch { /* storage may be unavailable; go to the network */ }
     }
     try {
-      /* Revalidate the browser's HTTP cache on each online request. CacheStorage remains the offline fallback. */
-      const response = await fetch(request, { cache:"no-cache" });
+      /* Revalidate the browser's HTTP cache on each online request. CacheStorage remains the offline fallback.
+         🧭 trk223：ナビゲーション（画面の読み込み）は電波が弱いと何十秒も待つので、3秒で切り上げて
+         キャッシュの殻へ切り替える（アプリが開かないより、少し古い画面のほうがよい）。 */
+      const response = await fetchWithTimeout(request, request.mode === "navigate" ? NAV_TIMEOUT_MS : 0);
       if (response.ok && response.type === "basic") {
         try {
-          const cache = await caches.open(CACHE);
+          const cache = await caches.open(pinned ? VENDOR_CACHE : CACHE_NAME);
           await cache.put(request, response.clone());
         } catch { /* storage may be unavailable or full; the network response still works */ }
       }
@@ -242,12 +473,12 @@ self.addEventListener("fetch", event => {
           headers: { "Content-Type": "text/plain; charset=utf-8" }
         });
       }
-      const cached = await caches.match(request);
+      const cached = await matchOwned(request, pinned);
       /* 固定された vendor は、照合が合うものだけ（オフラインでも汚染されたコピーは返さない） */
       if (cached && (!pinned || await pinnedMatches(cached, pinned))) return cached;
       if (request.mode === "navigate") {
         const offlineHome = new URL("index.html", SCOPE).href;
-        const fallback = await caches.match(offlineHome);
+        const fallback = await matchOwned(new Request(offlineHome), false);
         if (fallback) return fallback;
       }
       return new Response("trk! is offline. Reconnect to load this file.", {

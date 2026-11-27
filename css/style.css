@@ -21,18 +21,27 @@
   --don:#ff3b55;--ka:#55aaff;--stage-bg:#050505;--hud-text:#fff;--hud-shadow:rgba(0,0,0,.85);
   --j-perfect:#ffd166;--j-good:#fff;--j-miss:#9aa0aa;
   --font:system-ui,-apple-system,"Segoe UI","Noto Sans JP","Noto Sans SC","Noto Sans KR",sans-serif;
+  /* 🔤 書体スキン（trk228）。持っていないスキンは inherit なので、これまでと同じ見た目になります */
+  --font-title:inherit;--font-title-weight:revert;--font-title-space:inherit;--font-title-transform:none;
+  --font-weight:inherit;--font-lh:inherit;
 }
 
 /* ===== 2. 土台 ===== */
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:var(--ui-text);font-family:var(--font)}
+/* 🔤 書体スキンでは見出しだけ別の書体・太さ・字間・大文字化にする（指定が無いスキンは inherit で従来どおり） */
+h1,h2,.bannerTitle{font-family:var(--font-title);font-weight:var(--font-title-weight);letter-spacing:var(--font-title-space);text-transform:var(--font-title-transform)}
+body{font-weight:var(--font-weight);line-height:var(--font-lh)}
 button,input,select,textarea{font:inherit;color:inherit}
 
 /* ===== 3. ステージ（1920×1080 を画面に合わせて縮小） ===== */
 #stage{position:fixed;left:50%;top:50%;width:1920px;height:1080px;transform:translate(-50%,-50%);
   overflow:hidden;background:var(--stage-bg);user-select:none;-webkit-user-select:none}
-#view,#fx{position:absolute;inset:0;width:1920px;height:1080px}
+/* 🖥 trk223（2026-10-31 レビュー）：背景の映像・演出のキャンバスは 1920×1080 の絵を描きますが、
+   置き場所はステージいっぱい（100%）にします。拡大率 50% ではステージが 3840×2160 になるため、
+   1920px 固定だと左上の 1/4 しか塗られませんでした。100% のときは今までと同じ大きさです。 */
+#view,#fx{position:absolute;inset:0;width:100%;height:100%}
 #fx{z-index:3;pointer-events:none}
 #vrmCanvas,#mmdCanvas{position:absolute;z-index:2;pointer-events:none}
 #video{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
@@ -106,7 +115,7 @@ input[type=color]{width:52px;height:34px;padding:2px;border:1px solid var(--ui-b
 .screen{position:absolute;z-index:20;inset:0;display:flex;align-items:center;justify-content:center;padding:30px;
   background:radial-gradient(ellipse at 50% 28%,var(--ui-glow),transparent 62%),var(--ui-bg)}
 .screen.dim{background:rgba(0,0,0,.55);backdrop-filter:blur(6px)}
-.card{width:1260px;max-height:1020px;overflow:auto;padding:30px 36px;border:1px solid var(--ui-border);border-radius:28px;
+.card{width:1260px;max-height:1020px;overflow:auto;padding:calc(30px * var(--trk-dens-pad,1)) calc(36px * var(--trk-dens-pad,1));border:1px solid var(--ui-border);border-radius:28px;
   background:var(--ui-panel);box-shadow:var(--ui-shadow);color:var(--ui-text);font-size:18px}
 .card.wide{width:1820px}
 .card.small{width:860px;text-align:center}
@@ -115,6 +124,13 @@ input[type=color]{width:52px;height:34px;padding:2px;border:1px solid var(--ui-b
 .brand h1 span{color:var(--ui-accent)}
 .brand p{margin:8px 0 0;color:var(--ui-muted);font-size:18px}
 .headTools{display:flex;gap:12px;align-items:flex-end}
+/* 🖥 trk221：選曲画面の右上の「画面の形」（自動 → スマホ型 → PC型）。
+   PC でもスマホ型に切り替えられるようにするため、スマホ以外でも見える場所に置きます。 */
+.uiModeBtn{min-width:44px;min-height:44px;padding:0 10px;border:1px solid var(--ui-border);border-radius:12px;
+  background:var(--ui-soft);color:var(--ui-text);font-size:18px;line-height:1;cursor:pointer;touch-action:manipulation}
+.uiModeBtn:hover{background:var(--ui-button-hover)}
+.uiModeBtn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.uiModeBtn[data-mode="mobile"]{border-color:var(--ui-accent)}
 .quickGuide{margin-top:18px;padding:12px 16px;background:linear-gradient(135deg,rgba(255,209,102,.08),rgba(103,200,255,.06))}
 .quickGuide summary{cursor:pointer;color:var(--ui-gold);font-weight:850}
 .quickGuide>p{margin:8px 0 0}
@@ -185,9 +201,9 @@ input[type=color]{width:52px;height:34px;padding:2px;border:1px solid var(--ui-b
 /* 🔒 ごほうびスキンの謎カード（スタンプ5つで解禁） */
 .skinCard.locked{opacity:.7;cursor:default;filter:saturate(.35)}
 .skinCard.locked:hover{background:var(--ui-button);border-color:var(--ui-border);color:var(--ui-muted)}
-.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;margin-top:20px;align-items:start}
-.col{display:flex;flex-direction:column;gap:16px}
-.panel{border:1px solid var(--ui-border);border-radius:18px;background:var(--ui-soft);padding:16px 20px}
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:calc(24px * var(--trk-dens-gap,1));margin-top:calc(20px * var(--trk-dens-pad,1));align-items:start}
+.col{display:flex;flex-direction:column;gap:calc(16px * var(--trk-dens-gap,1))}
+.panel{border:1px solid var(--ui-border);border-radius:18px;background:var(--ui-soft);padding:calc(16px * var(--trk-dens-pad,1)) calc(20px * var(--trk-dens-pad,1))}
 .panel h3{margin:0 0 10px;font-size:14px;letter-spacing:.16em;color:var(--ui-muted)}
 .panel h3:not(:first-child){margin-top:16px}
 details.panel>summary{cursor:pointer;font-weight:800;font-size:19px;list-style:none;display:flex;justify-content:space-between;align-items:center}
@@ -205,23 +221,25 @@ details.panel[open]>summary{margin-bottom:14px}
 /* ===== 7. フォーム部品 ===== */
 select{padding:8px 10px;border-radius:10px;background:var(--ui-field);color:var(--ui-text);
   border:1px solid var(--ui-border);font-size:16px}
-.field{display:flex;flex-direction:column;gap:6px;text-align:left;font-size:14px;color:var(--ui-muted);font-weight:650;margin-top:8px}
+.field{display:flex;flex-direction:column;gap:calc(6px * var(--trk-dens-gap,1));text-align:left;font-size:14px;color:var(--ui-muted);font-weight:650;margin-top:calc(8px * var(--trk-dens-pad,1))}
 .field input,.field select{width:100%;padding:10px 12px;border-radius:10px;background:var(--ui-field);color:var(--ui-text);
   border:1px solid var(--ui-border);font-size:18px}
 .field input[type=range]{padding:0;background:none;border:none}
 .field input[type=file]{padding:6px;font-size:13px}
 .field textarea{width:100%;padding:10px 12px;border-radius:10px;background:var(--ui-field);color:var(--ui-text);
   border:1px solid var(--ui-border);font-size:16px;resize:vertical}
-.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fields{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(12px * var(--trk-dens-gap,1))}
 .fields .field{margin-top:0}
-.fields2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.fields2{display:grid;grid-template-columns:repeat(2,1fr);gap:calc(12px * var(--trk-dens-gap,1))}
 .fileBtn{display:inline-flex;align-items:center;gap:6px;padding:12px 20px;border-radius:999px;cursor:pointer;font-weight:800;
   background:var(--ui-accent);color:var(--ui-on-accent);white-space:nowrap}
 .fileBtn.small{padding:8px 14px;font-size:15px;background:var(--ui-button);color:var(--ui-text);border:1px solid var(--ui-border)}
 .fileBtn.small:hover{border-color:var(--ui-accent);color:var(--ui-text)}
 .fileBtn.disabled{opacity:.45;cursor:not-allowed}
-.hint{color:var(--ui-muted);font-size:14px;margin:6px 0;line-height:1.5}
-.status{color:var(--ui-gold);font-weight:700}
+.hint{color:var(--ui-muted);font-size:14px;margin:calc(6px * var(--trk-dens-pad,1)) 0;line-height:var(--trk-dens-line,1.5)}
+.status{color:var(--ui-text);font-weight:700}
+/* 🎨 trk301（レビュー R6）：知らせの文字は本文の色（--ui-gold は多くのスキンで 4.5:1 に届かない）。
+   記号は付けない（失敗・警告にも同じ記号が付いてしまうため。trk304） */
 .center{text-align:center}
 #eggStatus.egg{color:var(--ui-accent-ink,var(--ui-accent));font-weight:800}
 .seg{display:flex;flex-wrap:wrap;gap:6px;padding:5px;border-radius:16px;background:var(--ui-field);border:1px solid var(--ui-border)}
@@ -236,7 +254,7 @@ select{padding:8px 10px;border-radius:10px;background:var(--ui-field);color:var(
 .actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
 .miniActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .miniActions button,.miniActions .fileBtn{padding:7px 12px;font-size:14px}
-.check{display:flex;align-items:center;gap:10px;margin:10px 0;text-align:left;font-size:17px;cursor:pointer}
+.check{display:flex;align-items:center;gap:calc(10px * var(--trk-dens-gap,1));margin:calc(10px * var(--trk-dens-pad,1)) 0;text-align:left;font-size:17px;cursor:pointer}
 .check input{width:20px;height:20px;accent-color:var(--ui-accent);flex:none}
 .inline{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:16px}
 .inline.tight{margin:4px 0}
@@ -245,8 +263,8 @@ select{padding:8px 10px;border-radius:10px;background:var(--ui-field);color:var(
 .mono{font-variant-numeric:tabular-nums;min-width:56px;text-align:right;font-weight:800}
 
 /* ===== 8. 選曲画面 ===== */
-.selectGrid{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;margin-top:20px;align-items:start}
-.songCol,.detailCol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.selectGrid{display:grid;grid-template-columns:1.2fr 1fr;gap:calc(24px * var(--trk-dens-gap,1));margin-top:calc(20px * var(--trk-dens-pad,1));align-items:start}
+.songCol,.detailCol{display:flex;flex-direction:column;gap:calc(14px * var(--trk-dens-gap,1));min-width:0}
 .libHead{display:flex;justify-content:space-between;align-items:baseline}
 .libHead h3{margin:0}
 /* 曲リストの見出しは h2（見出し順を h1→h2 にするため）。見た目は従来の h3（.panel h3 ほか）と同じにする */
@@ -254,22 +272,24 @@ select{padding:8px 10px;border-radius:10px;background:var(--ui-field);color:var(
 .libTools{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px}
 .libTools input,.libTools select{padding:9px 12px;border-radius:10px;background:var(--ui-field);color:var(--ui-text);border:1px solid var(--ui-border);font-size:16px}
 .libTools button{padding:8px 14px;font-size:16px}
-#libList{display:flex;flex-direction:column;gap:5px;margin-top:10px;height:640px;overflow:auto;padding-right:4px}
-.libRow{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding:11px 16px;border-radius:12px;
+/* 📐 trk245：高さはこの場で決めない。js/core.js の fitStage() が「ステージの設計高さ − ほかの欄」から
+   --trk-lib-h を置いていく（拡大率で縮めたぶんはリストに返る）。無いとき（初回描画・js 無し）は 640px */
+#libList{display:flex;flex-direction:column;gap:calc(5px * var(--trk-dens-gap,1));margin-top:calc(10px * var(--trk-dens-pad,1));height:var(--trk-lib-h,640px);overflow:auto;padding-right:4px}
+.libRow{display:flex;justify-content:space-between;align-items:center;gap:calc(12px * var(--trk-dens-gap,1));width:100%;padding:calc(11px * var(--trk-dens-pad,1)) calc(16px * var(--trk-dens-pad,1));border-radius:12px;
   text-align:left;font-size:17px;border-left:5px solid transparent}
 .libRow.cur{border-color:var(--ui-accent);color:var(--ui-text);background:var(--ui-button-hover)}
 .libRow.src-pack{border-left-color:var(--ui-gold)}
 .libRow.src-file{border-left-color:var(--ka)}
 .libLeft{min-width:0;flex:1;display:flex;align-items:center;gap:10px}
 .libText{min-width:0;flex:1;display:flex;flex-direction:column}
-.libThumb{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;overflow:hidden;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-field);color:var(--ui-muted)}
+.libThumb{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 var(--trk-lib-thumb,40px);width:var(--trk-lib-thumb,40px);height:var(--trk-lib-thumb,40px);overflow:hidden;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-field);color:var(--ui-muted)}
 .libThumb img{display:block;width:100%;height:100%;object-fit:cover}
 .libThumbFallback{font-size:19px;line-height:1}
 .libName{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .libSub{font-size:12px;color:var(--ui-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .libMeta{display:flex;gap:5px;flex:none}
 /* 💿🎤 アルバム／アーティストの棚のグループ見出し（trk171）：スクロール中はリストの上端に張りつく */
-.libGroupHead{position:sticky;top:0;z-index:2;display:flex;align-items:baseline;gap:8px;margin:6px 0 1px;padding:7px 12px;
+.libGroupHead{position:sticky;top:0;z-index:2;display:flex;align-items:baseline;gap:calc(8px * var(--trk-dens-gap,1));margin:calc(6px * var(--trk-dens-pad,1)) 0 1px;padding:calc(7px * var(--trk-dens-pad,1)) calc(12px * var(--trk-dens-pad,1));
   border-radius:10px;background:var(--ui-panel);border:1px solid var(--ui-border);font-size:14px;font-weight:800;color:var(--ui-text)}
 .libGroupName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .libGroupSub{flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;color:var(--ui-muted)}
@@ -369,7 +389,7 @@ body.trkNoMascot #vrmCanvas,body.trkNoMascot #vrmPreview{display:none!important}
 .histRow.auto{opacity:.6}
 
 /* ===== 10. スキン・ノーツ ===== */
-#skinGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+#skinGrid{display:grid;grid-template-columns:repeat(var(--trk-skin-cols,3),minmax(0,1fr));gap:calc(10px * var(--trk-dens-gap,1))}
 #skinNow{margin-bottom:10px}
 #skinNow .skinCard{width:100%;background:var(--ui-soft)}
 .skinChips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 12px}
@@ -378,11 +398,110 @@ body.trkNoMascot #vrmCanvas,body.trkNoMascot #vrmPreview{display:none!important}
 .skinChip:hover{filter:brightness(1.15)}
 .skinChip.on{background:var(--ui-accent);color:var(--ui-on-accent);border-color:var(--ui-accent)}
 #skinShelfCount{color:var(--ui-muted);font-weight:600}
-.skinCard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:11px 13px;border-radius:14px;text-align:left;
+/* 🧺 trk229：棚のさがす・並べる・整理 */
+#skinFind{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin:10px 0 0}
+.skinFindBox{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ui-muted);font-weight:700}
+/* 🔤 trk326：題字の書体のうち、作品ごとの指定の退避から戻すボタン（R-REM-2） */
+.titleFontWorks .titleFontRestore{padding:7px 12px;font-size:13px;border-radius:10px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font-weight:700;margin-top:6px}
+.titleFontWorks .titleFontRestore:hover{filter:brightness(1.12)}
+/* 📚 trk326：取り込んだ巻（R-VOL-1）の一覧と小さなボタン */
+#skinImportList{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.skinImportRow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 11px;border-radius:11px;
+  border:1px solid var(--ui-border);background:var(--ui-field);color:var(--ui-text);font-size:13px;line-height:1.35}
+.skinImportRow>b{font-weight:800}
+.skinImportRow>small{color:var(--ui-muted);font-weight:600}
+.skinImportRow>.miniBtn{margin-left:auto;padding:5px 10px;font-size:12px;border-radius:9px;
+  border:1px solid var(--ui-border);background:var(--ui-panel);color:var(--ui-text);font-weight:700}
+.skinImportRow>.miniBtn:hover{filter:brightness(1.14)}
+.miniBtn{padding:6px 11px;font-size:13px;border-radius:10px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font-weight:700}
+.miniBtn:hover{filter:brightness(1.12)}
+#skinImportErrors{margin-top:8px;padding:8px 11px;border-radius:11px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text)}
+#skinImportPreview{margin-top:8px}
+/* 📚 trk274：巻の絞り込み（`#skinFind` の 2 段目＝<select> と「巻から選ぶ」） */
+#skinFind>button.miniBtn{align-self:end;padding:8px 12px;border-radius:10px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font-weight:700}
+#skinFind>button.miniBtn:hover{filter:brightness(1.12)}
+/* 📚 巻のパネル：`popover`＝トップレイヤー。モーダルにしない（light-dismiss はブラウザが持つ） */
+#skinVolPanel{position:fixed;inset:0;margin:auto;width:min(680px,92vw);height:fit-content;max-height:min(78vh,560px);
+  overflow:auto;padding:16px 18px;border-radius:16px;border:1px solid var(--ui-border);
+  background:var(--ui-panel);color:var(--ui-text);box-shadow:0 24px 80px rgba(0,0,0,.55)}
+#skinVolPanel::backdrop{background:rgba(0,0,0,.42)}
+#skinVolList{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
+.skinVolCard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:9px 11px;border-radius:12px;
+  border:1px solid var(--ui-border);background:var(--ui-field);color:var(--ui-text);text-align:left;font-size:13px;line-height:1.35}
+.skinVolCard b{font-size:13px;font-weight:800}
+.skinVolCard small{color:var(--ui-muted);font-size:11px;font-weight:700}
+.skinVolCard:hover{filter:brightness(1.12)}
+.skinVolCard.on{border-color:var(--ui-accent);box-shadow:inset 0 0 0 1px var(--ui-accent)}
+.skinVolSep{grid-column:1/-1;margin:6px 0 0;font-weight:800}
+/* ⌨ trk276：📚 のキー操作（入切・読み方向・4 つのアサイン） */
+#skinVolKeyBox{margin-top:12px;border-top:1px solid var(--ui-border);padding-top:8px}
+.volSeg{margin-top:8px}
+.volLabel{margin:10px 0 0;font-weight:700}
+.volSeg button{font-size:13px;padding:8px 10px}
+.volKeyPad{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.volKey{min-width:82px;padding:7px 10px;border-radius:10px;border:1px solid var(--ui-border);font-weight:700}
+.volKey.listening{border-color:var(--ui-accent);color:var(--ui-accent-ink);box-shadow:inset 0 0 0 1px var(--ui-accent)}
+#skinVolDirRow[data-off],#skinVolKeyPad[data-off]{opacity:.45}
+.skinHoldback{color:var(--ui-muted);font-size:10px;font-weight:700}
+/* G-2（modern-web-guidance-src: animate-element-entry-exit）
+   出るとき・消えるときを `@starting-style` と `transition-behavior: allow-discrete` で。
+   古いブラウザでは**アニメーションが付かず、そのまま出る**だけ（崩れません） */
+#skinVolPanel,.skinVolCard{transition:opacity .18s ease,transform .18s ease,display .18s allow-discrete,overlay .18s allow-discrete}
+#skinVolPanel{opacity:0;transform:translateY(6px)}
+#skinVolPanel:popover-open{opacity:1;transform:none}
+@starting-style{#skinVolPanel:popover-open{opacity:0;transform:translateY(6px)}}
+.skinVolCard{transition-property:opacity,transform,filter,box-shadow,border-color}
+/* G-4（defer-rendering-heavy-content）：棚の**画面の外**は描かない。
+   `contain-intrinsic-size` で 1 枚分の高さを先に伝え、スクロールバーを暴れさせない */
+/* trk275（レビュー R1）：118px は実測（1280px 幅で 58〜79px）と合わず、下まで送ると棚が跳ねた。
+   `auto` は「一度描いた実寸を覚える」ので、初回の見積もりだけ実測に近づけます。 */
+#skinGrid>.skinCell{content-visibility:auto;contain-intrinsic-size:auto 72px}
+.skinFindBox input,.skinFindBox select{width:100%;padding:7px 10px;border-radius:10px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:13px}
+#skinGrid:empty{display:none}
+#skinManageList{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto;margin-top:8px}
+.skinRow{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:8px;padding:5px 6px;
+  border-bottom:1px dashed var(--ui-border);font-size:13px}
+.skinRow b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skinRowMeta{color:var(--ui-muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.skinRow.isHidden{opacity:.55}
+.skinRow .miniBtn{min-width:34px;padding:4px 8px;border-radius:9px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:14px;line-height:1.2;cursor:pointer}
+.skinRow .miniBtn[aria-pressed="true"]{border-color:var(--ui-accent);background:var(--ui-soft)}
+/* 🧺 trk241：カードに ⭐／🚫 を重ねる（カードを押すと当てる、小さなボタンで出し入れ） */
+.skinCell{position:relative;display:flex}
+.skinCell>.skinCard{width:100%;height:100%}
+.skinQuick{position:absolute;top:5px;left:5px;display:flex;gap:4px;z-index:1}
+.skinQuickBtn{padding:1px 6px;border-radius:999px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:12px;line-height:1.5;cursor:pointer;opacity:.9}
+.skinQuickBtn:hover{filter:brightness(1.15);opacity:1}
+.skinQuickBtn[aria-pressed="true"]{border-color:var(--ui-accent);background:var(--ui-soft)}
+.skinHiddenNote{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0}
+.skinHiddenNote .miniBtn{padding:3px 10px;border-radius:9px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:12px;cursor:pointer}
+#skinHiddenNote[hidden],#skinManageNothing[hidden]{display:none}
+/* 🧺 trk241：整理の一覧のさがす・絞る・まとめて */
+#skinManageFind{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin:10px 0 0}
+#skinManageBulk{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#skinManageBulk .miniBtn{padding:5px 12px;border-radius:10px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+#skinManageBulk .miniBtn:disabled{opacity:.45;cursor:default}
+#skinManageCount{color:var(--ui-muted);font-weight:600;font-size:12px}
+@media (max-width:760px){ #skinFind,#skinManageFind{grid-template-columns:1fr} }
+.skinCard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:calc(4px * var(--trk-dens-gap,1));padding:calc(11px * var(--trk-dens-pad,1)) calc(13px * var(--trk-dens-pad,1));border-radius:14px;text-align:left;
+  font-family:var(--sk-font,inherit);
   border:2px solid var(--sk-border);background:var(--sk-bg);color:var(--sk-text)}
 .skinCard:hover{background:var(--sk-bg);color:var(--sk-text);border-color:var(--ui-accent)}
-.skinCard b{font-size:16px}
-.skinCard small{opacity:.75;font-size:12px;font-weight:500;line-height:1.3}
+.skinCard b{font-size:16px;font-family:var(--sk-title,inherit);letter-spacing:var(--sk-space,inherit);font-weight:var(--sk-weight,bold)}
+/* 🔤 書体スキンの見本の文字（棚カードの中だけ） */
+.skinSpec{font-size:17px;line-height:1.25;font-family:var(--sk-title,inherit);font-weight:var(--sk-weight,700);
+  letter-spacing:var(--sk-space,normal);text-transform:var(--sk-transform,none);
+  opacity:.92;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.skinCard small{opacity:.75;font-size:12px;font-weight:500;line-height:1.3;font-family:var(--sk-note,inherit)}
 .skinCard.selected{border-color:var(--ui-accent);box-shadow:0 0 0 3px var(--ui-glow)}
 .skinTag{position:absolute;top:6px;right:8px;font-size:10px;font-weight:900;letter-spacing:.08em;padding:2px 7px;border-radius:999px;background:var(--ui-accent);color:var(--ui-on-accent)}
 .dots{display:flex;gap:7px;margin-bottom:2px}
@@ -421,6 +540,19 @@ body.trkNoMascot #vrmCanvas,body.trkNoMascot #vrmPreview{display:none!important}
 .packBy{color:var(--ui-muted);font-size:13px}
 .packBadges{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
 .packBadge{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--ui-field);border:1px solid var(--ui-border)}
+/* 💾 trk234：容量の見える化（合計・上限・端末の空き）と、まとめて消すための選択 */
+.packUsage{margin-top:10px;padding:10px 12px;border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-field)}
+.packUsage .miniActions{margin-top:8px}
+.packUsageHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.packUsageHead b{font-size:15px}
+.packUsageBar{position:relative;height:8px;margin:7px 0 4px;border-radius:999px;background:var(--ui-soft);overflow:hidden}
+.packUsageBar i{display:block;height:100%;width:0;border-radius:999px;background:var(--ui-accent);transition:width .2s ease}
+.packUsageBar i.isHigh{background:var(--don,#ff6b6b)}
+.packPickWrap{display:inline-flex;align-items:center;margin-right:2px}
+.packPick{margin:0;width:18px;height:18px;accent-color:var(--ui-accent);cursor:pointer}
+.packCard.picked{border-color:var(--ui-accent);background:var(--ui-soft);box-shadow:0 0 0 2px var(--ui-glow)}
+/* 🔤 trk233：同梱の書体のライセンス全文（押したときだけ出る。長くても一覧を押し広げすぎない） */
+.packLicenseText{white-space:pre-wrap;word-break:break-word;max-height:16em;overflow:auto;font-size:.82em;line-height:1.45;margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--ui-field);border:1px solid var(--ui-border)}
 .packCard details{font-size:13px;color:var(--ui-muted);margin-top:4px;word-break:break-all}
 .packCard details a{color:var(--ui-accent-ink,var(--ui-accent))}
 .packCreditCardBox{margin-top:8px;padding:8px 10px;border:1px solid rgba(255,209,102,.35);border-radius:10px;background:linear-gradient(135deg,rgba(255,209,102,.10),rgba(255,255,255,.025))}
@@ -670,7 +802,9 @@ body.instOpen{overflow:hidden;overscroll-behavior:none}
 .instPianoHeader h3{flex:1 1 200px;margin:0}
 .instMapHint{margin:6px 0}
 .instPianoScroll{overflow-x:auto;overflow-y:hidden;padding:6px 2px 8px;overscroll-behavior-inline:contain;scrollbar-color:rgba(95,210,255,.5) rgba(255,255,255,.06);touch-action:pan-x}
-.instPiano{position:relative;height:164px;min-width:630px;user-select:none;-webkit-user-select:none;touch-action:pan-x}
+/* 🎹 trk261：min-width は JS が決めます（収めるときは 0・横スクロールのときだけ中身の幅）。
+   以前は 630px 固定だったので、縮めても横スクロールが出ていました。 */
+.instPiano{position:relative;height:164px;min-width:0;user-select:none;-webkit-user-select:none;touch-action:pan-x}
 .instKey{position:absolute;top:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;height:158px;margin:0;padding:0 1px 5px;border-radius:0 0 8px 8px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;transition:filter .08s,transform .05s,background .08s}
 .instKey.white{z-index:1;background:linear-gradient(180deg,#fff,#dae0ea);border:1px solid #697586;border-top:0;color:#141a25;box-shadow:0 4px 0 #56606e}
 .instKey.black{z-index:3;height:102px;background:linear-gradient(120deg,#2e3542,#060910 75%);border:1px solid #02040a;color:#eaf5ff;box-shadow:0 4px 0 #000,0 1px 5px #0009}
@@ -681,6 +815,17 @@ body.instOpen{overflow:hidden;overscroll-behavior:none}
 .instKey.black.pressed{transform:translateY(3px);background:linear-gradient(#8df1ff,#136fa5);box-shadow:0 1px 0 #064668}
 .instKey.assignTarget{outline:3px solid #ffe16b;outline-offset:2px;z-index:5;filter:brightness(1.12)}
 .instKey:focus-visible{outline:3px solid #fff;outline-offset:2px;z-index:6}
+/* 🎹 trk261：MIDI 入力の行（状態・つなぐ・最後の入力） */
+.instMidiRow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:8px 0 2px;padding:7px 9px;border:1px solid rgba(120,200,255,.22);border-radius:9px;background:rgba(24,40,62,.42)}
+.instMidiLabel{font-weight:800;font-size:12px;color:#bfe9ff}
+.instMidiState{flex:1 1 220px;font-size:11px;color:var(--ui-muted)}
+.instMidiState[data-state="instMidiConnected"]{color:#8ff0c0}
+.instMidiState[data-state="instMidiMany"]{color:#8ff0c0}
+.instMidiState[data-state="instMidiUnsupported"]{color:#ffc38a}
+.instMidiState[data-state="instMidiDenied"]{color:#ff9f9f}
+.instMidiBtn{margin-left:auto}
+.instMidiMonitor{min-height:1.2em;margin:2px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;color:#9fd4ff}
+.instMidiBtn:disabled{opacity:.45;cursor:not-allowed}
 .instStatus{min-height:1.4em;margin:5px 0 0;font-size:12px}
 .instFooter{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:7px 14px;border-top:1px solid rgba(255,255,255,.08);color:var(--ui-muted);font-size:10px}
 .instKeyHint{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#b9eaff}
@@ -709,7 +854,8 @@ body.instOpen{overflow:hidden;overscroll-behavior:none}
 
 /* メイン画面の欄（fx-dock.js）：さわれる本体 */
 #fxDock{display:flex;flex-direction:column;gap:8px}
-#libList{height:320px}
+/* 📐 trk245：ここに高さを書かない。#libList の高さは上の行の --trk-lib-h（窓と拡大率から決める）が正。
+   昔ここで 320px を固定していたため、拡大率で画面を縮めたときもリストが 320px のまま増えていなかった。 */
 .dockDev{position:relative;border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--ui-border);background:var(--ui-soft);color:var(--ui-text)}
 .dockTop{display:flex;align-items:center;gap:10px}
 .dockLcd{flex:1;min-width:0;padding:7px 12px;border-radius:8px;font-family:"Cascadia Mono",Consolas,monospace;font-weight:800;font-size:15px;
@@ -1735,6 +1881,52 @@ body.plDragging .libTab[data-pl]{outline:1px dashed var(--ui-border);outline-off
   border:0;cursor:pointer}
 .favMenuItem:hover,.favMenuItem:focus-visible{background:rgba(127,127,127,.22)}
 .favMenuItem.on{background:var(--ui-accent);color:var(--ui-on-accent)}
+/* 🔍 trk243：設定のさがす（見出しの下・当たったパネルだけ残す） */
+.setFind{display:flex;align-items:flex-end;gap:8px;margin:10px 0 0}
+.setFind .skinFindBox{flex:1 1 auto;min-width:0}
+.setFind .miniBtn{padding:7px 11px;border-radius:10px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:13px;font-weight:700;cursor:pointer;flex:none}
+.setFind .miniBtn[hidden],#setFindCount[hidden],#setFindNothing[hidden]{display:none}
+#setFindCount{flex:none;font-size:12px;color:var(--ui-muted);font-weight:700;white-space:nowrap}
+#setFindNothing{margin:8px 0 0}
+@media (max-width:760px){ .setFind{flex-wrap:wrap} .setFind .skinFindBox{flex:1 1 100%} }
+
+/* ⚖ trk279：設定の「段」（見せる量。値は変えません）
+   1 simple／2 standard／3 pro／4 master。行の data-tier と、画面の data-set-level で決まります。
+   触った行（data-changed）は、段が低くても必ず出します。 */
+.setLevel{margin:12px 0 0}
+.setLevelLabel{display:block;font-size:12px;font-weight:800;color:var(--ui-muted);letter-spacing:.02em}
+.setLevelBtns{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0}
+.setLevelBtns button{padding:7px 12px;border-radius:999px;border:1px solid var(--ui-border);
+  background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.setLevelBtns button:hover{border-color:var(--ui-accent)}
+.setLevelBtns button[aria-pressed="true"]{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-accent-ink)}
+.setLevelBtns button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.setLevel .hint{margin:6px 0 0}
+.setLevelMore{margin:6px 0 0}
+.setLevelMore[hidden],#setLevelStatus:empty{display:none}
+#settingsScreen[data-set-level="simple"] [data-tier="2"]:not([data-changed]),
+#settingsScreen[data-set-level="simple"] [data-tier="3"]:not([data-changed]),
+#settingsScreen[data-set-level="simple"] [data-tier="4"]:not([data-changed]),
+#settingsScreen[data-set-level="standard"] [data-tier="3"]:not([data-changed]),
+#settingsScreen[data-set-level="standard"] [data-tier="4"]:not([data-changed]),
+#settingsScreen[data-set-level="pro"] [data-tier="4"]:not([data-changed]){display:none}
+/* 中の行が全部隠れるパネルは、見出しごと隠す（1 行でも残るパネルは出したまま） */
+#settingsScreen details.panel[data-level-hidden]{display:none}
+
+/* 🔄 trk242：新しい版の知らせ（画面の下の小さな帯）。窓で覆わない・遊びを止めない */
+.swUpdateBar{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(96px + env(safe-area-inset-bottom, 0px));z-index:75;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+  max-width:min(94vw, 560px);padding:9px 12px;border-radius:14px;
+  background:var(--ui-field);color:var(--ui-text);border:1px solid var(--ui-accent);
+  box-shadow:0 10px 28px rgba(0,0,0,.38);font-size:13px;font-weight:700;line-height:1.35}
+.swUpdateBar[hidden]{display:none}
+.swUpdateBar>span{flex:1 1 190px;min-width:0}
+.swUpdateBar button{padding:6px 12px;border-radius:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  background:var(--ui-soft);color:var(--ui-text);border:1px solid var(--ui-border)}
+.swUpdateBar #swUpdateNow{background:var(--ui-accent);color:var(--ui-on-accent);border-color:var(--ui-accent)}
+@media (max-width:760px){ .swUpdateBar{bottom:calc(84px + env(safe-area-inset-bottom, 0px));font-size:12px} }
 .favToast{position:fixed;left:50%;bottom:6%;transform:translateX(-50%);z-index:70;padding:10px 16px;border-radius:999px;
   background:rgba(20,20,24,.94);color:#fff;border:1px solid var(--ui-border);font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .favDots{padding:2px 9px;font-size:15px;line-height:1.5;border-radius:999px;background:var(--ui-field);
@@ -1859,13 +2051,26 @@ body.plDragging .libTab[data-pl]{outline:1px dashed var(--ui-border);outline-off
 .mediaSmallBtn.selected{background:linear-gradient(130deg,#4ae4ff,#5e8bff);border-color:transparent;color:#03101a}
 .mediaWall[hidden]{display:none!important}.mediaWall{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(18px,4vw,42px);overflow:hidden;background:#08101d center/cover no-repeat;color:#f6fbff;text-shadow:0 2px 14px #000}.mediaWall[data-style="midnight"]{background-image:radial-gradient(circle at 20% 18%,rgba(86,160,255,.28),transparent 30%),radial-gradient(circle at 80% 76%,rgba(197,84,255,.22),transparent 34%),linear-gradient(145deg,#050711,#101a35 52%,#16091f)}.mediaWall[data-style="aurora"]{background-image:radial-gradient(ellipse at 18% 75%,rgba(0,255,191,.44),transparent 38%),radial-gradient(ellipse at 78% 22%,rgba(121,78,255,.5),transparent 40%),linear-gradient(145deg,#06111b,#0b2638 48%,#160a2a)}.mediaWall[data-style="paper"]{background-image:linear-gradient(rgba(255,255,255,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.2) 1px,transparent 1px),linear-gradient(135deg,#5b6470,#252b38);background-size:32px 32px,32px 32px,auto}.mediaWallTop{display:flex;justify-content:space-between;align-items:center;gap:12px}.mediaWallTop strong{font-size:clamp(14px,2vw,20px);letter-spacing:.08em}.mediaWallClose{padding:8px 12px;border-radius:10px}.mediaWallCenter{display:grid;place-items:center;align-content:center;gap:4px}.mediaWallClock{font-size:clamp(48px,12vw,132px);font-weight:200;letter-spacing:.04em;line-height:1}.mediaWallDate{font-size:clamp(12px,2vw,18px);color:rgba(255,255,255,.8);letter-spacing:.08em}.mediaWallHintText{align-self:center;max-width:600px;text-align:center;color:rgba(255,255,255,.72);font-size:11px}.mediaWallSettingsPanel{display:grid;gap:8px}.mediaWallUploadRow{display:flex;flex-direction:column;gap:5px;color:var(--ui-muted);font-size:11px;font-weight:750}.mediaWallUploadRow input{width:100%;padding:7px;border:1px solid var(--ui-border);border-radius:9px;background:var(--ui-field);color:var(--ui-text)}
 .mediaQueuePanel{display:flex;flex-direction:column;min-height:130px;margin:10px 14px 0;padding:11px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:rgba(255,255,255,.035)}
-.mediaQueueHead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}.mediaQueueHead h3{margin:0;font-size:15px}.mediaQueueHead p{margin:0;max-width:65%;font-size:11px;line-height:1.4}
+.mediaQueueHead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}.mediaQueueHead h3{margin:0;font-size:15px}.mediaQueueHead p{margin:0;max-width:65%;font-size:11px;line-height:1.4}
 .mediaSearch{width:100%;margin:8px 0;padding:8px 10px;border:1px solid var(--ui-border);border-radius:9px;background:var(--ui-field);color:var(--ui-text)}
 .mediaQueueList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:250px;overflow-y:auto;padding-right:2px;overscroll-behavior:contain}
 .mediaQueueItem{display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding:8px 10px;border:1px solid rgba(255,255,255,.09);border-radius:9px;background:rgba(0,0,0,.15);text-align:left}
 .mediaQueueItem:hover,.mediaQueueItem.selected{border-color:#ffd166;background:rgba(255,209,102,.13)}
 .mediaQueueName{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.mediaQueueMeta{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ui-muted);font-size:10px}
 .mediaEmpty{padding:18px;text-align:center;color:var(--ui-muted);font-size:12px}.mediaFooter{margin-top:10px}
+/* 🎧 trk327：キューの行（曲を選ぶ＋次に再生／最後へ／外す）、手動キューの見出し、読み込み中の 1 行 */
+.mediaQueueRow{display:flex;align-items:stretch;gap:4px;min-width:0}
+.mediaQueueRow>.mediaQueueItem{flex:1 1 auto;min-width:0}
+.mediaQueueTool{flex:0 0 auto;min-width:34px;padding:6px 7px!important;border-radius:9px!important;font-size:12px!important;line-height:1;background:rgba(0,0,0,.22);color:var(--ui-text)}
+.mediaQueueTool:hover{border-color:#ffd166;background:rgba(255,209,102,.16)}
+.mediaQueueManualHead{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:2px 2px 0}
+.mediaQueueManualHead strong{font-size:12px}.mediaQueueManualHead .hint{font-size:10px}
+.mediaQueueDivider{grid-column:1/-1;margin:4px 0 2px;padding-top:5px;border-top:1px solid rgba(255,255,255,.12);color:var(--ui-muted);font-size:10px;letter-spacing:.04em}
+.mediaBufferRow{padding:0 18px 6px}
+.mediaBuffer{color:#ffd166;font-size:11px;line-height:1.4}
+.mediaBuffer[hidden]{display:none!important}
+.mediaCheckRow{flex-direction:row!important;align-items:center;gap:7px}
+
 @media(max-width:680px){
   .mediaDialog{width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;border-left:0;border-right:0}
   .mediaDisplay{min-height:104px;padding:14px}.mediaStatus{right:14px;top:14px}.mediaDisplayTitle{max-width:100%}.mediaDisplaySub{max-width:100%}
@@ -1887,8 +2092,18 @@ body.helpTextOff .mediaWallHintText{display:none!important}
 #videoMaxView[hidden]{display:none!important}
 #videoMaxView{position:fixed;inset:0;z-index:60000;display:flex;flex-direction:column;background:#000;color:#fff;
   transition:opacity .2s}
-.videoMaxTop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;
+/* 🎬 trk262：上の帯（曲名）は重ねて出す（映像の高さを削らない）。下のバーは操作の 1 か所 */
+.videoMaxTop{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;
   background:linear-gradient(180deg,rgba(0,0,0,.72),rgba(0,0,0,0));transition:opacity .25s}
+.videoMaxTop[hidden]{display:none!important}
+.videoMaxBottom{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;align-items:center;gap:8px;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.28) 62%,rgba(0,0,0,0));transition:opacity .25s}
+.videoMaxBottom[hidden]{display:none!important}
+.videoMaxSkip{padding:7px 10px}
+.videoMaxSeekRange{flex:1 1 auto;min-width:70px;height:22px;accent-color:#ffd166;cursor:pointer}
+.videoMaxSeekRange:disabled{opacity:.45;cursor:default}
+.videoMaxTime{font-size:12px;color:rgba(255,255,255,.86);white-space:nowrap;font-variant-numeric:tabular-nums}
 .videoMaxTitle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(13px,2vw,19px);
   text-shadow:0 2px 8px #000}
 .videoMaxTools{display:flex;gap:8px;flex:none}
@@ -1909,9 +2124,9 @@ body.helpTextOff .mediaWallHintText{display:none!important}
 .videoMaxZoom{font-variant-numeric:tabular-nums;min-width:78px}
 .videoMaxNote{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;max-width:80%;
   text-align:center;color:rgba(255,255,255,.78)}
-.videoMaxHint{margin:0;padding:8px 14px 12px;text-align:center;color:rgba(255,255,255,.62);font-size:11px;
-  transition:opacity .25s}
-#videoMaxView.idle .videoMaxTop,#videoMaxView.idle .videoMaxHint{opacity:0;pointer-events:none}
+.videoMaxHint{position:absolute;left:0;right:0;bottom:62px;z-index:2;margin:0;padding:6px 14px;text-align:center;
+  color:rgba(255,255,255,.62);font-size:11px;transition:opacity .25s}
+.videoMaxHint[hidden]{display:none!important}
 #videoMaxView.idle{cursor:none}
 body.videoMaxOpen{overflow:hidden;overscroll-behavior:none}
 @media(prefers-reduced-motion:reduce){#videoMaxView,.videoMaxTop,.videoMaxHint{transition:none}}
@@ -1926,6 +2141,15 @@ body.helpTextOff .videoMaxHint{display:none!important}
 .mediaStageNote{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;max-width:80%;
   text-align:center;color:var(--ui-muted)}
 .mediaStageNote[hidden]{display:none!important}
+/* 📌 trk263：画中画を出している間の案内（映像を隠した代わりに、戻す道を残す） */
+.mediaPipNotice{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 14px 2px;padding:9px 12px;
+  border:1px solid rgba(255,209,102,.3);border-radius:12px;background:rgba(255,209,102,.08);
+  color:#ffe3a3;font-size:12px;font-weight:750}
+.mediaPipNotice[hidden]{display:none!important}
+.mediaPipNoticeText{margin-right:auto}
+/* 📌 trk265：押せないときの理由（title はタッチ端末で出ないので、ボタンのすぐ下に1行） */
+.mediaPipWhy{margin:2px 14px 0;padding:0;color:#ffcf86;font-size:11px;font-weight:750;line-height:1.5}
+.mediaPipWhy[hidden]{display:none!important}
 .mediaStageCanvas[hidden]{display:none!important}
 .mediaInterpBox{margin:0 14px 2px;padding:10px 12px;border:1px solid rgba(120,220,255,.24);border-radius:12px;
   background:rgba(120,220,255,.05)}
@@ -1960,10 +2184,32 @@ button.lyricLine:hover{color:#ffe6f3;background:rgba(255,170,220,.08)}
   text-align:center;font-size:clamp(12px,2.2vh,18px);line-height:1.4;color:#fff;white-space:pre-line;
   text-shadow:0 1px 3px #000,0 0 2px #000;background:rgba(0,0,0,.38);border-radius:8px;padding:2px 8px}
 .mediaSubs[hidden]{display:none!important}
+/* 🎬 trk262：字幕の置き場所（下・中央・上）と大きさ（小・中・大） */
+.mediaSubs[data-pos="middle"]{bottom:auto;top:50%;transform:translateY(-50%)}
+.mediaSubs[data-pos="top"]{bottom:auto;top:8%}
+.mediaSubs[data-size="small"]{font-size:calc(clamp(12px,2.2vh,18px) * .8)}
+.mediaSubs[data-size="large"]{font-size:calc(clamp(12px,2.2vh,18px) * 1.35)}
+/* 🎬 trk262：動画の再生中だけ、操作列を触らないと隠す（設定が bottom／none のとき） */
+.mediaControls,.mediaProgressRow{transition:opacity .25s}
+.mediaDialog.mediaChromeIdle .mediaControls,.mediaDialog.mediaChromeIdle .mediaProgressRow{opacity:0;pointer-events:none}
+.mediaSubsPosRow,.mediaSubsSizeRow{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;
+  color:var(--ui-muted);font-weight:750}
+.mediaSubsPosRow select,.mediaSubsSizeRow select{font-size:12px}
+.mediaSubsAuto{margin-top:8px;padding:8px 10px;border:1px solid rgba(150,220,255,.18);border-radius:10px;
+  background:rgba(0,0,0,.16);font-size:11px;line-height:1.5;color:var(--ui-muted)}
+.mediaSubsAuto summary{cursor:pointer;font-weight:800;color:#cdeeff;font-size:12px}
+.mediaSubsAuto p{margin:6px 0 0}
 .videoMaxSubs{position:absolute;left:5%;right:5%;bottom:6%;max-height:40%;overflow:hidden;pointer-events:none;
   text-align:center;font-size:clamp(16px,3.4vh,36px);line-height:1.35;color:#fff;white-space:pre-line;
-  text-shadow:0 2px 5px #000,0 0 3px #000}
+  text-shadow:0 2px 5px #000,0 0 3px #000;transition:bottom .2s}
 .videoMaxSubs[hidden]{display:none!important}
+/* 🎬 trk262：字幕の置き場所（下・中央・上）と大きさ（小・中・大）。設定は trk が描く字幕だけに効く */
+.videoMaxSubs[data-pos="middle"]{bottom:auto;top:50%;transform:translateY(-50%)}
+.videoMaxSubs[data-pos="top"]{bottom:auto;top:8%}
+.videoMaxSubs[data-size="small"]{font-size:calc(clamp(16px,3.4vh,36px) * .8)}
+.videoMaxSubs[data-size="large"]{font-size:calc(clamp(16px,3.4vh,36px) * 1.35)}
+#videoMaxView.chromeShown .videoMaxSubs[data-pos="bottom"]{bottom:calc(6% + 62px)}
+#videoMaxView.chromeShown .videoMaxSubs[data-pos="middle"]{transform:translateY(-50%) translateY(-31px)}
 .mediaSubsBox{margin:0 14px 2px;padding:10px 12px;border:1px solid rgba(150,220,255,.22);border-radius:12px;
   background:rgba(150,220,255,.045)}
 .mediaSubsBox[hidden]{display:none!important}
@@ -2021,3 +2267,201 @@ body.noDev .devOnly { display: none !important; }
 .libRow.ghost .libName::after{content:" \u25CB";font-size:11px;opacity:.6}
 .ghostBadge{font-size:11px;padding:2px 6px;border-radius:999px;background:var(--ui-field);border:1px dashed var(--ui-border);color:var(--ui-muted)}
 .ghostActions{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ==========================================================================
+   🖥 trk222：拡大率（50／75／100／125%）
+   ・ステージの設計サイズを 1/拡大率 に縮めて、その分だけ大きく描く（js/core.js の fitStage）。
+     中の文字とボタンが同じ比率で大きくなり、ステージ全体は今までどおり画面に収まる。
+   ・ゲーム中（playing／paused）は js 側で 100% に戻すので、盤面は欠けない。
+   ・--trk-ui-zoom   … 拡大率（1／0.75／…）
+   ・--trk-icon-zoom … アイコンだけの割り戻し（「アイコンの大きさは100%で固定」がオンのとき 1/拡大率）
+   ========================================================================== */
+:root{--trk-ui-zoom:1;--trk-icon-zoom:1}
+
+/* 拡大しても、カードが画面からはみ出さないようにする（100% のときは今までと同じ 1020px 以内） */
+body.trk-zoom #stage .card{max-height:100%;max-width:100%}
+
+/* アイコンの大きさを 100% で固定する（絵文字は拡大で崩れやすいため） */
+body.trk-zoom.trk-icon-fixed .uiModeBtn{font-size:calc(18px * var(--trk-icon-zoom))}
+body.trk-zoom.trk-icon-fixed .trk-mobile-nav button > span[aria-hidden="true"]{font-size:calc(20px * var(--trk-icon-zoom));line-height:1}
+body.trk-zoom.trk-icon-fixed .trk-playerbar button{font-size:calc(16px * var(--trk-icon-zoom))}
+body.trk-zoom.trk-icon-fixed .trk-playerbar .trk-pb-play{font-size:calc(18px * var(--trk-icon-zoom)) !important}
+body.trk-zoom.trk-icon-fixed .trk-pb-art{font-size:calc(20px * var(--trk-icon-zoom))}
+
+/* ==========================================================================
+   🧱 trk244：表示の密度（余白・行間・列数）
+   利用者さんの相談「PC版では縮小化しても表示部分を減らして、全体の大きさを維持する」を、
+   Clementine／MusicBee の Compact の考え方（**文字は小さくしない。余白と行だけ詰める**）で実装したもの。
+   ・js/core.js の applyUiScale() が body へ trk-density-<段> を1つ乗せます（段は4つ）。
+   ・ここにある --trk-dens-* が、上の各欄の padding / gap / line-height / 列数 / サムネイルの大きさになります。
+   ・既定（normal）は、trk243 までと**同じ数値**です（見た目の既定値を変えない）。
+   ・font-size はどこでも変えません＝文字は読める大きさのまま、1画面に出る量だけ変わります。
+   ・--trk-skin-cols …スキンの棚の列数　--trk-lib-thumb …曲リストのジャケの大きさ（行の高さの主役）
+   ========================================================================== */
+:root{--trk-dens-pad:1;--trk-dens-gap:1;--trk-dens-line:1.5;--trk-skin-cols:3;--trk-lib-thumb:40px}
+
+/* ゆったり：125% 相当。余白を広めて、1画面の量を少し減らす（見出しが広く見える） */
+body.trk-density-roomy{--trk-dens-pad:1.18;--trk-dens-gap:1.14;--trk-dens-line:1.62;--trk-skin-cols:2;--trk-lib-thumb:46px}
+/* ふつう：100% 相当（既定＝今までどおり） */
+body.trk-density-normal{--trk-dens-pad:1;--trk-dens-gap:1;--trk-dens-line:1.5;--trk-skin-cols:3;--trk-lib-thumb:40px}
+/* ぎゅっと：75% 相当。行の余白とサムネイルを詰めて、文字はそのまま行数を増やす */
+body.trk-density-compact{--trk-dens-pad:.72;--trk-dens-gap:.8;--trk-dens-line:1.34;--trk-skin-cols:4;--trk-lib-thumb:32px}
+/* ぎっしり：50% 相当（いちばん詰める。MusicBee の Compact リストに近い見え方） */
+body.trk-density-dense{--trk-dens-pad:.55;--trk-dens-gap:.7;--trk-dens-line:1.24;--trk-skin-cols:5;--trk-lib-thumb:24px}
+/* 「縮小は詰めて見せる」が効いているとき（拡大率 75%・50%）は、カードを画面いっぱいに使って行数を稼ぐ
+   （文字は 100% のまま。trk222 の --trk-ui-zoom は 1 なので、ステージの拡大は起きない） */
+body.trk-scale-compact #stage .card{max-height:100%}
+
+/* スマホ型は指で触る大きさを優先するので、詰めすぎない（行の高さは .trk-mobile .libRow{min-height:52px} が守る） */
+body.trk-mobile.trk-density-roomy{--trk-skin-cols:2;--trk-lib-thumb:44px}
+body.trk-mobile.trk-density-compact{--trk-skin-cols:3;--trk-lib-thumb:40px}
+body.trk-mobile.trk-density-dense{--trk-skin-cols:4;--trk-lib-thumb:36px}
+
+/* 🔤 trk246：書体の組み合わせ（trk-Avatar-Library の目録から14組）。
+   `js/typography.js` が `--trk-typo-display`／`--trk-typo-body` を置き、**body.trk-typo-on のときだけ**効きます
+   （選んでいない端末は1ピクセルも変わらない）。あて先は見出し類と設定の説明文だけで、
+   ゲーム画面の中（canvas の ctx.font）は今回触りません。 */
+body.trk-typo-on .brand h1,body.trk-typo-on details.panel>summary,body.trk-typo-on .panel h3{font-family:var(--trk-typo-display,var(--font))}
+body.trk-typo-on .hint,body.trk-typo-on .brand p{font-family:var(--trk-typo-body,var(--font))}
+/* 🎨 trk299：見出し用の枠（heading）は見出し（summary・.panel h3）だけ。題字（.brand h1）は display のまま */
+body.trk-typo-heading details.panel>summary,body.trk-typo-heading .panel h3{font-family:var(--trk-typo-heading)}
+
+/* ============ ⌨ ターミナル（trk267・受け口は trk268） ============
+   色は CSS 変数（--ui-*）から取るので、スキンを当て替えると端末の色も一緒に変わります。
+   CLI 用のスキン（cat に wizard／cli／console）が来たら、この規則を足さずにそのまま着られます。
+   trk268：スキンが端末だけの見た目を持てるように、次の 4 つを任意で受けます（既定は今までどおり）。
+     --cli-font   端末の書体（書体名だけ。入っていなければ等幅）
+     --cli-prompt 入力の合図（1〜4 文字。既定 ">"）
+     --cli-caret  カーソルの色（#rgb／#rrggbb／currentColor。既定は文字色）
+     --cli-scan   走査線の濃さ（0〜0.6。既定 0＝なし） */
+.cliOverlay{background:rgba(2,4,10,.72)}
+/* ⌨ trk286：ターミナルは**下から持ち上がるボトムシート**（ネイティブ <dialog> ＋ showModal）。
+   出し入れは @starting-style ＋ transition-behavior: allow-discrete ＋ overlay で作ります
+   （modern-web-guidance の animate-to-from-top-layer）。高さは設定で 52%／70%／92%。 */
+dialog.cliDialog{position:fixed;inset:auto 0 0 0;margin:0 auto;width:min(900px,100%);max-width:100%;
+  height:70dvh;max-height:calc(100dvh - 8px);padding:0 0 env(safe-area-inset-bottom,0px);
+  border:1px solid var(--ui-border);border-bottom:none;border-radius:18px 18px 0 0;background:transparent;
+  color:var(--ui-text);display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 -18px 60px rgba(0,0,0,.55);
+  transform:translateY(0);opacity:1;
+  transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .24s ease-out,display .3s,overlay .3s;
+  transition-behavior:allow-discrete}
+dialog.cliDialog[data-size="half"]{height:52dvh}
+dialog.cliDialog[data-size="tall"]{height:70dvh}
+dialog.cliDialog[data-size="full"]{height:92dvh}
+dialog.cliDialog:not([open]){display:none;transform:translateY(100%);opacity:0}
+@starting-style{dialog.cliDialog[open]{transform:translateY(100%);opacity:0}}
+dialog.cliDialog::backdrop{background:rgba(2,4,10,0);transition:background-color .3s ease-out,display .3s,overlay .3s;transition-behavior:allow-discrete}
+dialog.cliDialog[open]::backdrop{background:rgba(2,4,10,.62)}
+@starting-style{dialog.cliDialog[open]::backdrop{background:rgba(2,4,10,0)}}
+dialog.cliDialog:modal{overscroll-behavior:contain}
+@media (prefers-reduced-motion:reduce){dialog.cliDialog,dialog.cliDialog::backdrop{transition:none}}
+/* 地（::before）と走査線（::after）の上に、中身を必ず載せる */
+dialog.cliDialog::before,dialog.cliDialog::after{z-index:0}
+dialog.cliDialog>*{position:relative;z-index:1}
+/* 開いているあいだ、後ろの画面は動かさない（モーダルの作法） */
+body:has(dialog.cliDialog[open]){overflow:hidden;overscroll-behavior:none}
+/* 上端のつまみ（見た目だけ） */
+.cliSheetHandle{flex:0 0 auto;align-self:center;width:44px;height:4px;margin:7px 0 2px;border-radius:999px;background:var(--ui-muted);opacity:.55}
+.cliDialog{width:min(860px,100%);border-color:var(--ui-border);background:transparent;color:var(--ui-text);font-family:var(--cli-font,ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace);position:relative;overflow:hidden}
+/* 地は ::before に置く（--cli-opacity で透けさせても、文字は薄くならない） */
+.cliDialog::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:var(--ui-panel);opacity:var(--cli-opacity,1)}
+.cliDialog::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:var(--cli-scan,0);background:repeating-linear-gradient(to bottom,rgba(255,255,255,.55) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+.cliDialog .instHeader{border-bottom-color:var(--ui-border)}
+.cliLog{flex:1 1 0;min-height:0;max-height:none;overflow-y:auto;padding:10px 14px;background:var(--ui-field);border-bottom:1px solid var(--ui-border);overscroll-behavior:contain}
+.cliLog:focus-visible{outline:2px solid var(--ui-accent-ink,var(--ui-accent));outline-offset:-2px}
+.cliLine{white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.55}
+.cliLine.cliIn{color:var(--ui-accent-ink,var(--ui-accent))}
+.cliLine.cliErr{color:var(--j-miss,#ff8f8f)}
+.cliLine.cliOut{color:var(--ui-text)}
+/* ⌨ trk283：入力できるかのバッジ（設定で 出す／状態行だけ／打てないときだけ を選ぶ） */
+.cliTypingBadge{align-self:flex-start;margin:8px 14px 0;padding:4px 10px;border-radius:999px;border:1px solid var(--ui-border);
+  background:var(--ui-soft);color:var(--ui-muted);font-size:12px;line-height:1.4}
+.cliTypingBadge[data-ok="1"]{border-color:color-mix(in oklab,var(--ui-accent) 45%,var(--ui-border));color:var(--ui-accent-ink,var(--ui-accent))}
+.cliTypingBadge[data-ok="0"]{color:var(--ui-text);background:color-mix(in oklab,var(--j-miss,#ff8f8f) 18%,var(--ui-field))}
+/* ⌨ trk284：辞書登録（呪文）の GUI。端末のいちばん下 */
+.cliSpellPanel{border-top:1px solid var(--ui-border);background:var(--ui-panel);padding:8px 14px 12px;max-height:34vh;overflow-y:auto;overscroll-behavior:contain}
+.cliSpellPanel>summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ui-text)}
+.cliSpellPanel .hint{font-size:12px}
+.cliSpellList{list-style:none;margin:6px 0 8px;padding:0;display:flex;flex-direction:column;gap:4px}
+.cliSpellRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;padding:4px 6px;border-radius:8px;background:var(--ui-soft)}
+.cliSpellRow .cliSpellName{color:var(--ui-accent-ink,var(--ui-accent));font-family:var(--cli-font,ui-monospace,monospace)}
+.cliSpellRow .cliSpellText{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;color:var(--ui-text)}
+.cliSpellAdd{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.cliSpellAdd .field{flex:1 1 160px;margin-top:0}
+.cliSpellAdd input{font-size:13px}
+.cliSpellStatus{min-height:1.2em;margin:6px 0 0}
+.cliForm{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--ui-border);background:rgba(0,0,0,.18)}
+.cliPromptChar{flex:none;color:var(--ui-accent-ink,var(--ui-accent));font-weight:900}
+.cliPromptChar::before{content:var(--cli-prompt,">")}
+/* ⌨ trk285：文字で出す合図（<スキン名(English)> ~ %）。空のとき（スキンに任せる）は --cli-prompt の記号 */
+.cliPromptChar[data-text="1"]::before{content:none}
+.cliPromptChar[data-text="1"]{white-space:pre;font-weight:700;opacity:.92;max-width:min(52%,320px);overflow:hidden;text-overflow:ellipsis}
+@media (max-width:520px){.cliPromptChar[data-text="1"]{max-width:40%;font-size:12px}}
+.cliInput{flex:1 1 auto;min-width:0;padding:8px 10px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-field);color:var(--ui-text);font:inherit;font-size:14px;caret-color:var(--cli-caret,currentColor);caret-shape:var(--cli-cursor-shape,auto)}
+.cliInput:focus-visible{outline:2px solid var(--ui-accent-ink,var(--ui-accent));outline-offset:1px}
+.cliRunBtn{flex:none}
+.cliHintText{margin:0;padding:8px 14px 12px;color:var(--ui-muted);font-size:11px;line-height:1.5}
+/* ⌨ trk288（C2）：入力欄・ボタンは必ず板の中に残す。縮むのは出力（ログ）だけ。
+   キーボードが出て板が低くなったときも、入力欄が画面の外へ押し出されないように。 */
+dialog.cliDialog>*{flex:none}
+dialog.cliDialog>.cliLog{flex:1 1 0;min-height:72px}
+dialog.cliDialog>.cliSpellPanel{flex:0 1 auto;min-height:0}
+@media (max-height:600px){
+  dialog.cliDialog>.cliTypingBadge,dialog.cliDialog>.cliHintText,dialog.cliDialog>.cliSheetHandle{display:none}
+  dialog.cliDialog>.cliSpellPanel{max-height:22vh}
+}
+@media (max-width:560px){
+  dialog.cliDialog>.cliLog{min-height:clamp(96px,28vh,320px)}
+  .cliForm{flex-wrap:wrap}
+  .cliInput{flex:1 1 100%;order:2}
+  .cliRunBtn{flex:1 1 auto;order:3}
+  .cliPromptChar{order:1}
+}
+/* ⌨ trk289（R-b）・trk290（推奨4・5）：幅 560px 以下の出力の最小（上の 96px〜）は、背の低い画面では入力欄を押し出す。
+   境は 600px（320×568 の iPhone SE 第 1 世代で、半分の入力欄が切れていた）。
+   この規則は 560px 以下の規則より後ろに置く（同じ強さなので、後ろが勝つ）。 */
+@media (max-height:600px){
+  dialog.cliDialog>.cliLog{min-height:48px}
+  /* 52dvh だと、背の低い画面では見出し（約84px）と入力の行（約115px）が入らず、入力欄が板の外へ出る。
+     この画面の高さでは「半分」を 80dvh にして、中身を収める（tall・full は変えない） */
+  dialog.cliDialog[data-size="half"]{height:80dvh}
+  /* 低い画面では「tall」を「半分」より低くしない（390×500 で半分の方が高かった） */
+  dialog.cliDialog[data-size="tall"]{height:88dvh}
+}
+
+/* 🎨 trk297：trk-re-modern の領域ごとの 3 行（設定「🎨 スキン」） */
+.remodernRegions { display: grid; gap: .4em; margin: .4em 0; }
+.remodernRow { display: grid; grid-template-columns: minmax(4em, auto) 1fr 1fr; gap: .4em; align-items: center; }
+.remodernRow select { min-width: 0; width: 100%; }
+
+.study-file-btn[hidden], .remodernOpenMedia[hidden], .remodernDevBadge[hidden] { display: none; }
+/* 🎨 trk310：開発用の印（切り替えが入っている間だけ。画面の下の帯・ボタンは 24px 以上） */
+.remodernDevBadge { position: fixed; left: 8px; bottom: 8px; z-index: 9000; max-width: calc(100vw - 16px);
+  display: flex; flex-wrap: wrap; gap: .4em; align-items: center; padding: .4em .7em; border-radius: 8px;
+  background: #fff3a3; color: #1a1a1a; border: 2px solid #1a1a1a; font-size: 14px; line-height: 1.4; }
+.remodernDevBadge .remodernDevOff { min-height: 24px; min-width: 24px; padding: .2em .8em; font: inherit; color: #1a1a1a;
+  background: #fff; border: 2px solid #1a1a1a; border-radius: 6px; cursor: pointer; }
+.remodernDevBadge .remodernDevOff:focus-visible { outline: 3px solid #0050c0; outline-offset: 2px; }
+.remodernDialog { max-width: min(32rem, 92vw); border: 1px solid var(--ui-border, currentColor); border-radius: 10px; padding: 1em;
+  background: var(--ui-panel); color: var(--ui-text); }
+.remodernDialog::backdrop { background: rgb(0 0 0 / .5); }
+.remodernDialog .remodernRow label { display: grid; gap: .25em; }
+.remodernDialog .remodernRow { grid-template-columns: 1fr; }
+/* 🔤 trk315：題字の書体（利用者が導入した書体）。選んで全部そろって読めたときだけ張る。題字と作品名一覧だけ */
+body.trk-title-font-on .brand h1,body.trk-title-font-on #skinGrid .skinCard b{font-family:var(--trk-title-font)}
+.titleFontCard{border:1px solid var(--ui-border);border-radius:8px;padding:8px;margin:6px 0}
+.titleFontFile{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12px}
+.titleFontLicenceText{white-space:pre-wrap;max-height:240px;overflow:auto;font-size:11px;margin:4px 0}
+.titleFontOffer{border:2px solid var(--ui-border);border-radius:8px;padding:8px;margin:6px 0}
+.titleFontOffer button{margin:6px 6px 0 0}
+/* 🛟 セーフモードの浮きボタン：既定は非表示（設定でオンのときだけ表示） */
+#floatingSafeBtn[hidden]{display:none!important}
+/* 🙈 設定を隠す：ユーザーがチェックした設定パネルを非表示にする */
+#settingsScreen details.panel.trk-user-hidden{display:none!important}
+.hideSettingsList{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 12px;margin-top:8px}
+.hideSettingsList .check{margin:0}
+
+/* 📚 trk326（R-SKIN-1）：旧配色（legacyColors）を使うスキンの一覧。チェックはほかの設定と同じ見た目 */
+.skinLegacyList{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.skinLegacyList label.check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}

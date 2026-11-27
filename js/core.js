@@ -16,12 +16,50 @@ const stage = $("stage"), video = $("video");
 const view = $("view"), vctx = view.getContext("2d");
 const fx = $("fx"), ctx = fx.getContext("2d");
 
+/* 🖥 trk222：拡大率（50／75／100／125%）。ステージの「設計サイズ」を 1/拡大率 に縮めてから、
+   その分だけ大きく描きます（＝中の文字とボタンが同じ比率で大きくなる）。
+   ステージ全体は今までどおり画面に収まるので、はみ出して切れることがありません。
+   ・ゲーム中（playing／paused）は拡大しません。盤面が欠けると遊べないためです。
+   ・スマホ型の選曲画面は CSS が実ピクセルで並べるので、幅と高さは CSS に任せます（css/mobile-shell.css）。
+   ・`settings` はこの関数より後に作られるので、まだ無いときは 100% として扱います。 */
+function uiZoomFactor() {
+  let scale = 100;
+  try { scale = Number(settings && settings.uiScale); } catch (_) { scale = 100; }
+  if (!Number.isFinite(scale) || scale <= 0) scale = 100;
+  const z = scale / 100;
+  if (z === 1) return 1;
+  if (!document.body || !document.body.classList.contains("trk-zoom")) return 1;
+  /* スマホ型は CSS が実ピクセルで並べる（拡大率は文字と余白だけに効かせる）ので、ステージは拡大しない */
+  if (document.body.classList.contains("trk-mobile")) return 1;
+  const phaseNow = stage.dataset.phase || "title";
+  return phaseNow === "title" || phaseNow === "ended" ? z : 1;
+}
 function fitStage() {
-  const s = Math.min(innerWidth / window.Trk.data.W, innerHeight / window.Trk.data.H);
+  const W = window.Trk.data.W, H = window.Trk.data.H;
+  const z = uiZoomFactor();
+  /* スマホ型は幅と高さを CSS に任せる（選曲画面は実ピクセル・プレイ中は 1920×1080）。
+     ここで幅を固定すると、スマホの画面からはみ出します。 */
+  if (document.body && document.body.classList.contains("trk-mobile")) {
+    stage.style.width = "";
+    stage.style.height = "";
+  } else if (z !== 1) { stage.style.width = `${W / z}px`; stage.style.height = `${H / z}px`; }
+  else { stage.style.width = ""; stage.style.height = ""; }
+  const s = Math.min(innerWidth / W, innerHeight / H) * z;
   stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+  /* 📐🧱 trk245：ステージの設計高さ（1080 / 拡大率）から、曲リストの高さと表示の密度を見直す。
+     拡大率で縮めて設計が広くなったぶんはリストに返し、窓が狭いときは密度を詰める。 */
+  if (document.documentElement && document.documentElement.style && typeof document.documentElement.style.setProperty === "function") {
+    document.documentElement.style.setProperty("--trk-lib-h", `${libListHeight(H / z)}px`);
+  }
+  applyDensityClasses();
 }
 addEventListener("resize", fitStage);
-fitStage();
+/* ⏳ 最初の寸法合わせは、このファイルの最後（定義を読み終えた後）で 1 回だけ呼びます。
+   2026-11-02 trk260：以前はここで呼んでいましたが、fitStage が使う LIB_LIST_MIN などは
+   ファイルの後ろ（約 1800 行）で const 宣言しているため、先に走ると TDZ の
+   「Cannot access 'LIB_LIST_MIN' before initialization」になり、core.js の残り
+   （settings・文章の差し込み・画面の配線）が丸ごと止まっていました。
+   ＝開いた直後が「枠だけ・文字なし・ボタンが効かない」になっていた原因です。 */
 
 /* ---------- 合図（イベント） ---------- */
 const HOOKS = {};
@@ -38,11 +76,13 @@ function on(name, fn) {
 function emit(name, ...args) {
   for (const fn of HOOKS[name] || []) { try { fn(...args); } catch (e) { console.error(e); } }
 }
+/* 🖥 trk222：拡大率はプレイ中だけ 100% に戻すので、フェーズが変わるたびに寸法を合わせ直す */
+on("phase", fitStage);
 
 /* ---------- 全画面の重ね表示が開いているか（名前空間の移行で、旧 window の旗 3 つ＝書斎・メディアプレーヤー・シンス を置き換え） ----------
    書く側：window.Trk.overlay.set("study", true)   読む側：window.Trk.overlay.is("study")
-   どれか一つでも開いているか：window.Trk.overlay.any()   名前は "study"（書斎）・"media"（メディアプレーヤー）・"synth"（シンス） */
-const TRK_OVERLAY_OPEN = { study:false, media:false, synth:false };
+   どれか一つでも開いているか：window.Trk.overlay.any()   名前は "study"（書斎）・"media"（メディアプレーヤー）・"synth"（シンス）・"cli"（⌨ ターミナル・trk267） */
+const TRK_OVERLAY_OPEN = { study:false, media:false, synth:false, cli:false };
 const trkOverlayHas = name => Object.prototype.hasOwnProperty.call(TRK_OVERLAY_OPEN, name);
 window.Trk = window.Trk || {};
 window.Trk.overlay = {
@@ -71,7 +111,10 @@ function saveCustomSkins() { try { localStorage.setItem(CUSTOM_SKINS_KEY, JSON.s
    保存場所の名前（shadow_taiko_…）は、これまでのデータを引き継ぐため変えていません。
    各モードの細かい設定（ORBITの見た目・STAGEの譜面・CATCHのキーなど）は、それぞれのファイルが追加します。 */
 const PREFS_KEY = "shadow_taiko_preferences_v2", OLD_PREFS_KEY = "shadow_taiko_preferences_v1", BEST_KEY = "shadow_taiko_best_v1";
-const PREFS_IMPORT_MAX = 2 * 1024 * 1024;
+/* 設定JSONの読み込み上限。⚙ → 💾 端末の保存 から自分の書き出しを読み戻せるように、
+   まるごとバックアップ（js/backup.js の MAX_LS_VALUE＝local.json 20 MiB）と同じ目盛りにした。
+   2 MiB のころは、ノーツ設定の多い人が書き出したファイルを自分で読み返せなかった。 */
+const PREFS_IMPORT_MAX = 20 * 1024 * 1024;
 let prefs = {};
 try { prefs = JSON.parse(localStorage.getItem(PREFS_KEY)) || JSON.parse(localStorage.getItem(OLD_PREFS_KEY)) || {}; } catch (_) { prefs = {}; }
 if (!prefs || typeof prefs !== "object") prefs = {};
@@ -80,6 +123,58 @@ const VIDEO_STYLE_IDS = typeof TRK_TV_PRESETS !== "undefined" && Array.isArray(T
   ? TRK_TV_PRESETS.map(p => p && p.id).filter(id => typeof id === "string")
   : ["skin", "color", "mono", "dim", "off"];
 const num = (v, lo, hi, def) => (typeof v === "number" && isFinite(v)) ? Math.min(hi, Math.max(lo, v)) : def;
+/* 🧺 trk229：スキンの棚の整理に使う保存値の掃除（壊れた値・長すぎる値を落とす）。
+   id は本体・カスタム・パックのスキンで形が違うので、使う文字だけを見ます。 */
+const SKIN_ID_RE = /^[A-Za-z0-9_.-]{1,48}$/;
+/* 🎧 trk327：手動キューは「曲の key」だけ（最大 100・重複なし・長すぎるものは捨てる） */
+function cleanMediaQueue(v, max = 100) {
+  if (!Array.isArray(v)) return [];
+  return [...new Set(v.filter(k => typeof k === "string" && k.length > 0 && k.length <= 200))].slice(0, max);
+}
+/* 🎧 trk327：クロスフェードの秒数（0〜12 の整数。0＝オフ） */
+function clampCrossfade(v) {
+  const n = Math.round(Number(v));
+  return Number.isFinite(n) && n > 0 ? Math.min(12, n) : 0;
+}
+function cleanSkinIdList(v, max = 400) {
+  if (!Array.isArray(v)) return [];
+  return [...new Set(v.filter(x => typeof x === "string" && SKIN_ID_RE.test(x)))].slice(0, max);
+}
+function cleanSkinMap(v, max = 400) {
+  const out = {};
+  if (!v || typeof v !== "object") return out;
+  for (const [k, n] of Object.entries(v)) {
+    if (!SKIN_ID_RE.test(k) || typeof n !== "number" || !isFinite(n) || n < 0) continue;
+    out[k] = Math.round(Math.min(n, 1e9));
+    if (Object.keys(out).length >= max) break;
+  }
+  return out;
+}
+/* ⌨ trk267：ターミナルで覚えた呪文（マクロ）の掃除。
+   名前は英小文字・数字・- の 24 文字まで、中身は 200 文字まで・24 本まで。
+   壊れた値は落とす（読むときに js/cli.js も同じ形に寄せます）。 */
+/* ⌨ trk289（N1）：辞書の名前の規則。cli-pure.js の SPELL_ID_RE・spellIdKey と同じ（tests が両方を見比べる）。
+   core.js は cli-pure.js より先に読まれるので、ここにも置く。古い規則（英数字だけ）だと、日本語の名前が読み込みで消える。 */
+const CLI_SPELL_ID_RE = /^[\p{L}\p{N}][\p{L}\p{N}-]{0,23}$/u;
+function cliSpellKey(id) {
+  let s = String(id == null ? "" : id);
+  try { s = s.normalize("NFKC"); } catch (_) { /* 古い環境では、そのまま */ }
+  return s.trim().toLowerCase();
+}
+function cleanCliSpells(v) {
+  const out = {};
+  if (!v || typeof v !== "object" || Array.isArray(v)) return out;
+  for (const [id0, body] of Object.entries(v)) {
+    const id = cliSpellKey(id0);
+    if (!CLI_SPELL_ID_RE.test(id)) continue;
+    if (typeof body !== "string") continue;
+    const text = body.trim().slice(0, 200);
+    if (!text) continue;
+    out[id] = text;
+    if (Object.keys(out).length >= 24) break;
+  }
+  return out;
+}
 const clampTvDim = v => Number((Math.round(num(v, 0, .9, 0) * 20) / 20).toFixed(2));
 const clampTvBlur = v => Math.round(num(v, 0, 12, 0));
 const TV_PARAM_FAV_MAX = 8;
@@ -154,6 +249,17 @@ const savedVideoKeys = Array.isArray(prefs.videoKeys) && prefs.videoKeys.length 
   prefs.videoKeys.every(validCode) && new Set(prefs.videoKeys).size === VIDEO_KEY_DEFAULTS.length ? prefs.videoKeys.slice()
   : Array.isArray(prefs.videoKeys) && [5, 7].includes(prefs.videoKeys.length) && prefs.videoKeys.every(validCode) && new Set(prefs.videoKeys).size === prefs.videoKeys.length
     ? [...prefs.videoKeys, ...VIDEO_KEY_DEFAULTS.slice(prefs.videoKeys.length)] : VIDEO_KEY_DEFAULTS.slice();
+/* ⌨ trk276：📚 のキー操作の既定。4 方向を別々に持ち、重複したら既定へ戻します */
+const VOL_KEY_DEFAULTS = { L: "ArrowLeft", R: "ArrowRight", U: "ArrowUp", D: "ArrowDown" };
+function volKeyBoot(p) {
+  const out = {}, used = new Set();
+  for (const k of ["L", "R", "U", "D"]) {
+    const v = p && p["skinVolKey" + k];
+    if (validCode(v) && !used.has(v)) { out["skinVolKey" + k] = v; used.add(v); }
+    else { out["skinVolKey" + k] = VOL_KEY_DEFAULTS[k]; used.add(VOL_KEY_DEFAULTS[k]); }
+  }
+  return out;
+}
 const bootKeys = (Array.isArray(prefs.keys) && prefs.keys.length === 2 && prefs.keys.every(validCode) && prefs.keys[0] !== prefs.keys[1])
   ? prefs.keys.slice() : KEY_PRESETS.standard.keys.slice();
 const bootSub = [0, 1].map(i => { const k = Array.isArray(prefs.subKeys) ? prefs.subKeys[i] : ""; return validCode(k) && !bootKeys.includes(k) ? k : ""; });
@@ -179,6 +285,10 @@ const TRK_ENUM_VALUES = {
   chartGen: ["1", "2", "3", "4"], // 🎼 1・2は旧方式、3はAタイプ（従来）、4はBタイプ（既定。遊びの文法。js/chart-gen.js）
   mediaKeepLimit: ["1g", "5g", "unlimited"] // 🎵 保存棚の上限（ブラウザー側の容量上限は別に適用）
 };
+/* ⚖ trk279・trk281：⚙ の「段」。**見せる量**を選ぶだけで、値は変えません（js/settings-level.js が読みます）。
+   1＝シンプル／2＝スタンダード（既定）／3＝プロ／4＝マスター／5＝ウィザード
+   （ウィザードは一番上。スキンの「wizard」もここでだけ棚に出ます）. */
+const SET_LEVELS = ["simple", "standard", "pro", "master", "wizard"];
 
 /* 🧭 チュートリアルのスタンプを読み込む（trk140）。既知の8つだけを残し、重複を除く。旧「曲を選ぶ」song は play へ引き継ぐ。 */
 function tutorialStampsFrom(raw) {
@@ -193,13 +303,34 @@ const settings = {
   mediaKeepLimit: pick(prefs.mediaKeepLimit, TRK_ENUM_VALUES.mediaKeepLimit, "1g"), // 🎵 明示保存する曲・動画の合計上限
   mediaKeepOverCapNotice1: prefs.mediaKeepOverCapNotice1 === 1 ? 1 : 0, // 既存保存棚が新上限を超える場合の一度限りの起動通知
   skinShelfOpen: prefs.skinShelfOpen !== false,      // 🖼 スキンの棚の開閉（30種＋カスタムでも設定画面が膨らまないように）
-  skinShelfCat: pick(prefs.skinShelfCat, ["all","basic","miku","dark","light","grad","fun","access","life","custom"], "all"),
+  skinShelfCat: pick(prefs.skinShelfCat, ["all","basic","type","miku","dark","light","grad","fun","access","life","custom"], "all"),
+  /* 🧺 trk229：棚の整理。⭐お気に入り・🚫隠した・使用回数・最後に使った日時・並び順・絞り込み（すべてこの端末だけ） */
+  skinShelfOnly: pick(prefs.skinShelfOnly, ["", "fav", "recent", "hidden"], ""),
+  skinSort: pick(prefs.skinSort, ["default", "name", "used", "recent"], "default"),
+  /* 📚 trk274：棚の「巻」。"" は**定番＋ウィザードだけ**（vol.1〜10・glitch は選んだときだけ出す）。
+     "all" は全部。ほかは巻の id（vol-01 など）。新しい保存キーは作らず、この中に入れます */
+  skinShelfVol: typeof prefs.skinShelfVol === "string" ? prefs.skinShelfVol.slice(0, 24) : "",
+  /* ⌨ trk276：📚 のパネルをキーで動かす（使わない・読み方向・4 つのキー）。
+     新しい保存キーは作らず、settings の中に入れます（工場出荷で既定に戻ります） */
+  skinVolNav: prefs.skinVolNav === "off" ? "off" : "on",
+  skinVolDir: prefs.skinVolDir === "col" ? "col" : "row",
+  /* 端まで行ったとき：stop＝端で止まる（既定）／wrap＝反対側へ回り込む／chain＝次の本へ続ける（連読） */
+  skinVolWrap: prefs.skinVolWrap === "chain" ? "chain"
+    : (prefs.skinVolWrap === "wrap" || prefs.skinVolWrap === "on") ? "wrap" : "stop",
+  ...volKeyBoot(prefs),
+  skinFav: cleanSkinIdList(prefs.skinFav),
+  skinHidden: cleanSkinIdList(prefs.skinHidden),
+  skinUse: cleanSkinMap(prefs.skinUse),
+  skinLast: cleanSkinMap(prefs.skinLast),
   layout: pick(prefs.layout ?? prefs.gameplayLayout, Object.keys(window.Trk.data.LAYOUTS), "classic"),
   videoStyle: pick(prefs.videoStyle, VIDEO_STYLE_IDS, "skin"),
   videoZoom: num(prefs.videoZoom, .5, 3, 1),
   /* 🔍 trk212：全画面表示の動画を、マウスホイール1回で何%拡大・縮小するか（2／5／10。既定5）。
      js/video-max.js が 2/5/10 のどれかへ寄せて使う（壊れた値・未設定は5）。 */
   videoMaxWheelStep: num(prefs.videoMaxWheelStep, 1, 20, 5),
+  /* 🎬 trk262：映像を見るときの操作パネルの出かた（full／bottom／always／none。既定は今までどおり full）。
+     値の寄せ方は js/viewer-chrome.js が持ち、🖥 全画面ビューアと ▶ メディアプレーヤーが同じ設定を見る。 */
+  videoMaxChrome: pick(prefs.videoMaxChrome, ["full", "bottom", "always", "none"], "full"),
   videoKeys: savedVideoKeys,
   castPolicy: pick(prefs.castPolicy, ["off", "antenna"], "off"),
   backgroundPolicy: pick(prefs.backgroundPolicy, ["off", "antenna", "corner"], prefs.castPolicy === "antenna" ? "antenna" : "off"),
@@ -214,6 +345,8 @@ const settings = {
   difficulty: pick(prefs.difficulty, window.Trk.data.DIFF_IDS, "normal"),
   showMasterDiff: !!prefs.showMasterDiff,
   escNoReturn: prefs.escNoReturn === true,   /* ❓謎設定：Esc長押しで選曲へ戻らない（既定はオフ＝長押しで戻る） */
+  showFloatingSafeBtn: prefs.showFloatingSafeBtn === true,   /* 🛟 右下のセーフモードボタンを表示する（既定はオフ） */
+  hiddenSettingPanels: Array.isArray(prefs.hiddenSettingPanels) ? [...new Set(prefs.hiddenSettingPanels.filter(x => typeof x === "string" && x.length > 0 && x.length <= 80))].slice(0, 100) : [],   /* 🙈 ユーザーが隠す設定パネルのキー一覧 */
   /* 🚪 メディアプレイヤーを抜けたときに曲を読み込み直すか（trk206）。既定はオフ＝そのまま流れ続ける
      （メディアプレイヤーへ入るときと同じで、曲が途切れない。エフェクトを触っても音が消えない）。
      オンにすると昔の動き＝閉じたときに止めて、プレビューの開始位置から鳴らし直す（不具合の再現用）。 */
@@ -239,9 +372,49 @@ const settings = {
   reverseHands: !!prefs.reverseHands,
   hideGameplayUI: !!prefs.hideGameplayUI,
   playerMode: !!prefs.playerMode,
+  /* 🖥 trk221：画面の形。auto＝端末に合わせる／desktop＝PC型／mobile＝スマホ型
+     （PCでも縦型のスタンドや小さい窓で使うときは mobile、大きいタブレットは desktop を選べる） */
+  uiMode: pick(prefs.uiMode, ["auto", "desktop", "mobile"], "auto"),
+  /* 🎵 trk221：下に出す再生バー。on＝つねに／auto＝曲を選んだら／off＝出さない
+     （trk222：既定を on に。前回聞いていた曲を、そのままバーに出しておける） */
+  playerBar: pick(prefs.playerBar, ["on", "auto", "off"], "on"),
+  /* 🎵 trk225：再生バーを下のどこに置くか（スマホ型のとき）。
+     bottom＝画面のいちばん下（操作パネルはバーの上へ）／above＝操作パネルの上（trk221〜trk224 と同じ） */
+  playerBarPos: pick(prefs.playerBarPos, ["bottom", "above"], "bottom"),
+  /* 🔒 trk225：再生バーを隠さない（バーの ✕ を出さない。誤って消す対策。既定オフ） */
+  playerBarLock: prefs.playerBarLock === true,
+  /* ❓ trk226：バーに触れても位置を移動しない（既定オフ＝触れれば動く。❓謎設定） */
+  playerBarSeekLock: prefs.playerBarSeekLock === true,
+  /* ❓ trk227：リピートボタンを単曲リピートのみにする（既定オフ＝なし→1曲→全曲→なし） */
+  playerBarRepeatOneOnly: prefs.playerBarRepeatOneOnly === true,
+  /* ❓ trk227：シャッフルは、いまの一覧（プレイリスト）の中から選ぶ（既定オフ＝ライブラリ全体から） */
+  playerBarShuffleInList: prefs.playerBarShuffleInList === true,
+  /* 🖥 trk222：画面の拡大率（%）。50／75／100／125 の4つだけ。ゲーム中は 100% のまま */
+  uiScale: pick(prefs.uiScale, [50, 75, 100, 125], 100),
+  /* 🖥 trk222：拡大率を変えても、アイコンの大きさは 100% のまま固定する（既定オン） */
+  fixedIconSize: prefs.fixedIconSize !== false,
+  /* 🧱 trk244：表示の密度（ゆったり／ふつう／ぎゅっと／ぎっしり）。
+     `uiScaleCompact` がオンのあいだは、拡大率（125/100/75/50%）が**密度の段**になります
+     （縮小＝文字を小さくする、ではなく「詰めて多く見せる」）。 */
+  uiDensity: pick(prefs.uiDensity, ["auto", "roomy", "normal", "compact", "dense"], "auto"),
+  /* 🔤 trk246：書体の組み合わせ（見出し＋本文の2役）。未選定は null。
+     相手の目録の書式をそのまま使えるようにして、知らない項目は sanitize() が落とします。 */
+  typography: (window.Trk && window.Trk.typography && window.Trk.typography.sanitize(prefs.typography)) || null,
+  /* 🧱 trk244：縮小（75%・50%）を「詰めて多く見せる」に使う（既定オン＝文字は小さくしない） */
+  uiScaleCompact: prefs.uiScaleCompact !== false,
+  /* 🖥 trk222：右上の 📱／🖥 で選んだ画面の形を、次に開いたときも使い続ける（❓謎設定） */
+  uiModeLock: prefs.uiModeLock !== false,
+  /* 🎛 trk222：スマホ型で、エフェクトの欄をライブラリにも出す（エフェクトのタブには常に出る） */
+  fxInLibrary: prefs.fxInLibrary === true,
   helpText: prefs.helpText !== false,
   tutorialDone: prefs.tutorialDone === true,
   welcomeSeen: prefs.welcomeSeen === true,   /* 👋 「trk!にようこそ！」を閉じた（一度だけ出す） */
+  /* 🔄 trk255：新しい版の知らせ（画面の下の帯）。
+     swUpdateNotice が false なら帯を出さない（設定の「新しい版を確かめる」はいつでも使える）。
+     swUpdateSnooze は「あとで」を押した時刻＋24時間（0＝眠らせていない）。
+     ⚠ どちらも core.settings の中なので **localStorage のキーは増やしません**。 */
+  swUpdateNotice: prefs.swUpdateNotice !== false,
+  swUpdateSnooze: num(prefs.swUpdateSnooze, 0, 8.64e15, 0),
   tutorialStamps: tutorialStampsFrom(prefs.tutorialStamps),   /* 🧭 スタンプ（順番自由・8つでごほうび。旧「曲を選ぶ」は「曲を流す」へ引き継ぐ） */
   skinGradUnlocked: prefs.skinGradUnlocked === true,
   menuKey: validCode(prefs.menuKey) ? prefs.menuKey : "KeyM",
@@ -294,6 +467,10 @@ const settings = {
   synthModeFastStart: !!prefs.synthModeFastStart,
   synthModeKeyboardLock: prefs.synthModeKeyboardLock !== false,
   synthModeWideKeyboard: !!prefs.synthModeWideKeyboard,
+  /* 🎹 trk261：鍵盤の広さ（25／49／61／88）と幅の合わせ方（fit／scroll／shrink）、MIDI の自動接続 */
+  synthModeKeyRange: ["25", "49", "61", "88"].includes(String(prefs.synthModeKeyRange)) ? String(prefs.synthModeKeyRange) : "25",
+  synthModeKeyFit: ["fit", "scroll", "shrink"].includes(prefs.synthModeKeyFit) ? prefs.synthModeKeyFit : "fit",
+  synthMidiAuto: prefs.synthMidiAuto !== false,
   notes: window.Trk.data.sanitizeNotes(prefs.notes ?? (prefs.skin === "clarity" ? window.Trk.data.NOTE_PRESETS.clarity : null)),
   mascot: pick(prefs.mascot, ["skin", "none", ...window.Trk.data.MASCOT_IDS], "skin"),
   fxPower: num(prefs.fxPower, 0, 3, 1.5),
@@ -328,6 +505,9 @@ const settings = {
      granted なら起動しただけで曲が並ぶ。prompt のときは最初のタップで1回だけ許可を確認する
      （ブラウザーはクリックの中でしか確認を出せないため）。オフにすると今までどおり手動で再接続。 */
   folderAutoRead: prefs.folderAutoRead !== false,
+  /* 🔓 trk293：「共有の許可をブラウザに求める」ワンボタンを設定に出すか（初期オフ＝今までの画面のまま）。
+     許可を「許可しない」にしたあとでも、設定からいつでも許可を求め直せるようにする。 */
+  permAskBtn: prefs.permAskBtn === true,
   libSort: pick(prefs.libSort, ["name", "plays", "recent", "best"], "name"),
   libProgress: pick(prefs.libProgress, ["all", "new", "progress", "done"], "all"),   // 📈 進捗フィルター：未聴/継続/完了で絞る（表示層だけ。trk174）
   shortMode: pick(prefs.shortMode, ["off", "90", "120", "180"], "off"),      // 🕹️ ショートプレイ（後半だけ遊ぶ・初期オフ）
@@ -386,7 +566,46 @@ const settings = {
   cover: num(prefs.cover, .2, .7, .4),
   catchNitroBonus: prefs.catchNitroBonus !== false,
   catchBlastNext: prefs.catchBlastNext === true,
+  /* ⌨ trk267：ターミナル（trk CLI）。play の行き先（メディアプレーヤー／曲リストの試聴）、
+     開いている間の見た目（auto＝wizard を含むスキン→無ければ terminal／terminal／keep）、
+     覚えた呪文。どれもこの settings の中だけ（新しい localStorage のキーは増やしません）。 */
+  cliPlay: pick(prefs.cliPlay, ["media", "preview"], "media"),
+  /* ⌨ trk286：既定は「いまのスキンのまま」＝端末の中だけ、後ろと同じ見た目で開く */
+  cliSkin: pick(prefs.cliSkin, ["auto", "terminal", "keep"], "keep"),
+  cliSpells: cleanCliSpells(prefs.cliSpells),
+  cliBell: prefs.cliBell !== false,   /* ⌨ trk269：エラーの音を鳴らしてよいか（鳴らすかはスキンが決める） */
+  /* ⌨ trk283：呼び出しキー（同じキーで開閉・Ctrl/⌘ と一緒に押す）・実行後に閉じる・
+     入力できるかの見せ方（既定は常時バッジ）・端末のスキンを個別に選ぶか。 */
+  /* ⌨ trk288（Q1）：呼び出しキーの既定は Ctrl+.（Period）。Backquote は JIS で IME に取られやすいため */
+  /* ⌨ trk289（R-a）：一回限りの移行。trk288 までに保存された Backquote（JIS で Ctrl+` が押せないことがある）は、
+     この印が無いときだけ Period にする。印は次の保存で残るので、以後に本人が Backquote を選べばそのまま残る。 */
+  /* ⌨ trk290（推奨 1・Q1 の再決定）：既定はオフ（""）。使う人が ⚙ で決める。 */
+  cliKey: prefs.cliKey === "" ? "" : ((validCode(prefs.cliKey) && !(prefs.cliKey === "Backquote" && prefs.cliKeyPeriod1 !== true)) ? prefs.cliKey : ""),
+  cliKeyPeriod1: true,
+  /* ⌨ trk288（C3）：呼び出しに Shift を一緒に押すか（Ctrl+Shift+K などを登録したとき） */
+  cliShift: prefs.cliShift === true,
+  /* ⌨ trk288（R2）：入力欄の文字の入れ方。native＝ブラウザーの挿入に任せる（既定）／exec＝execCommand（元に戻す履歴に残る） */
+  cliInsert: pick(prefs.cliInsert, ["native", "exec"], "native"),
+  /* ⌨ trk287：呼び出しキーと一緒に押す修飾キー。既定は Ctrl か ⌘／Win のどちらでも。
+     "meta" を選ぶと「Win（Super）+ キー」で呼べます（Windows は Win+D などを OS が先に取る点に注意） */
+  cliMod: pick(prefs.cliMod, ["ctrlOrMeta", "meta", "ctrl", "alt"], "ctrlOrMeta"),
+  /* ⌨ trk286：実行後に閉じるのは**既定オフ**（1 回呼んで唱えて、そのまま何度も唱えられるように） */
+  cliAutoClose: prefs.cliAutoClose === true,
+  /* ⌨ trk286：ボトムシートの高さ（half＝52%／tall＝70%（既定）／full＝92%） */
+  cliSheetSize: pick(prefs.cliSheetSize, ["half", "tall", "full"], "tall"),
+  cliTypingCheck: pick(prefs.cliTypingCheck, ["badge", "status", "quiet"], "badge"),
+  /* ⌨ trk285：入力の合図（プロンプト）の形。既定は Linux 系の「<スキン名(English)> ~ %」 */
+  cliPromptStyle: pick(prefs.cliPromptStyle, ["linux", "bash", "root", "fish", "ps", "plain", "skin"], "linux"),
+  cliSkinPickOn: prefs.cliSkinPickOn === true,
+  cliSkinPick: typeof prefs.cliSkinPick === "string" && has(window.Trk.data.SKINS, prefs.cliSkinPick) ? prefs.cliSkinPick : "",
   /* ▶ メディアプレーヤー（TV電源長押し） */
+  /* 🎧 trk327：曲間のつなぎ。**どちらも既定はオフ**（勝手に音を変えない）。
+     gapless＝次の曲のファイルを先に読み込んでおく（曲間の待ちを詰める）。
+     crossfade＝曲の終わりを N 秒かけて静かに閉じ、次の曲の頭を短く立ち上げる（曲は重ねない）。 */
+  mediaGapless: prefs.mediaGapless === true,
+  mediaCrossfade: num(prefs.mediaCrossfade, 0, 12, 0),
+  /* 🎧 trk327：手動の「次に再生」キュー（曲の key・最大 100）。空なら順番どおり */
+  mediaQueueNext: cleanMediaQueue(prefs.mediaQueueNext),
   mediaRepeat: pick(prefs.mediaRepeat, ["off", "one", "all"], "off"),
   mediaShuffle: prefs.mediaShuffle === true,
   mediaRate: num(prefs.mediaRate, .5, 2, 1),
@@ -399,11 +618,67 @@ const settings = {
   mediaWakeLock: prefs.mediaWakeLock !== false,                                // 🔆 Wake Lock：動画再生中に画面を消灯させない（初期オン。trk164）
   mediaWave: prefs.mediaWave !== false,                                        // 🌊 波形シークバー：解析の rms 包絡をシークバーに描く（初期オン。trk173）
   mediaLyricsOpen: prefs.mediaLyricsOpen === true,                             // 🎤 歌詞パネルを開いたままにするか（初期は閉じる。trk166）
+  /* 💬 trk262：字幕の置き場所（下・中央・上）と大きさ（小・中・大）。trk が描く字幕だけに効く
+     （📌 画中画と OS のライブキャプションは向こうの設定）。 */
+  mediaSubsPos: pick(prefs.mediaSubsPos, ["bottom", "middle", "top"], "bottom"),
+  /* 📌 trk263：画中画を、メディアプレーヤーを閉じても続ける（既定オン）と、
+     画中画を出している間はプレーヤー側の映像を隠す（既定オン）。 */
+  mediaPipKeep: prefs.mediaPipKeep !== false,
+  mediaPipHideStage: prefs.mediaPipHideStage !== false,
+  mediaSubsSize: pick(prefs.mediaSubsSize, ["small", "normal", "large"], "normal"),
   /* ✨ フレーム補完（js/frame-interp.js）。既定はオフ（重いので） */
   frameInterp: pick(prefs.frameInterp, ["off", "blend", "flow"], "off"),
-  frameInterpStrength: num(prefs.frameInterpStrength, 0, 1, .85)
+  frameInterpStrength: num(prefs.frameInterpStrength, 0, 1, .85),
+  /* ⚖ trk279：⚙ の「段」（見せる量）。既定はスタンダード。
+     値は変えません（段を下げても、いまの動きはそのまま）。 */
+  setLevel: pick(prefs.setLevel, SET_LEVELS, "standard"),
+  /* ⚖ trk279：自分で動かしたことのある設定の名前。段で隠れる行でも、
+     一度でも触ったものは必ず出します（「設定したのに消えた」を作らない）。 */
+  setTouched: cleanSkinIdList(prefs.setTouched, 160),
+  /* ⚖ trk281：TRUCK の揺れを全員オフへ寄せる「一回限りの印」（docs/MIGRATIONS.md）。
+     1 になったら二度と掛かりません（工場出荷でも戻しません）。 */
+  swayTruckOff1: prefs.swayTruckOff1 === 1 ? 1 : 0,
+  /* 🎨 trk297：trk-re-modern の領域ごとの選択（共通・書斎・基地）。既定は全部 keep（既存の表示のまま・D4）。
+     読み込みで検証し、壊れた値は keep に落とす（js/remodern-regions.js）。 */
+  /* 🎨 trk297：書斎・基地のヘッダーに「🎨 スキン」のボタンを出すか（既定オフ＝今の画面のまま・利用者が選ぶ） */
+  remodernIcons: prefs.remodernIcons === true,
+  /* 🔤 trk326（R-REM-3）：書斎・基地に作品の配色を当てるか（独立のオプトイン）。既定はどちらもオフ */
+  /* 📚 trk326（R-WIZ-1）：倉庫の Advance Wizard 設定（読んだときだけ入る。既定は空） */
+  cliAdvance: (prefs.cliAdvance && typeof prefs.cliAdvance === "object" && !Array.isArray(prefs.cliAdvance)
+    ? { format: "trk-avatar-library-advance-prefs", version: 1,
+        advance: (prefs.cliAdvance.advance && typeof prefs.cliAdvance.advance === "object" ? prefs.cliAdvance.advance : {}),
+        dictionary: (Array.isArray(prefs.cliAdvance.dictionary) ? prefs.cliAdvance.dictionary.filter(w => typeof w === "string").slice(0, 500) : []) }
+    : null),
+  /* 📚 trk326（R-SKIN-1）：旧配色（legacyColors）をこの端末だけ使うスキンの ID。既定は全て新配色 */
+  skinLegacy: cleanSkinIdList(prefs.skinLegacy, 300),
+  remodernOptIn: (window.TrkReModernRegions ? window.TrkReModernRegions.normalizeOptIn(prefs.remodernOptIn) : { study: false, base: false }),
+  /* 🎨 trk300：読んだ作品（作品ファイルの値だけ・最大 20 件）。読むときに js/remodern-work.js で検査し直す */
+  remodernWorks: Array.isArray(prefs.remodernWorks) ? prefs.remodernWorks.slice(0, 20) : [],
+  /* 🎨 trk308：直前の状態（「戻す」のための記録。壊れていれば null＝戻せない） */
+  remodernDevPaint: prefs.remodernDevPaint === true,
+  remodernLast: window.TrkReModernRegions ? window.TrkReModernRegions.sanitizeSnapshot(prefs.remodernLast) : null,
+  remodern: (window.TrkReModernRegions ? window.TrkReModernRegions.normalize(prefs.remodern).state
+    : { version: 1, common: { mode: "keep", work: null }, study: { mode: "keep", work: null }, base: { mode: "keep", work: null } })
 };
-function saveUserPrefs() { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefsForSave())); } catch (_) {} }
+/* 🖥 trk223（2026-10-31 レビュー⑤）：同じオリジンで2つの trk! を公開できる（/trk/ と /trk/）。
+   localStorage はオリジンで共有なので、片方（古い版）が保存すると、その版が知らない設定
+   （uiScale・uiMode・playerBar など）が丸ごと消えていた。保存のときは、いま保存されている生の値に
+   重ねて書き、知らないキーはそのまま残す。工場出荷に戻したとき（fresh）だけは、きれいに置き換える。 */
+function storedPrefsRaw() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PREFS_KEY) || "null");
+    return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  } catch (_) { return {}; }
+}
+function saveUserPrefs({ fresh = false } = {}) {
+  /* trk247：成否を返す（書き込み失敗＝容量がいっぱい、を呼び出し側で言葉にできるように）。
+     返す値を見ていない呼び出し側はそのまま動く。 */
+  try {
+    const out = fresh ? prefsForSave() : Object.assign({}, storedPrefsRaw(), prefsForSave());
+    localStorage.setItem(PREFS_KEY, JSON.stringify(out));
+    return true;
+  } catch (_) { return false; }
+}
 /* 🛟 trk202：セーフモードが安全側に倒した値を、保存に持ち込まない。
    いまは ?safe=1 で入っても、そのあと何か設定を保存すると folderAutoRead・mediaStartFromZero・
    previewEnabled が false のまま残り、通常の URL で開き直しても戻らなかった（1.0.7 レビューの指摘）。
@@ -495,7 +770,7 @@ function askFactoryReset(onYes, onNo) {
 }
 function resetVideoPrefs() {
   settings.videoStyle = "color";
-  settings.videoZoom = 1; settings.videoMaxWheelStep = 5; settings.videoKeys = VIDEO_KEY_DEFAULTS.slice(); settings.castPolicy = "off"; settings.backgroundPolicy = "off"; settings.fxAntenna = false; settings.fxAntennaShape = "rod"; settings.fxAntennaCustomOn = ""; settings.fxAntennaCustomOff = ""; settings.mediaLoopTrigger = "toggle"; settings.mediaWallTrigger = "toggle"; settings.mediaWallStyle = "midnight"; settings.mediaWallClock = true; settings.mediaWallStopsVideo = true; settings.mediaExitKey = "Escape"; settings.mediaExitConfirm = true; settings.mediaResumeRewind = 0; settings.mediaWakeLock = true; settings.mediaWave = true; settings.libProgress = "all"; settings.mediaLyricsOpen = false;
+  settings.videoZoom = 1; settings.videoMaxWheelStep = 5; settings.videoMaxChrome = "full"; settings.mediaSubsPos = "bottom"; settings.mediaSubsSize = "normal"; settings.mediaPipKeep = true; settings.mediaPipHideStage = true; settings.videoKeys = VIDEO_KEY_DEFAULTS.slice(); settings.castPolicy = "off"; settings.backgroundPolicy = "off"; settings.fxAntenna = false; settings.fxAntennaShape = "rod"; settings.fxAntennaCustomOn = ""; settings.fxAntennaCustomOff = ""; settings.mediaLoopTrigger = "toggle"; settings.mediaWallTrigger = "toggle"; settings.mediaWallStyle = "midnight"; settings.mediaWallClock = true; settings.mediaWallStopsVideo = true; settings.mediaExitKey = "Escape"; settings.mediaExitConfirm = true; settings.mediaResumeRewind = 0; settings.mediaWakeLock = true; settings.mediaWave = true; settings.libProgress = "all"; settings.mediaLyricsOpen = false;
   settings.bgDim = 0; settings.bgBlur = 0;
   /* ✨ TRKエフェクト（リッチ映像。js/tv-rich.js）の記憶も一緒に戻す */
   settings.tvRichId = "portrait_natural"; settings.tvRichPrev = ""; settings.tvRichCat = "portrait"; settings.tvRichOpen = true;   /* 初期状態に戻す＝欄は開いておく */
@@ -520,6 +795,7 @@ function resetAudioPrefs() {
   settings.bannerRandomBtn = true; settings.bannerRandomTap = false;
   settings.midiSoundProfile = "studio_gm"; settings.midiMixEnabled = false; settings.midiMixProfile = "studio_gm"; settings.midiMixOpen = true;
   settings.synthModeDisabled = false; settings.synthModeFastStart = false; settings.synthModeKeyboardLock = true; settings.synthModeWideKeyboard = false;
+  settings.synthModeKeyRange = "25"; settings.synthModeKeyFit = "fit"; settings.synthMidiAuto = true;
   try {
     if (window.TrkFX && typeof window.TrkFX.midiMixProfile === "function") window.TrkFX.midiMixProfile("studio_gm");
     if (window.TrkFX && typeof window.TrkFX.midiMixOn === "function") window.TrkFX.midiMixOn(false);
@@ -599,6 +875,7 @@ function enterSafeMode() {
   settings.artWallpaperBg = false; settings.useStudyArtwork = false; settings.hideArtworkDuringChart = false;
   settings.synthModeKeyboardLock = true; // 🎹 セーフモードではシンセを開けないが、既定値は壊さない
   settings.synthModeWideKeyboard = false;
+  settings.synthModeKeyRange = "25"; settings.synthModeKeyFit = "fit";   // セーフモードは鍵盤を最小・等倍に戻す（MIDI の設定は消さない）
   settings.libKeepShared = false;        // 📤 セーフモードでは、端末に残した共有の曲も読み戻さない
   settings.fxPower = 0; settings.gameFxMode = "off"; settings.hideGameplayUI = false;
   settings.midiMixEnabled = false; settings.midiMixOpen = false;
@@ -642,8 +919,31 @@ function resetAllPrefs() {
   settings.mmdScale = 1; settings.mmdTurn = 0; settings.mmdMotionBpm = 0; settings.mmdMotionKind = "faceSing";
   settings.mmdQuickUI = true; settings.mmdMotionFavs = [];
   settings.skin = "shadow"; settings.layout = "classic";
+  /* 🧺 trk229：棚の整理（お気に入り・隠した・回数・日時・並び・絞り込み）も工場出荷状態へ */
+  settings.skinShelfOnly = ""; settings.skinSort = "default"; settings.skinShelfVol = ""; settings.skinFav = []; settings.skinHidden = [];
+  settings.skinVolNav = "on"; settings.skinVolDir = "row"; settings.skinVolWrap = "stop"; Object.assign(settings, volKeyBoot(null));
+  settings.skinUse = {}; settings.skinLast = {};
+  /* 🖥 trk221/222：画面の形（自動）・下の再生バー（つねに表示）・拡大率（100%）も工場出荷状態へ戻す */
+  settings.uiMode = "auto"; settings.playerBar = "on";
+  settings.uiScale = 100; settings.fixedIconSize = true; settings.uiModeLock = true; settings.fxInLibrary = false;
+  /* 🧱 trk244：表示の密度（ふつう）と、縮小は「詰めて見せる」（オン）も工場出荷状態へ */
+  settings.uiDensity = "auto"; settings.uiScaleCompact = true;
+  /* 🔤 trk246：書体の組み合わせも工場出荷状態（使わない）へ */
+  settings.typography = null;
+  /* 🔄 trk255：更新の知らせ（出す・眠らせない）も工場出荷状態へ */
+  settings.swUpdateNotice = true; settings.swUpdateSnooze = 0;
+  /* 🎵 trk225：バーの置き場所（いちばん下）と、隠さない設定（オフ）も工場出荷状態へ */
+  settings.playerBarPos = "bottom"; settings.playerBarLock = false; settings.playerBarSeekLock = false;
+  /* ❓ trk227：リピートの段（単曲のみ）と、シャッフルの範囲（いまの一覧）も既定へ */
+  settings.playerBarRepeatOneOnly = false; settings.playerBarShuffleInList = false;
+  /* ⌨ trk267：ターミナルの行き先（プレイヤー）・見た目（自動）・覚えた呪文（無し）も工場出荷状態へ */
+  settings.cliPlay = "media"; settings.cliSkin = "keep"; settings.cliSpells = {}; settings.cliBell = true; settings.cliKey = ""; settings.cliShift = false; settings.cliInsert = "native"; settings.cliMod = "ctrlOrMeta"; settings.cliAutoClose = false; settings.cliSheetSize = "tall"; settings.cliTypingCheck = "badge"; settings.cliSkinPickOn = false; settings.cliSkinPick = ""; settings.cliPromptStyle = "linux";
+  /* ⚖ trk279：⚙ の段（スタンダード）と「触った設定」も工場出荷状態へ */
+  settings.setLevel = "standard"; settings.setTouched = [];
 }
-function exportPrefs(kind) {
+/* trk247：設定JSONの「中身」を決める1か所（書き出しと、書き出しsizes表示が同じ物を見る）。
+   ⚠ kind ごとに載せる物が違う（notes／tv／audio／all）。all は settings 全体。 */
+function prefsExportPayload(kind) {
   const out = {};
   if (kind === "notes") out.notes = settings.notes;
   else if (kind === "tv" || kind === "video") {
@@ -662,11 +962,21 @@ function exportPrefs(kind) {
     out.synthModeDisabled = settings.synthModeDisabled; out.synthModeFastStart = settings.synthModeFastStart;
     out.synthModeKeyboardLock = settings.synthModeKeyboardLock;
     out.synthModeWideKeyboard = settings.synthModeWideKeyboard;
+    out.synthModeKeyRange = settings.synthModeKeyRange;
+    out.synthModeKeyFit = settings.synthModeKeyFit;
+    out.synthMidiAuto = settings.synthMidiAuto;
     if ("gameVolume" in settings) out.gameVolume = settings.gameVolume;
+  } else if (kind === "core") {
+    /* trk247：ノート（譜面の作り込み）をのぞいた設定。ノートが大きいせいで
+       上限を超えて読み込めない、を避けるための1本 */
+    Object.assign(out, settings); delete out.notes;
   } else { // all
     Object.assign(out, settings);
   }
-  try { downloadJSON(out, `trk-${kind || "all"}-` + new Date().toISOString().slice(0,10) + ".json"); } catch(e){ console.error(e); }
+  return out;
+}
+function exportPrefs(kind) {
+  try { downloadJSON(prefsExportPayload(kind), `trk-${kind || "all"}-` + new Date().toISOString().slice(0,10) + ".json"); } catch(e){ console.error(e); }
 }
 function parseHashParams(hash) {
   /* ⚠ 小文字にするのは**キーだけ**（値まで小文字にすると、将来ケースを区別する値を
@@ -759,7 +1069,7 @@ function parseHashParams(hash) {
             setTimeout(() => b.remove(), 5000);
           };
           askFactoryReset(
-            () => { resetAllPrefs(); saveUserPrefs(); toast("♻️ " + tr("factoryAskYes")); setTimeout(() => location.reload(), 400); },
+            () => { resetAllPrefs(); saveUserPrefs({ fresh: true }); toast("♻️ " + tr("factoryAskYes")); setTimeout(() => location.reload(), 400); },
             () => toast(tr("factoryAskCanceled"))
           );
         }, 300);
@@ -792,7 +1102,7 @@ function parseHashParams(hash) {
       k = String(k).toLowerCase();
       if (["all","factory"].includes(k)) {
         /* ♻️ コンソールからの trkReset("all") も、消す前に確認する */
-        askFactoryReset(() => { resetAllPrefs(); saveUserPrefs(); location.reload(); }, () => {});
+        askFactoryReset(() => { resetAllPrefs(); saveUserPrefs({ fresh: true }); location.reload(); }, () => {});
         return;
       }
       if (k==="safe") enterSafeMode(); else if (["tv","video"].includes(k)) resetVideoPrefs(); else if (["audio","sound"].includes(k)) resetAudioPrefs(); else if (k==="notes") resetNotesPrefs(); else if (["lite","light"].includes(k)) resetLitePrefs(); else if (["keys","key","pad","controller","input"].includes(k)) resetKeysPrefs(); else if (["amp","rack"].includes(k)) resetAmpPrefs(); else resetVideoPrefs();
@@ -1103,7 +1413,8 @@ function renderAllStatuses() { Object.keys(statusState).forEach(renderStatus); }
 function applyLanguage(code) {
   lang = TEXT[code] ? code : "en"; settings.language = lang; $("language").value = lang;
   document.documentElement.lang = { ja:"ja", en:"en", zh:"zh-CN", ko:"ko" }[lang];
-  document.querySelectorAll("[data-i18n]").forEach(n => { n.textContent = tr(n.dataset.i18n); });
+  /* trk313：optgroup は textContent を書くと中の選択肢（option）が消える。見出しは label に書く（📚 書斎のテーマ選びが空になっていた） */
+  document.querySelectorAll("[data-i18n]").forEach(n => { if (n.tagName === "OPTGROUP") n.label = tr(n.dataset.i18n); else n.textContent = tr(n.dataset.i18n); });
   /* 読み上げ名（aria-label）も同じ辞書から。data-i18n-aria="key" と書く */
   document.querySelectorAll("[data-i18n-aria]").forEach(n => { n.setAttribute("aria-label", tr(n.dataset.i18nAria)); });
   document.querySelectorAll("[data-i18n-placeholder]").forEach(n => { n.placeholder = tr(n.dataset.i18nPlaceholder); });
@@ -1113,8 +1424,23 @@ function applyLanguage(code) {
 }
 
 /* ---------- スキン ---------- */
-const SKIN_CATS = [["all","catAll"],["basic","catBasic"],["miku","catMiku"],["dark","catDark"],["light","catLight"],["grad","catGrad"],["fun","catFun"],["access","catAccess"],["life","catLife"],["custom","catCustom"]];
-const skinCatList = s => (s.custom || s.pack) ? ["custom"] : (Array.isArray(s.cat) && s.cat.length ? s.cat : ["basic"]);
+const SKIN_CATS = [["all","catAll"],["basic","catBasic"],["type","catType"],["miku","catMiku"],["dark","catDark"],["light","catLight"],["grad","catGrad"],["fun","catFun"],["access","catAccess"],["life","catLife"],["wizard","catWizard"],["custom","catCustom"]];
+const skinCatList = s => (s.custom || s.pack || s.imported) ? ["custom"] : (Array.isArray(s.cat) && s.cat.length ? s.cat : ["basic"]);
+/* 🔤 書体スキン（trk228）：棚カードの中だけに書体・太さ・字間を効かせる。書体見本の文字も添える */
+function skinCardType(b, s) {
+  if (s.font) b.style.setProperty("--sk-font", s.font);
+  const t = s.type; if (!t) return;
+  /* 書体スキンの説明文だけは、読みやすいよう本文の書体に戻す（12px の明朝は読みにくいため） */
+  b.style.setProperty("--sk-note", "var(--font)");
+  if (t.title) b.style.setProperty("--sk-title", t.title);
+  if (t.titleWeight) b.style.setProperty("--sk-weight", t.titleWeight);
+  if (t.titleSpace) b.style.setProperty("--sk-space", t.titleSpace);
+  if (t.titleTransform) b.style.setProperty("--sk-transform", t.titleTransform);
+}
+function skinSpecNode(s) {
+  const t = s.type; if (!t || !t.mark) return null;
+  return el("span", "skinSpec", t.mark);
+}
 /* 今 使っているスキン（棚を閉じていても見える）。押すと棚が開く */
 function buildSkinNow() {
   const now = $("skinNow"); if (!now) return;
@@ -1122,51 +1448,784 @@ function buildSkinNow() {
   const b = el("button", "skinCard"); b.type = "button";
   b.style.setProperty("--sk-bg", s.game.stage); b.style.setProperty("--sk-text", s.ui["--ui-text"]);
   b.style.setProperty("--sk-border", s.ui["--ui-border"]);
-  if (s.font) b.style.fontFamily = s.font;
+  skinCardType(b, s);
   const dots = el("span", "dots");
   for (const c of [s.ui["--ui-accent"], s.ui["--ui-gold"], s.ui["--ui-text"]]) { const d = el("i", "dot square"); d.style.background = c; dots.append(d); }
-  b.append(dots, el("b", "", s.label[lang] || s.label.en), el("small", "", (s.desc && (s.desc[lang] || s.desc.en)) || ""));
+  b.append(dots, el("b", "", s.label[lang] || s.label.en));
+  const spec = skinSpecNode(s); if (spec) b.append(spec);
+  b.append(el("small", "", (s.desc && (s.desc[lang] || s.desc.en)) || ""));
   b.title = tr("skinShelf"); b.setAttribute("aria-label", tr("skinShelf"));
   b.addEventListener("click", () => { const shelf = $("skinShelf"); if (shelf) shelf.open = true; });
   now.append(b);
 }
+/* ---------- 🧺 スキンの棚の整理（trk229） ----------
+   スキンが53種になったので、探す・並べる・⭐・🚫 を足しました。
+   判定と並べ替えは純粋関数（skinMatchesQuery／skinShelfEntries）にして、テストから同じものを動かせます。 */
+const SKIN_SORT_IDS = ["default", "name", "used", "recent"];
+const SKIN_ONLY_IDS = ["", "fav", "recent", "hidden"];
+let skinQuery = "";          /* 検索欄の文字（保存はしない。開き直すと空） */
+let skinFindWired = false;   /* 入力欄の配線は1回だけ */
+function skinSearchText(id, s) {
+  const label = s.label || {}, desc = s.desc || {};
+  return [id, ...Object.values(label), ...Object.values(desc), ...(Array.isArray(s.cat) ? s.cat : [])]
+    .filter(v => typeof v === "string").join(" ").toLowerCase();
+}
+/* 空白で区切った語は「すべて含む」で一致（例：「明朝 dark」） */
+function skinMatchesQuery(id, s, query) {
+  const words = String(query || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const text = skinSearchText(id, s);
+  return words.every(w => text.includes(w));
+}
+/* 📚 trk274：巻の一覧（`js/skins-volumes.js` が入れた SKIN_VOLUMES）。無ければ空。
+   巻の目録は**データ**なので、選んだ巻に属する ID をそのまま使います。 */
+function skinVolumes() {
+  const v = window.Trk && window.Trk.data && window.Trk.data.SKIN_VOLUMES;
+  return Array.isArray(v) ? v : [];
+}
+/* 📚 trk275（レビュー R4）：巻の題名は目録では**日本語**でした。画面の言語に合わせて出します
+   （辞書に無い巻は目録の題名をそのまま）。 */
+const SKIN_VOL_NAME_KEYS = {
+  "vol-01": "skinVolNameVol01", "vol-02": "skinVolNameVol02", "vol-03": "skinVolNameVol03",
+  "vol-04": "skinVolNameVol04", "vol-05": "skinVolNameVol05", "vol-06": "skinVolNameVol06",
+  imported: "skinVolNameImported",   /* 📚 trk326：取り込んだ巻 */
+  "vol-07": "skinVolNameVol07", "vol-08": "skinVolNameVol08", "vol-09": "skinVolNameVol09",
+  "vol-10": "skinVolNameVol10", glitch: "skinVolNameGlitch", wizard: "skinVolNameWizard", other: "skinVolNameOther",
+};
+function skinVolTitle(g) {
+  if (!g) return "";
+  const key = SKIN_VOL_NAME_KEYS[g.id];
+  if (key) { const t = tr(key); if (t && t !== key) return t; }
+  return g.title || g.id || "";
+}
+/* ⚖ trk281：段ごとに、既定の棚へ出すスキンのカテゴリ（ご相談 2026-11-03）。
+   ・シンプル／スタンダード＝定番・書体・ダーク・ライト・グラデ（ミクの 4 種は「定番」に入っています）
+   ・プロ＝＋遊び心
+   ・マスター＝＋みやすさ・生活
+   ・ウィザード＝＋ウィザード（初見の驚きは、この段で。wizard の巻も既定の棚に戻ります）
+   巻を選んだとき・ALL のときは掛けません（選んだものは全部見せる）。
+   ウィザードの段だけは、既定の棚に wizard の巻も戻ります（trk280 で外した「定番＋ウィザード」）。 */
+const SKIN_LEVEL_CATS = {
+  simple:   ["basic", "type", "dark", "light", "grad"],
+  standard: ["basic", "type", "dark", "light", "grad"],
+  pro:      ["basic", "type", "dark", "light", "grad", "fun"],
+  master:   ["basic", "type", "dark", "light", "grad", "fun", "access", "life"],
+  wizard:   ["basic", "type", "dark", "light", "grad", "fun", "access", "life", "wizard"],
+};
+/* その段で、そのスキンを既定の棚に出してよいか。純粋関数。 */
+function skinLevelAllows(cats, level) {
+  const allowed = SKIN_LEVEL_CATS[level] || SKIN_LEVEL_CATS.standard;
+  const list = Array.isArray(cats) && cats.length ? cats : ["basic"];
+  return list.some(c => allowed.includes(c));
+}
+
+/* 絞り込み（カテゴリ・⭐・🕒・🚫・巻・検索）と並べ替えを、1か所で決める */
+function skinShelfEntries(skins, opt) {
+  const o = opt || {}, cat = o.cat || "all", only = o.only || "";
+  const fav = new Set(o.fav || []), hidden = new Set(o.hidden || []);
+  const use = o.use || {}, last = o.last || {}, locale = o.locale || "ja";
+  const nameOf = id => { const s = skins[id]; return String((s.label && (s.label[locale] || s.label.en)) || id); };
+  const byName = (a, b) => nameOf(a[0]).localeCompare(nameOf(b[0]), locale) || a[0].localeCompare(b[0]);
+  /* 📚 trk274：巻の絞り込み。"" は**定番＋ウィザードだけ**（vol.1〜10・glitch は選んだときだけ）、
+     "all" は全部、それ以外はその巻の ID だけ。純粋関数のまま（テストから同じものを動かせる） */
+  const volumes = Array.isArray(o.volumes) ? o.volumes : [];
+  const vol = o.vol || "";
+  /* 📚 trk275（レビュー M2）：⭐・🕒・🚫 の絞り込みと検索は、**巻の外も見る**。
+     trk241 の「いま使っているスキンは棚に残す」と同じ考え方で、
+     絞り込みを掛けているときに巻で切り落とすと「消えた」ように見えるためです。 */
+  const acrossVolumes = only === "fav" || only === "recent" || only === "hidden" || String(o.query || "").trim() !== "";
+  let volSet = null, outside = null;
+  if (!acrossVolumes && vol && vol !== "all") {
+    const g = volumes.find(x => x && x.id === vol);
+    if (g && Array.isArray(g.ids)) volSet = new Set(g.ids);
+  }
+  const defaultVol = !acrossVolumes && !volSet && vol !== "all";   /* "" と知らない巻名＝既定の棚 */
+  if (defaultVol) {
+    /* "" （既定）と、知らない巻名（古い保存・目録が減ったとき）は同じ扱い＝**定番だけ**。
+       ⚖ trk280：ご相談「ウィザードは定番＋ウィザードから外す（初見の驚きを残す）」により、
+       wizard も既定の棚から外しました（📚 の巻で wizard を選んだとき・ALL では見えます）。 */
+    outside = new Set();
+    for (const g of volumes) {
+      /* 📚 trk326：取り込んだ巻（imported）は利用者が自分で入れたものなので、既定の棚にも残す */
+      if (!g || g.id === "other" || g.id === "imported") continue;
+      /* ⚖ trk281：ウィザードの段では、wizard の巻を既定の棚に戻す（5 段目だけの特権） */
+      if (o.level === "wizard" && g.id === "wizard") continue;
+      for (const id of Array.isArray(g.ids) ? g.ids : []) outside.add(id);
+    }
+  }
+  const out = [];
+  for (const [id, s] of Object.entries(skins)) {
+    if (cat !== "all" && !skinCatList(s).includes(cat)) continue;
+    /* 📚 trk275：**いま当てているスキン**は、選んだ巻の外でも棚に残す（M2-a） */
+    const inUse = id === o.current;
+    if (volSet && !volSet.has(id) && !inUse) continue;
+    if (outside && outside.has(id) && !inUse) continue;
+    /* ⚠ 差し戻し（目録の色のまま）は**既定の棚に出さない**（ALL と、その巻では見える）。
+       選んでいるとき・絞り込みのときは消さない（M2 と同じ理由） */
+    /* 差し戻し（目録へお返し中）は、**明示的にその巻を選んだとき**と ALL だけ（Q2）。
+     知らない巻名・巻の目録が読めないときは「選んでいない」扱いで外します。 */
+  if (s.holdback && !inUse && vol !== "all" && !(volSet && volSet.has(id))) continue;
+    /* ⚖ trk280：既定の棚にはウィザードを出さない（巻の目録が読めないときも同じ。
+       目録が無いと巻で切れないので、カテゴリで外します）。 */
+    if (defaultVol && !inUse && o.level !== "wizard" && skinCatList(s).includes("wizard")) continue;
+    /* ⚖ trk281：既定の棚は、段（シンプル〜ウィザード）でカテゴリを絞る */
+    if (defaultVol && !inUse && !skinLevelAllows(skinCatList(s), o.level)) continue;
+    /* 隠したスキンは「🚫 隠した」を見ているときだけ出す。
+       ⚠ trk241：**いま使っているスキンだけは、隠しても棚に残す**（消えたように見えると、
+          当たっているのに「効かない」と誤解されるため。印は 🚫 で出す）。 */
+    if (only === "fav") { if (!fav.has(id)) continue; }
+    else if (only === "recent") { if (!(last[id] > 0)) continue; }
+    else if (only === "hidden") { if (!hidden.has(id)) continue; }
+    else if (hidden.has(id) && id !== o.current) continue;
+    if (!skinMatchesQuery(id, s, o.query)) continue;
+    out.push([id, s]);
+  }
+  /* ⚖ trk281：⭐ を付けたスキンは棚の先頭へ（隠しません。並びだけ）。
+     並べ方を選んでいるときは、その並びを尊重して動かしません。 */
+  if ((!o.sort || o.sort === "default") && fav.size) {
+    out.sort((a, b) => (fav.has(b[0]) ? 1 : 0) - (fav.has(a[0]) ? 1 : 0));
+  }
+  if (o.sort === "name") out.sort(byName);
+  else if (o.sort === "used") out.sort((a, b) => (use[b[0]] || 0) - (use[a[0]] || 0) || byName(a, b));
+  else if (o.sort === "recent") out.sort((a, b) => (last[b[0]] || 0) - (last[a[0]] || 0) || byName(a, b));
+  return out;
+}
+/* ⭐・🚫 の切り替え（保存して棚を作り直す） */
+function toggleSkinList(key, id) {
+  const set = new Set(Array.isArray(settings[key]) ? settings[key] : []);
+  if (set.has(id)) set.delete(id); else set.add(id);
+  settings[key] = cleanSkinIdList([...set]);
+  saveUserPrefs(); buildSkinGrid();
+}
+/* ---------- 🧺 trk241：棚の出し入れを、棚からも整理からも、まとめても ----------
+   利用者の相談：「スキンの数を作ると、デフォルトで入っている使わないものに煩わしさを与えてしまう」
+   　→ **削除ではなく、スキンごとに一時的な非表示**（trk229 の 🚫 を、もっと軽く・安全に）。
+   決めたこと：
+     ・隠すのは**この端末の設定だけ**（スキンそのものは消さない。当てることもできる）
+     ・**いま使っているスキンは隠しても棚に残す**（使用中の印。効かないと誤解されないため）
+     ・**最後の 1 種は隠せない**（棚が空になると「スキンが消えた」に見える）
+     ・隠した数は棚の下に必ず出し、そこから 1 タップで戻せる
+     ・まとめて隠せるのは**使ったことのないスキン**だけ（使っているものは人の判断に残す） */
+const SKIN_MANAGE_FILTERS = ["all", "fav", "hidden", "unused"];
+/* 隠してよいか（棚に残るものが 1 種も無くならないか）。純粋関数。 */
+function skinCanHide(skins, id, hidden, current) {
+  const hid = new Set(Array.isArray(hidden) ? hidden : []);
+  if (hid.has(id)) return { ok:true, reason:"" };      /* もう隠れている＝何もしない（戻す側の操作） */
+  const ids = Object.keys(skins || {});
+  if (!ids.includes(id)) return { ok:false, reason:"unknown" };
+  /* 隠したあとに棚へ残る数（いま使っているスキンを隠すときは、棚に残す決まりなので 1 は残る） */
+  const left = ids.filter(x => !hid.has(x) && x !== id).length;
+  const keepCurrent = current === id ? 1 : 0;
+  if (left + keepCurrent <= 0) return { ok:false, reason:"last" };
+  return { ok:true, reason:"" };
+}
+/* 隠した状態を変える（1 種）。保存して棚を作り直し、結果を返す。 */
+function setSkinHidden(id, on) {
+  const hid = new Set(settings.skinHidden);
+  if (on) {
+    const g = skinCanHide(window.Trk.data.SKINS, id, settings.skinHidden, settings.skin);
+    if (!g.ok) return g;
+    hid.add(id);
+  } else hid.delete(id);
+  settings.skinHidden = cleanSkinIdList([...hid]);
+  saveUserPrefs(); buildSkinGrid();
+  return { ok:true, reason:"" };
+}
+/* 整理の一覧に出す行（検索・絞り込み・名前順）。純粋関数。 */
+function skinManageRows(skins, opt) {
+  const o = opt || {}, filter = SKIN_MANAGE_FILTERS.includes(o.filter) ? o.filter : "all";
+  const fav = new Set(o.fav || []), hid = new Set(o.hidden || []), use = o.use || {};
+  const locale = o.locale || "ja";
+  const nameOf = id => String((skins[id].label && (skins[id].label[locale] || skins[id].label.en)) || id);
+  const rows = [];
+  for (const id of Object.keys(skins || {})) {
+    const used = Number(use[id]) || 0;
+    if (filter === "fav" && !fav.has(id)) continue;
+    if (filter === "hidden" && !hid.has(id)) continue;
+    if (filter === "unused" && used > 0) continue;
+    if (!skinMatchesQuery(id, skins[id], o.query)) continue;
+    rows.push(id);
+  }
+  return rows.sort((a, b) => nameOf(a).localeCompare(nameOf(b), locale) || a.localeCompare(b));
+}
+/* まとめて隠す／戻す。純粋関数。
+   mode:"unused"＝使ったことのない（いま使っているもの・⭐・もう隠しているものは除く）を隠す
+   mode:"restore"＝隠しているものを全部戻す */
+function skinBulkPlan(skins, opt) {
+  const o = opt || {}, hid = new Set(o.hidden || []), fav = new Set(o.fav || []), use = o.use || {};
+  const ids = Object.keys(skins || {});
+  if (o.mode === "restore") return { ids: ids.filter(id => hid.has(id)), mode:"restore" };
+  const target = ids.filter(id => !hid.has(id) && id !== o.current && !fav.has(id) && !(Number(use[id]) > 0));
+  /* 隠したあとに棚が空にならないよう、残る数を確かめてから（多すぎるときは後ろから削る） */
+  const visible = ids.filter(id => !hid.has(id)).length;
+  const room = Math.max(0, visible - 1 - (o.current && !hid.has(o.current) ? 0 : 0));
+  return { ids: target.slice(0, room), mode:"unused" };
+}
+function wireSkinFind() {
+  if (skinFindWired) return;
+  const q = $("skinSearch"), sort = $("skinSort");
+  if (!q || !sort) return;
+  skinFindWired = true;
+  q.addEventListener("input", () => { skinQuery = q.value; buildSkinGrid(); });
+  sort.addEventListener("change", () => {
+    settings.skinSort = pick(sort.value, SKIN_SORT_IDS, "default"); saveUserPrefs(); buildSkinGrid();
+  });
+  /* 📚 trk274：巻の絞り込み。<select> は**どのブラウザでも効く**控えめな入口、
+     popover のパネルは同じ値を選ぶ近道（G-1） */
+  const volSel = $("skinVol");
+  if (volSel) volSel.addEventListener("change", () => { setSkinVol(volSel.value); });
+  wireSkinVolKeys();
+  const volPanel = $("skinVolPanel"), volBtn = $("skinVolBtn");
+  if (volPanel) {
+    /* popover を知らないブラウザ（古い Safari など）では、出しっぱなしにせず**隠す**。
+       その場合も <select> で選べるので、用は足ります */
+    if (typeof volPanel.showPopover !== "function") {
+      volPanel.hidden = true;
+      if (volBtn) volBtn.hidden = true;
+    } else {
+      volPanel.hidden = false;
+      if (volBtn) volBtn.hidden = false;
+    }
+  }
+}
+/* ==================== ⌨ trk276：📚 をキーで動かす ====================
+   ご要望：上下を含む 4 方向を**アサイン**できて、**使わない**設定も選べる。
+   縦読み（縦書き）の本を読む人は「↓ が次」なので、読み方向を切り替えます。
+   - row（横書き）：← → が読み順（行の端は次の行へ）／↑ ↓ は同じ列の前後の行
+   - col（縦書き）：↑ ↓ が読み順（列の端は次の列の先頭へ）／← → は同じ行の前後の列
+   端では止まります（回り込まない）。移動は**フォーカスだけ**（Enter／Space で決定）。 */
+
+/* 見た目の格子を読む（幅で列数が変わるので、固定の列数にはしない） */
+function volLayout(rects) {
+  const tol = 4, rows = [];
+  const order = rects.map((r, i) => i).sort((a, b) => rects[a].top - rects[b].top || rects[a].left - rects[b].left);
+  for (const i of order) {
+    const r = rects[i];
+    let row = rows.find(x => Math.abs(x.top - r.top) <= tol);
+    if (!row) { row = { top: r.top, items: [] }; rows.push(row); }
+    row.items.push(i);
+  }
+  rows.sort((a, b) => a.top - b.top);
+  for (const row of rows) row.items.sort((a, b) => rects[a].left - rects[b].left);
+  const cols = rows.reduce((n, row) => Math.max(n, row.items.length), 0);
+  const pos = [];
+  rows.forEach((row, ri) => row.items.forEach((idx, ci) => { pos[idx] = { ri, ci }; }));
+  const byRow = rows.flatMap(row => row.items);            /* 横書きの読み順 */
+  const byCol = [];                                        /* 縦書きの読み順（列ごと） */
+  for (let ci = 0; ci < cols; ci++) for (const row of rows) if (row.items[ci] !== undefined) byCol.push(row.items[ci]);
+  return { rows, cols, pos, byRow, byCol };
+}
+/* move: left／right／up／down。返り値は移動先の index（無ければ -1）。
+   wrap=true なら、端の次は**反対側の端**へ（「端から反対側へ回り込む」） */
+function volMove(rects, i, move, mode, wrap) {
+  const n = Array.isArray(rects) ? rects.length : 0;
+  if (!n) return -1;
+  if (!(i >= 0 && i < n)) return 0;
+  const L = volLayout(rects), p = L.pos[i];
+  if (!p) return -1;
+  const lastRow = L.rows.length - 1, lastCol = L.cols - 1;
+  /* 同じ行の ci 列目（その行が短ければ、いちばん右の札に寄せる） */
+  const at = (ri, ci) => {
+    const row = L.rows[ri];
+    if (!row || !row.items.length || L.cols === 0) return -1;
+    return row.items[Math.min(Math.max(ci, 0), row.items.length - 1)];
+  };
+  const seq = mode === "col" ? L.byCol : L.byRow;
+  const k = seq.indexOf(i);
+  /* 読み順（横書き＝← →、縦書き＝↑ ↓） */
+  if ((mode === "col" && (move === "up" || move === "down")) || (mode !== "col" && (move === "left" || move === "right"))) {
+    const d = (move === "right" || move === "down") ? 1 : -1;
+    if (k < 0) return -1;
+    const to = k + d;
+    if (to >= 0 && to < seq.length) return seq[to];
+    if (!wrap) return -1;
+    return d > 0 ? seq[0] : seq[seq.length - 1];
+  }
+  /* 直交（横書き＝↑ ↓、縦書き＝← →） */
+  if (mode === "col") {
+    const to = p.ci + (move === "left" ? -1 : 1);
+    if (to >= 0 && to <= lastCol) return at(p.ri, to);
+    if (!wrap) return -1;
+    return at(p.ri, move === "left" ? lastCol : 0);
+  }
+  const to = p.ri + (move === "up" ? -1 : 1);
+  if (to >= 0 && to <= lastRow) return at(to, p.ci);
+  if (!wrap) return -1;
+  return at(move === "up" ? lastRow : 0, p.ci);
+}
+/* 押されたキー → 4 方向のどれか（アサインを見る） */
+function volMoveOf(code) {
+  if (!code) return "";
+  if (code === settings.skinVolKeyL) return "left";
+  if (code === settings.skinVolKeyR) return "right";
+  if (code === settings.skinVolKeyU) return "up";
+  if (code === settings.skinVolKeyD) return "down";
+  return "";
+}
+let skinVolKeysWired = false, volKeyListening = "";
+function skinVolCards() {
+  const list = $("skinVolList");
+  return list ? [...list.querySelectorAll('[role="radio"]')] : [];
+}
+/* 4 つのキーの見せ方（アサインのボタン・読み方向の入切）を、いまの設定に合わせる */
+function renderSkinVolKeys() {
+  const on = settings.skinVolNav !== "off";
+  /* ほかの選択肢（.seg）と同じ印＝.selected＋aria-pressed にそろえます */
+  document.querySelectorAll("[data-volnav]").forEach(b => {
+    const sel = (b.dataset.volnav === "off") !== on;
+    b.classList.toggle("selected", sel); b.setAttribute("aria-pressed", String(sel));
+  });
+  document.querySelectorAll("[data-voldir]").forEach(b => {
+    const sel = b.dataset.voldir === settings.skinVolDir;
+    b.classList.toggle("selected", sel); b.setAttribute("aria-pressed", String(sel));
+  });
+  document.querySelectorAll("[data-volwrap]").forEach(b => {
+    const sel = b.dataset.volwrap === settings.skinVolWrap;
+    b.classList.toggle("selected", sel); b.setAttribute("aria-pressed", String(sel));
+  });
+  for (const k of ["L", "R", "U", "D"]) {
+    const b = document.querySelector(`[data-volkey="${k}"]`);
+    if (!b) continue;
+    const listening = volKeyListening === k;
+    b.textContent = listening ? tr("skinVolKeysListening") : formatKey(settings["skinVolKey" + k]);
+    b.classList.toggle("listening", listening);
+    b.setAttribute("aria-pressed", String(listening));
+  }
+  const box = $("skinVolKeyPad"), dirBox = $("skinVolDirRow");
+  for (const node of [box, dirBox]) if (node) node.toggleAttribute("data-off", !on);
+}
+/* アサインを決める（Esc は取り消し。ほかの向きと重なったら入れ替える） */
+function setSkinVolKey(kind, code) {
+  if (!["L", "R", "U", "D"].includes(kind) || !validCode(code)) return false;
+  const key = "skinVolKey" + kind;
+  const old = settings[key];
+  for (const [k, name] of [["L", "skinVolKeyL"], ["R", "skinVolKeyR"], ["U", "skinVolKeyU"], ["D", "skinVolKeyD"]]) {
+    if (name !== key && settings[name] === code) settings[name] = old;   /* 重なりは入れ替え */
+  }
+  settings[key] = code;
+  saveUserPrefs(); renderSkinVolKeys();
+  return true;
+}
+function setSkinVolNav(on) {
+  settings.skinVolNav = on ? "on" : "off";
+  saveUserPrefs(); renderSkinVolKeys();
+}
+function setSkinVolDir(dir) {
+  settings.skinVolDir = dir === "col" ? "col" : "row";
+  saveUserPrefs(); renderSkinVolKeys();
+}
+const SKIN_VOL_WRAP_IDS = ["stop", "wrap", "chain"];
+function setSkinVolWrap(mode) {
+  settings.skinVolWrap = pick(mode, SKIN_VOL_WRAP_IDS, "stop");
+  saveUserPrefs(); renderSkinVolKeys();
+}
+/* 一覧の中の 1 枚へフォーカスを移す（roving tabindex も一緒に） */
+function focusVolCard(cards, idx) {
+  if (!Array.isArray(cards) || !cards[idx]) return;
+  cards.forEach((c, i) => { c.tabIndex = i === idx ? 0 : -1; });
+  cards[idx].focus();
+}
+/* 連読：端の次を「次の本（巻）」へつなぐ。パネルは開いたまま、その本の先頭／末尾へ */
+function volChainStep(forward) {
+  const target = volChainTarget(skinVolBooks(), settings.skinShelfVol, forward);
+  if (!target) return false;                       /* 既定・ALL は「本」が決まらないので回り込みへ */
+  selectSkinVol(target);
+  const cards = skinVolCards();
+  focusVolCard(cards, forward ? 0 : cards.length - 1);
+  const g = skinVolumes().find(x => x && x.id === target);
+  announceVolText(tr(forward ? "skinVolChainedNext" : "skinVolChainedPrev", {
+    name: skinVolTitle(g), n: cards.length,
+  }));
+  return true;
+}
+function wireSkinVolKeys() {
+  if (skinVolKeysWired) return;
+  const list = $("skinVolList");
+  if (!list) return;
+  skinVolKeysWired = true;
+  /* 矢印キー：フォーカスだけ移す（決定は Enter／Space＝button の標準の動き） */
+  list.addEventListener("keydown", e => {
+    if (settings.skinVolNav === "off") return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    let move = volMoveOf(keyCodeOf(e) || e.code);
+    if (!move && (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      move = e.key.slice(5).toLowerCase();       /* アサインを外した矢印は、そのまま格子の向き */
+    }
+    if (!move) return;
+    const cards = skinVolCards();
+    const from = cards.indexOf(document.activeElement);
+    if (from < 0) return;
+    const dir = settings.skinVolDir;
+    /* 読み進む向きか（横書き＝→、縦書き＝↓） */
+    const forward = dir === "col" ? move === "down" : move === "right";
+    const backward = dir === "col" ? move === "up" : move === "left";
+    const rects = cards.map(c => { const r = c.getBoundingClientRect(); return { top: r.top, left: r.left }; });
+    const plain = volMove(rects, from, move, dir, false);
+    e.preventDefault();
+    if (plain >= 0) { focusVolCard(cards, plain); return; }
+    /* ここから端。stop＝止まる／wrap＝反対側へ回り込む／chain＝次の本へ続ける（連読） */
+    const mode = settings.skinVolWrap;
+    if (mode === "stop") return;
+    const wrapped = volMove(rects, from, move, dir, true);
+    if (mode === "wrap") {
+      if (wrapped >= 0) {
+        focusVolCard(cards, wrapped);
+        /* 「先頭に戻りました」「末尾に戻りました」（伝わる言い方で） */
+        announceVolText(tr(forward || move === "down" || move === "right" ? "skinVolWrappedTop" : "skinVolWrappedBottom"));
+      }
+      return;
+    }
+    /* chain：読み軸の向きだけ、次の本（巻）へ。本が決まらない（既定・ALL）ときは回り込み */
+    if ((forward || backward) && volChainStep(forward)) return;
+    if (wrapped >= 0) {
+      focusVolCard(cards, wrapped);
+      announceVolText(tr(forward || move === "down" || move === "right" ? "skinVolWrappedTop" : "skinVolWrappedBottom"));
+    }
+  });
+  /* フォーカスが入ったら、そこを Tab の入口にする（roving） */
+  list.addEventListener("focusin", e => {
+    const cards = skinVolCards(), i = cards.indexOf(e.target);
+    if (i < 0) return;
+    cards.forEach((c, k) => { c.tabIndex = k === i ? 0 : -1; });
+  });
+  /* 入切・読み方向 */
+  document.querySelectorAll("[data-volnav]").forEach(b => b.addEventListener("click", () => setSkinVolNav(b.dataset.volnav !== "off")));
+  document.querySelectorAll("[data-voldir]").forEach(b => b.addEventListener("click", () => setSkinVolDir(b.dataset.voldir)));
+  document.querySelectorAll("[data-volwrap]").forEach(b => b.addEventListener("click", () => setSkinVolWrap(b.dataset.volwrap)));
+  /* 4 方向のアサイン：押したら「キーを押してください」で待つ */
+  document.querySelectorAll("[data-volkey]").forEach(b => b.addEventListener("click", () => {
+    volKeyListening = volKeyListening === b.dataset.volkey ? "" : b.dataset.volkey;
+    renderSkinVolKeys();
+    if (volKeyListening) b.blur();
+  }));
+  /* 待っている間のキーは、ここで受け取る（設定を閉じる Esc より先に） */
+  addEventListener("keydown", e => {
+    if (!volKeyListening) return;
+    const kind = volKeyListening;
+    e.preventDefault(); e.stopPropagation();
+    if (e.key === "Escape") { volKeyListening = ""; renderSkinVolKeys(); return; }
+    const code = keyCodeOf(e) || e.code;
+    if (!validCode(code)) return;
+    volKeyListening = "";
+    setSkinVolKey(kind, code);
+  }, true);
+  renderSkinVolKeys();
+}
+/* 棚に出している枚数（読み上げに使う） */
+let skinShownCount = 0;
+/* 状態の行に 1 文を出す（読み上げは #skinVolStatus の aria-live が行う） */
+function announceVolText(text) {
+  const box = $("skinVolStatus");
+  if (!box) return;
+  box.textContent = "";
+  requestAnimationFrame(() => { box.textContent = text; });
+}
+/* 本（巻）の並び。"" と "all" は「本」ではないので、連読では使いません */
+function skinVolBooks() {
+  return skinVolumes().map(g => g && g.id).filter(Boolean);
+}
+/* 連読：前の本／次の本（端は反対側へつなぐ＝最後の本の次は最初の本） */
+function volChainTarget(books, cur, forward) {
+  const list = Array.isArray(books) ? books.filter(Boolean) : [];
+  const i = list.indexOf(cur);
+  if (i < 0 || !list.length) return "";
+  return list[(i + (forward ? 1 : -1) + list.length) % list.length];
+}
+/* 巻を切り替えた結果を、見た目と同時に読み上げる（G-3・aria-live） */
+function announceSkinVol(vol) {
+  const box = $("skinVolStatus");
+  if (!box) return;
+  const volumes = skinVolumes();
+  const g = volumes.find(x => x && x.id === vol);
+  const name = vol === "" ? tr("skinVolDefault") : vol === "all" ? tr("skinVolAll") : (g ? skinVolTitle(g) : vol);
+  const text = tr("skinVolShown", { name, n: skinShownCount });
+  box.textContent = "";                       /* 同じ文でも読み上げ直されるように、いったん空へ */
+  requestAnimationFrame(() => { box.textContent = text; });
+}
+/* 巻を選ぶ（保存して棚を作り直す）。"" は定番＋ウィザード、"all" は全部 */
+/* 選ぶだけ（パネルは閉じない）。連読で「次の本へ移る」ときに使います */
+function selectSkinVol(vol) {
+  const volumes = skinVolumes();
+  const known = ["", "all", ...volumes.map(g => g && g.id).filter(Boolean)];
+  settings.skinShelfVol = known.includes(vol) ? vol : "";
+  saveUserPrefs();
+  buildSkinGrid();
+  return settings.skinShelfVol;
+}
+function setSkinVol(vol) {
+  selectSkinVol(vol);
+  announceSkinVol(settings.skinShelfVol);
+  const panel = $("skinVolPanel");
+  if (panel && typeof panel.hidePopover === "function" && panel.matches(":popover-open")) {
+    panel.hidePopover();
+    /* ⌨ trk276：パネルが閉じたら、開いたボタンへフォーカスを戻す（キーだけで往復できる） */
+    const btn = $("skinVolBtn");
+    if (btn && !btn.hidden) btn.focus();
+  }
+}
+/* 巻の <select> と popover のパネルを、いまの目録から作り直す */
+/* 📚 trk275：巻の絞り込みで**実際に出る枚数**（既定・ALL・各巻）を数える。
+   レビュー M3/R6：「定番＋ウィザード」に全体の数（291）が入っていた／
+   「（115／291）」と言いながら実際は 114 枚だった、を同じ数え方で揃えます。 */
+function skinVolCount(skins, volumes, vol) {
+  return skinShelfEntries(skins, {
+    vol, volumes, locale: lang, fav: [], hidden: [], use: {}, last: {}, level: settings.setLevel,
+  }).length;
+}
+function buildSkinVolControls(volumes, skins) {
+  const sel = $("skinVol");
+  if (sel) {
+    const want = settings.skinShelfVol || "";
+    const opts = [["", tr("skinVolDefault")], ["all", tr("skinVolAll")],
+      ...volumes.map(g => [g.id, `${skinVolTitle(g)}（${g.ids.length}）`])];
+    sel.textContent = "";
+    for (const [value, label] of opts) {
+      const o = document.createElement("option");
+      o.value = value; o.textContent = label;
+      sel.append(o);
+    }
+    sel.value = opts.some(([v]) => v === want) ? want : "";
+  }
+  const list = $("skinVolList");
+  if (list) {
+    list.textContent = "";
+    /* 1 つだけ選ぶものなので radiogroup／radio（レビュー R5） */
+    list.setAttribute("role", "radiogroup");
+    const add = (value, label, count) => {
+      const b = el("button", "skinVolCard");
+      b.type = "button";
+      b.setAttribute("role", "radio");
+      b.classList.toggle("on", (settings.skinShelfVol || "") === value);
+      b.setAttribute("aria-checked", String((settings.skinShelfVol || "") === value));
+      b.append(el("b", "", label), el("small", "", tr("skinVolItems", { n: count })));
+      b.addEventListener("click", () => setSkinVol(value));
+      /* ⌨ trk276：選ばれている 1 枚だけ Tab で止まる（roving tabindex）。
+         ほかは Tab では飛ばし、矢印キーで移ります（15 枚を Tab で渡らせない） */
+      b.tabIndex = (settings.skinShelfVol || "") === value ? 0 : -1;
+      list.append(b);
+    };
+    add("", tr("skinVolDefault"), skinVolCount(skins, volumes, ""));
+    add("all", tr("skinVolAll"), skinVolCount(skins, volumes, "all"));
+    for (const g of volumes) {
+      /* 最後の 2 巻（定番・ウィザード）は仲間なので、区切りを 1 行入れてから並べる（レビュー R7）。
+         ⚖ trk280：既定の棚は「定番」だけになりました（wizard はここで選んだときだけ）。 */
+      if (g.id === "wizard") {
+        const sep = el("p", "hint skinVolSep");
+        sep.textContent = tr("skinVolGroupClassic");
+        list.append(sep);
+      }
+      add(g.id, skinVolTitle(g), g.ids.length);
+    }
+    /* どれも選ばれていない（知らない巻名など）ときは先頭を Tab の入口に */
+    if (!list.querySelector('[role="radio"][tabindex="0"]')) {
+      const first = list.querySelector('[role="radio"]');
+      if (first) first.tabIndex = 0;
+    }
+  }
+  renderSkinVolKeys();
+}
 function buildSkinGrid() {
   const grid = $("skinGrid"); if (!grid) return;
+  wireSkinFind();
   grid.textContent = "";
+  const skins = window.Trk.data.SKINS;
   /* 棚のチップ（そのカテゴリーに属するスキンがないときはチップ自体を出さない） */
-  const cats = new Set(); for (const s of Object.values(window.Trk.data.SKINS)) skinCatList(s).forEach(c => cats.add(c));
+  const cats = new Set(); for (const s of Object.values(skins)) skinCatList(s).forEach(c => cats.add(c));
   const cat = settings.skinShelfCat !== "all" && cats.has(settings.skinShelfCat) ? settings.skinShelfCat : "all";
+  const only = SKIN_ONLY_IDS.includes(settings.skinShelfOnly) ? settings.skinShelfOnly : "";
   const chips = $("skinChips");
   if (chips) {
     chips.textContent = "";
+    const addChip = (label, isOn, onPick) => {
+      const c = el("button", "skinChip"); c.type = "button"; c.textContent = label;
+      c.classList.toggle("on", isOn); c.setAttribute("aria-pressed", String(isOn));
+      c.addEventListener("click", onPick); chips.append(c);
+    };
     for (const [id, key] of SKIN_CATS) {
       if (id !== "all" && !cats.has(id)) continue;
-      const c = el("button", "skinChip"); c.type = "button"; c.textContent = tr(key);
-      c.classList.toggle("on", id === cat); c.setAttribute("aria-pressed", String(id === cat));
-      c.addEventListener("click", () => { settings.skinShelfCat = id; saveUserPrefs(); buildSkinGrid(); });
-      chips.append(c);
+      addChip(tr(key), id === cat && only !== "hidden", () => {
+        settings.skinShelfCat = id; if (only === "hidden") settings.skinShelfOnly = ""; saveUserPrefs(); buildSkinGrid();
+      });
+    }
+    /* ⭐ お気に入り・🕒 最近・🚫 隠した（押すと絞り込み、もう一度押すと解除）
+       🧺 trk241：⭐ と 🚫 は**数を添える**（隠したことに気づけるように。0 のときは数えません） */
+    const recentN = Object.keys(skins).filter(id => settings.skinLast[id] > 0).length;
+    const favN = (Array.isArray(settings.skinFav) ? settings.skinFav : []).filter(id => has(skins, id)).length;
+    const hidN = (Array.isArray(settings.skinHidden) ? settings.skinHidden : []).filter(id => has(skins, id)).length;
+    for (const [val, key, n] of [["fav", "skinOnlyFav", favN], ["recent", "skinOnlyRecent", recentN], ["hidden", "skinOnlyHidden", hidN]]) {
+      addChip(n > 0 ? tr(key + "N", { n }) : tr(key), only === val, () => {
+        settings.skinShelfOnly = only === val ? "" : val; saveUserPrefs(); buildSkinGrid();
+      });
     }
   }
-  const count = $("skinShelfCount"); if (count) count.textContent = `（${Object.keys(window.Trk.data.SKINS).length}）`;
-  for (const [id, s] of Object.entries(window.Trk.data.SKINS)) {
-    if (cat !== "all" && !skinCatList(s).includes(cat)) continue;
+  const volumes = skinVolumes();
+  const totalSkins = Object.keys(skins).length;
+  buildSkinVolControls(volumes, skins);
+  /* 知らない巻名（古い保存・目録が減った）は既定に戻し、**状態の行に 1 行**出す（レビュー Q3） */
+  const wantVol = settings.skinShelfVol || "";
+  const volKnown = !wantVol || wantVol === "all" || volumes.some(g => g && g.id === wantVol);
+  const vol = volKnown ? wantVol : "";
+  const list = skinShelfEntries(skins, {
+    cat, only, query: skinQuery, sort: settings.skinSort, locale: lang, current: settings.skin,
+    fav: settings.skinFav, hidden: settings.skinHidden, use: settings.skinUse, last: settings.skinLast,
+    vol, volumes, level: settings.setLevel
+  });
+  const total = Object.keys(skins).length;
+  skinShownCount = list.length;
+  const count = $("skinShelfCount");
+  if (count) count.textContent = list.length === total ? `（${total}）` : tr("skinCountShown", { shown: list.length, all: total });
+  const volStatus = $("skinVolStatus");
+  if (volStatus && !volKnown) volStatus.textContent = tr("skinVolUnknown");
+  const noMatch = $("skinNoMatch"); if (noMatch) noMatch.hidden = list.length > 0;
+  /* 🧺 trk241：隠しているものがあるときは、棚の下に数と「戻す」を必ず出す（隠しっぱなしにしない） */
+  const note = $("skinHiddenNote"), noteText = $("skinHiddenNoteText"), noteBtn = $("skinHiddenRestore");
+  if (note && noteText && noteBtn) {
+    const n = (Array.isArray(settings.skinHidden) ? settings.skinHidden : []).filter(id => has(skins, id)).length;
+    note.hidden = n === 0;
+    if (n > 0) {
+      noteText.textContent = tr("skinHiddenNote", { n });
+      noteBtn.textContent = tr("skinHiddenRestore");
+      noteBtn.setAttribute("aria-label", tr("skinHiddenRestore"));
+      noteBtn.onclick = () => { settings.skinShelfOnly = "hidden"; saveUserPrefs(); buildSkinGrid(); };
+    }
+  }
+  const favSet = new Set(settings.skinFav), hidSet = new Set(settings.skinHidden);
+  const marks = id => (favSet.has(id) ? "⭐ " : "") + (hidSet.has(id) ? "🚫 " : "");
+  for (const [id, s] of list) {
     if (s.locked && !settings.skinGradUnlocked) {   /* ❓ ごほうびスキン（スタンプ5つで解禁）は、正体不明カードで出す */
       const q = el("button", "skinCard locked"); q.type = "button"; q.disabled = true; q.title = tr("skinLockedHint");
       q.style.setProperty("--sk-bg", "#10142a"); q.style.setProperty("--sk-text", "var(--ui-muted)"); q.style.setProperty("--sk-border", "var(--ui-border)");
       q.append(el("b", "", "❓ ？？？"), el("small", "", tr("skinLockedHint")));
-      grid.append(q); continue;
+      /* trk275（レビュー R6）：数（115）と描いた枚数がずれないよう、こちらも .skinCell で包む */
+      const lockedCell = el("div", "skinCell");
+      lockedCell.append(q);
+      grid.append(lockedCell); continue;
     }
+    const cell = el("div", "skinCell");          /* 🧺 trk241：カード＋⭐／🚫 の小さなボタン */
     const b = el("button", "skinCard"); b.type = "button"; b.dataset.skin = id;
     b.style.setProperty("--sk-bg", s.game.stage); b.style.setProperty("--sk-text", s.ui["--ui-text"]);
     b.style.setProperty("--sk-border", s.ui["--ui-border"]);
-    if (s.font) b.style.fontFamily = s.font;
-    if (s.custom || s.pack) b.append(el("span", "skinTag", s.pack ? "PACK" : tr("customTag")));
+    skinCardType(b, s);
+    if (s.custom || s.pack || s.imported) b.append(el("span", "skinTag", s.pack ? "PACK" : s.imported ? tr("skinImportedTag") : tr("customTag")));
+    /* 📚 trk326：意図した低コントラストのスキンは、理由の前に警告の印を出す（合格証ではない） */
+    if (s.readability === "intentional-low") b.append(el("span", "skinTag", tr("skinLowReadTag")));
     const dots = el("span", "dots");
     for (const c of [s.ui["--ui-accent"], s.ui["--ui-gold"], s.ui["--ui-text"]]) { const d = el("i", "dot square"); d.style.background = c; dots.append(d); }
-    b.append(dots, el("b", "", s.label[lang] || s.label.en), el("small", "", (s.desc && (s.desc[lang] || s.desc.en)) || ""));
+    b.append(dots, el("b", "", marks(id) + (s.label[lang] || s.label.en)));
+    const spec = skinSpecNode(s); if (spec) b.append(spec);
+    b.append(el("small", "", (s.desc && (s.desc[lang] || s.desc.en)) || ""));
+    if (s.holdback) b.append(el("small", "skinHoldback", tr("skinHoldbackNote")));
+    /* trk293：目録の「意図した低コントラスト」の理由（宣言があるスキンだけ）。合格証ではなく、差し戻しの判定は変えない */
+    if (s.readability === "intentional-low" && s.readabilityReason) b.append(el("small", "skinHoldback", s.readabilityReason[lang] || s.readabilityReason.en || ""));
     b.classList.toggle("selected", id === settings.skin); b.setAttribute("aria-pressed", id === settings.skin);
     b.addEventListener("click", () => applySkin(id));
-    grid.append(b);
+    const quick = el("div", "skinQuick");
+    const qFav = el("button", "skinQuickBtn", favSet.has(id) ? "⭐" : "☆");
+    qFav.type = "button"; qFav.title = tr(favSet.has(id) ? "skinFavOff" : "skinFavOn");
+    qFav.setAttribute("aria-label", qFav.title); qFav.setAttribute("aria-pressed", String(favSet.has(id)));
+    qFav.addEventListener("click", () => toggleSkinList("skinFav", id));
+    const qHide = el("button", "skinQuickBtn", hidSet.has(id) ? "👁" : "🚫");
+    qHide.type = "button"; qHide.title = tr(hidSet.has(id) ? "skinShowAction" : "skinHideAction");
+    qHide.setAttribute("aria-label", qHide.title); qHide.setAttribute("aria-pressed", String(hidSet.has(id)));
+    qHide.addEventListener("click", () => {
+      const r = setSkinHidden(id, !hidSet.has(id));
+      if (!r.ok) skinToast(tr("skinCantHideLast"));
+    });
+    quick.append(qFav, qHide);
+    cell.append(b, quick);
+    grid.append(cell);
+  }
+  buildSkinManage();
+}
+/* 🧺 棚の横に置く「整理」の一覧（名前・回数・最後に使った日時・⭐・🚫）
+   🧺 trk241：スキンが増えたときのために、**一覧にも さがす・絞り込み・まとめて**を足しました。 */
+/* 画面の短い通知（js/render.js の showToast を、window.Trk.play から呼ぶ） */
+const skinToast = text => { try { const p = window.Trk && window.Trk.play; if (p && typeof p.showToast === "function") p.showToast(text); } catch (_) {} };
+let skinManageQuery = "";              /* 整理の一覧の検索語（保存しない） */
+let skinManageFilter = "all";          /* all／fav／hidden／unused（保存しない） */
+let skinManageWired = false;
+function wireSkinManage() {
+  if (skinManageWired) return;
+  const q = $("skinManageSearch"), f = $("skinManageFilter"),
+    bHide = $("skinManageHideUnused"), bRestore = $("skinManageRestoreAll");
+  if (!q || !f) return;
+  skinManageWired = true;
+  q.addEventListener("input", () => { skinManageQuery = q.value; buildSkinManage(); });
+  f.addEventListener("change", () => {
+    skinManageFilter = SKIN_MANAGE_FILTERS.includes(f.value) ? f.value : "all"; buildSkinManage();
+  });
+  if (bHide) bHide.addEventListener("click", () => {
+    const plan = skinBulkPlan(window.Trk.data.SKINS, {
+      mode:"unused", hidden:settings.skinHidden, fav:settings.skinFav, use:settings.skinUse, current:settings.skin,
+    });
+    if (!plan.ids.length) { skinToast(tr("skinBulkNone")); return; }
+    settings.skinHidden = cleanSkinIdList([...settings.skinHidden, ...plan.ids]);
+    saveUserPrefs(); buildSkinGrid();
+    skinToast(tr("skinHiddenDone", { n:plan.ids.length }));
+  });
+  if (bRestore) bRestore.addEventListener("click", () => {
+    const plan = skinBulkPlan(window.Trk.data.SKINS, { mode:"restore", hidden:settings.skinHidden });
+    if (!plan.ids.length) { skinToast(tr("skinBulkNone")); return; }
+    const back = new Set(plan.ids);
+    settings.skinHidden = cleanSkinIdList(settings.skinHidden.filter(id => !back.has(id)));
+    saveUserPrefs(); buildSkinGrid();
+    skinToast(tr("skinRestoredDone", { n:plan.ids.length }));
+  });
+}
+function buildSkinManage() {
+  const box = $("skinManageList"); if (!box) return;
+  box.textContent = "";
+  wireSkinManage();
+  const skins = window.Trk.data.SKINS;
+  const fav = new Set(settings.skinFav), hid = new Set(settings.skinHidden);
+  const nameOf = id => String(skins[id].label[lang] || skins[id].label.en);
+  /* 絞り込みの選択と、まとめて操作の数を毎回そろえる */
+  const filterSel = $("skinManageFilter");
+  if (filterSel && SKIN_MANAGE_FILTERS.includes(skinManageFilter)) filterSel.value = skinManageFilter;
+  const ids = skinManageRows(skins, {
+    query: skinManageQuery, filter: skinManageFilter, locale: lang,
+    fav: settings.skinFav, hidden: settings.skinHidden, use: settings.skinUse,
+  });
+  const searchEl = $("skinManageSearch");
+  if (searchEl && searchEl.value !== skinManageQuery) searchEl.value = skinManageQuery;
+  const unusedPlan = skinBulkPlan(skins, { mode:"unused", hidden:settings.skinHidden, fav:settings.skinFav, use:settings.skinUse, current:settings.skin });
+  const restorePlan = skinBulkPlan(skins, { mode:"restore", hidden:settings.skinHidden });
+  const hideUnusedBtn = $("skinManageHideUnused"), restoreBtn = $("skinManageRestoreAll"), manageCount = $("skinManageCount");
+  if (hideUnusedBtn) {
+    hideUnusedBtn.textContent = tr("skinManageHideUnused", { n:unusedPlan.ids.length });
+    hideUnusedBtn.disabled = unusedPlan.ids.length === 0;
+  }
+  if (restoreBtn) {
+    restoreBtn.textContent = tr("skinManageRestoreAll", { n:restorePlan.ids.length });
+    restoreBtn.disabled = restorePlan.ids.length === 0;
+  }
+  if (manageCount) {
+    const all = Object.keys(skins).length;
+    manageCount.textContent = ids.length === all ? `（${all}）` : tr("skinManageCount", { shown:ids.length, all });
+  }
+  const empty = $("skinManageNothing"); if (empty) empty.hidden = ids.length > 0;
+  for (const id of ids) {
+    const row = el("div", "skinRow" + (hid.has(id) ? " isHidden" : ""));
+    const meta = el("small", "skinRowMeta");
+    const used = settings.skinUse[id] || 0, last = settings.skinLast[id] || 0;
+    let when = tr("skinNever");
+    try { if (last) when = new Date(last).toLocaleDateString(lang); } catch (_) {}
+    meta.textContent = `${tr("skinUsedTimes", { n: used })} · ${when}`;
+    const favBtn = el("button", "miniBtn", fav.has(id) ? "⭐" : "☆");
+    favBtn.type = "button"; favBtn.title = tr(fav.has(id) ? "skinFavOff" : "skinFavOn");
+    favBtn.setAttribute("aria-pressed", String(fav.has(id)));
+    favBtn.addEventListener("click", () => toggleSkinList("skinFav", id));
+    const hideBtn = el("button", "miniBtn", hid.has(id) ? "👁" : "🚫");
+    hideBtn.type = "button"; hideBtn.title = tr(hid.has(id) ? "skinShowAction" : "skinHideAction");
+    hideBtn.setAttribute("aria-pressed", String(hid.has(id)));
+    /* 🧺 trk241：最後の 1 種は隠せない（棚が空になると「消えた」に見えるため） */
+    hideBtn.addEventListener("click", () => {
+      const r = setSkinHidden(id, !hid.has(id));
+      if (!r.ok) skinToast(tr("skinCantHideLast"));
+    });
+    const name = (fav.has(id) ? "⭐ " : "") + nameOf(id) + (id === settings.skin ? "・" + tr("skinInUseMark") : "");
+    row.append(el("b", "", name), meta, favBtn, hideBtn);
+    box.append(row);
   }
 }
 /* 背景映像のフィルター：スキン／表示スタイルの色味 → 暗さ → ぼかし の順に重ねる */
@@ -1192,11 +2251,34 @@ function applySkin(id, persist = true) {
   if (has(window.Trk.data.SKINS, id) && window.Trk.data.SKINS[id].locked && !settings.skinGradUnlocked) id = "shadow";   /* 🔒 ごほうびスキンは、スタンプ5つで解禁されるまで当てられない */
   settings.skin = has(window.Trk.data.SKINS, id) ? id : "shadow";
   const s = skin(), root = document.documentElement.style;
-  for (const [k, v] of Object.entries(s.ui)) root.setProperty(k, v);
+  /* 🧺 trk229：使った回数と日時をこの端末だけに記録する（起動時の復元 persist=false では数えない） */
+  if (persist) {
+    settings.skinUse[settings.skin] = Math.min(1e9, (settings.skinUse[settings.skin] || 0) + 1);
+    settings.skinLast[settings.skin] = Date.now();
+  }
+  /* 📚 trk326（R-SKIN-1）：旧配色を持つスキンで、利用者が「旧配色を使う」を選んだときだけ、ui を旧配色にする。
+     既定は目録の新配色（コントラスト適合後）。game（舞台・ノーツ）は変えない = 旧配色の範囲を狭くする。 */
+  const legacyOn = s.legacyUi && Array.isArray(settings.skinLegacy) && settings.skinLegacy.includes(settings.skin);
+  const uiSet = legacyOn ? Object.assign({}, s.ui, s.legacyUi) : s.ui;
+  for (const [k, v] of Object.entries(uiSet)) root.setProperty(k, v);
   /* 🔤 小さな文字に使うアクセント色（入れ子の欄でも 4.5:1。足りているスキンは --ui-accent と同じ） */
-  root.setProperty("--ui-accent-ink", window.Trk.data.accentInk(s.ui));
+  root.setProperty("--ui-accent-ink", window.Trk.data.accentInk(uiSet));
   root.setProperty("--stage-bg", s.game.stage); root.setProperty("--hud-text", s.game.ink);
-  root.setProperty("--hud-shadow", s.game.inkShadow); root.setProperty("--font", s.font || window.Trk.data.FONT_DEFAULT);
+  /* 🔤 書体パック（trk232）：パックが持ち込んだ書体を、いま使うスキンの --font の先頭に置く
+     （そのパックのスキンを使っているとき／スキンを持たない書体パックのとき。外すと空になる） */
+  const packFont = window.Trk.packFont && typeof window.Trk.packFont.forSkin === "function" ? window.Trk.packFont.forSkin(settings.skin) : "";
+  root.setProperty("--hud-shadow", s.game.inkShadow); root.setProperty("--font", (packFont ? packFont + "," : "") + (s.font || window.Trk.data.FONT_DEFAULT));
+  /* 🔤 書体スキン（trk228）：見出しの書体・太さ・字間・行間。持っていないスキンは inherit（＝これまで通り） */
+  const ty = s.type || null;
+  root.setProperty("--font-title", (ty && ty.title) || "inherit");
+  root.setProperty("--font-title-weight", (ty && ty.titleWeight) || "revert");   /* revert＝h1/h2 はブラウザ既定の太字に戻す */
+  root.setProperty("--font-title-space", (ty && ty.titleSpace) || "inherit");
+  root.setProperty("--font-title-transform", (ty && ty.titleTransform) || "none");
+  root.setProperty("--font-weight", (ty && ty.weight) || "inherit");
+  root.setProperty("--font-lh", (ty && ty.lh) || "inherit");
+  /* 🔤 trk246：書体の組み合わせ（CSS 変数2本）。スキンの --font を読み替えるので、後に置きます。
+     選んでいないときは body.trk-typo-on を外すだけ（＝この行があるかないかで見た目が不変） */
+  try { if (window.Trk.typography) window.Trk.typography.apply(settings.typography); } catch (_) {}
   root.setProperty("--j-perfect", s.game.perfect); root.setProperty("--j-good", s.game.good); root.setProperty("--j-miss", s.game.miss);
   applyNoteVars();
   document.documentElement.dataset.skin = settings.skin;
@@ -1304,6 +2386,119 @@ function setPhase(p) {
   updateTouchKeys();
   emit("phase", p);
 }
+/* ---------- 🖥 trk222：拡大率とアイコンの大きさを、画面へ反映する ----------
+   ・拡大率は 50／75／100／125 の4つだけ（それ以外の保存値は 100 として扱う＝壊れた設定で崩れない）。
+   ・「アイコンの大きさは100%で固定」がオンのときは、アイコンだけ拡大率のぶん割り戻す
+     （--trk-icon-zoom = 1/拡大率）。絵文字のアイコンが拡大で崩れるのを避けるため。
+   ・ステージの拡大は fitStage() が行う（design サイズを 1/拡大率 に縮めて、その分だけ拡大）。 */
+const UI_SCALES = [50, 75, 100, 125];
+function uiScaleValue() {
+  const n = Number(typeof settings !== "undefined" && settings ? settings.uiScale : 100);
+  return UI_SCALES.includes(n) ? n : 100;
+}
+/* 🧱 trk244：表示の密度（余白・行間・列数の詰め具合）。
+   利用者さんの相談：「PC版では縮小化しても表示部分を減らして、全体の大きさを維持する等」
+   　→ 拡大率の「75%・50%」を、**文字を小さくする**のではなく**余白と行間を詰めて、1画面に多く出す**に
+   使えるようにしました（`uiScaleCompact`。既定オン）。125% は trk222 と同じ「文字を大きく」のまま。
+   段は 4 つ：roomy（ゆったり）／normal（ふつう）／compact（ぎゅっと）／dense（ぎっしり）。
+   考え方：Clementine や MusicBee は、窓を小さくしても文字を小さくせず、
+   　行の高さやサイドバーの詰め方だけを変える設計です（一覧は見やすさを保ったまま行数だけ増える）。
+   実装：JS は body へ trk-density-<段> を1つ乗せるだけ。余白・行間・棚の列数は CSS が決めます
+   　（css/style.css §trk244）。font-size はどこでも変えないので、文字は読める大きさのままです。 */
+const UI_DENSITIES = ["roomy", "normal", "compact", "dense"];
+/* 設定の欄に出すchoices（auto は「窓の広さに合わせる」）。body のクラスは上の4つだけ */
+const UI_DENSITY_CHOICES = ["auto", "roomy", "normal", "compact", "dense"];
+/* 「縮小＝詰める」がオンのとき、拡大率が密度の段になる表。
+   125% は「字を大きくしたい」方の設定なので、密度は据え置き（ふつう）にします */
+const DENSITY_BY_SCALE = { 50:"dense", 75:"compact", 100:"normal", 125:"normal" };
+/* 縮小を「詰めて多く見せる」に使うか（既定オン）。オフにすると、これまでどおり全体を小さく描きます */
+function uiScaleCompactOn() { return settings.uiScaleCompact !== false; }
+/* 拡大率が「縮小」側か（詰める対象にするのは 75%・50% の2つだけ） */
+function uiScaleShrinks(percent) { const n = Number(percent); return n === 50 || n === 75; }
+/* 拡大率から決める密度の段（純粋関数）。知らない値は 100% として扱う */
+function densityFromScale(percent) {
+  const n = Number(percent);
+  return DENSITY_BY_SCALE[UI_SCALES.includes(n) ? n : 100];
+}
+/* いま密度が拡大率から自動で決まっているか（75%・50% のとき。設定画面で「下の選択は使いません」と伝えるため） */
+function uiDensityAuto() { return uiScaleCompactOn() && uiScaleShrinks(uiScaleValue()); }
+/* 🪟 trk245：窓の広さから密度を決める（純粋関数）。数式は「短い辺の2乗＝画面の面積」で、
+   　単位は 100 万 px²（1.0 = 1000×1000 相当）。狭いほど詰める＝Clementine／MusicBee の自動のまね。 */
+const DENSITY_WINDOW_STEPS = [[2.6, "roomy"], [1.0, "normal"], [0.45, "compact"]];
+const DENSITY_WINDOW_NARROW = 900;    // これより**幅が**狭い（半画面・小さな窓）はもう1段詰める
+function densityFromWindow(width, height) {
+  const w = Number(width), h = Number(height);
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return "normal";
+  const mpx = (w * h) / 1e6;
+  let level = "dense";
+  for (const [min, name] of DENSITY_WINDOW_STEPS) { if (mpx >= min) { level = name; break; } }
+  if (w < DENSITY_WINDOW_NARROW) {
+    const i = UI_DENSITIES.indexOf(level);
+    level = UI_DENSITIES[Math.min(UI_DENSITIES.length - 1, i + 1)];   // 1段だけ詰める方へ
+  }
+  return level;
+}
+/* 📐 trk245：曲リストの高さ（設計px）。カードの中身（バナー・見出し・ツール・詳細欄）がだいたい 440px
+   　なので、ステージの設計高さからそれを引いたぶんをリストに返す。狭い（拡大率 125%）なら短く、
+   　広い（50%）なら長く。スマホ型は CSS が実ピクセルで並べるので、ここで高さを固定しない。 */
+const LIB_LIST_PAD = 440, LIB_LIST_MIN = 320, LIB_LIST_MAX = 900;
+function libListHeight(designHeight) {
+  const h = Number(designHeight);
+  if (!Number.isFinite(h) || h <= 0) return LIB_LIST_MIN;
+  return Math.max(LIB_LIST_MIN, Math.min(LIB_LIST_MAX, Math.round(h - LIB_LIST_PAD)));
+}
+/* いま効いている密度：①75%・50%の「縮小＝詰める」が最優先、②settings.uiDensity が auto なら窓の広さ、
+   　③それ以外は選んだ段。知らない値は auto として扱う（既定と同じ窓に落ちる） */
+/* 窓の大きさ（vm・ workers・古い環境でも落ちないように、無いものは 0 として扱う） */
+function uiWindowSize() {
+  let w = NaN, h = NaN;
+  try { w = Number(innerWidth); h = Number(innerHeight); } catch (_) {}
+  if (!(w > 0 && h > 0)) {
+    try { w = Number(window.innerWidth); h = Number(window.innerHeight); } catch (_) {}
+  }
+  return { width: Number.isFinite(w) ? w : 0, height: Number.isFinite(h) ? h : 0 };
+}
+function uiDensityValue() {
+  if (uiDensityAuto()) return densityFromScale(uiScaleValue());
+  const stored = UI_DENSITY_CHOICES.includes(settings.uiDensity) ? settings.uiDensity : "auto";
+  if (stored !== "auto") return stored;
+  const box = uiWindowSize();
+  return densityFromWindow(box.width, box.height);
+}
+/* 密度のクラスだけをそろえる（リサイズでも見直す。保存も作り直しもしない） */
+function applyDensityClasses() {
+  const density = uiDensityValue();
+  if (document.body) {
+    for (const level of UI_DENSITIES) document.body.classList.toggle("trk-density-" + level, density === level);
+  }
+  return density;
+}
+function applyUiScale({ persist = false } = {}) {
+  const percent = uiScaleValue();
+  settings.uiScale = percent;
+  /* 縮小＝詰める がオンで、拡大率が 75%・50% のときだけ、ステージを小さく描きません
+     （文字と全体の大きさは 100% のまま、余白と行間だけを詰めて多く出す） */
+  const packed = uiDensityAuto();
+  const z = packed ? 1 : percent / 100;
+  const root = document.documentElement;
+  root.style.setProperty("--trk-ui-zoom", String(z));
+  const iconsFixed = settings.fixedIconSize !== false;
+  root.style.setProperty("--trk-icon-zoom", String(iconsFixed ? 1 / z : 1));
+  if (document.body) {
+    document.body.classList.toggle("trk-zoom", z !== 1);
+    document.body.classList.toggle("trk-icon-fixed", iconsFixed);
+    document.body.classList.toggle("trk-scale-compact", packed);
+  }
+  const density = applyDensityClasses();   /* 直後の fitStage() が --trk-lib も見直す */
+  fitStage();
+  /* 棚の列数・行の高さ・余白は、密度のクラス（trk-density-*）を受けた CSS が決める（css/style.css）。
+     DOM を作り直さなくてよいので、設定を開いたまま密度を変えても棚のスクロール位置は残ります。 */
+  if (persist) saveUserPrefs();
+  emit("uiscale", percent);
+  emit("density", density);
+  return percent;
+}
+
 const SCREENS = ["selectScreen", "settingsScreen", "pauseScreen", "endScreen"];
 function showScreen(id) {
   SCREENS.forEach(s => { $(s).hidden = s !== id; });
@@ -1324,6 +2519,36 @@ const SETTING_ENUM_KEYS = ["specStyle", "specTheme", "mmdMotionKind", "fxPreset"
   "liteMode", "liteFps", "liteMascot", "liteScale", "liteLibRows", "trkTabName", "chartGen", "mediaKeepLimit", "midiSoundProfile", "midiMixProfile"];
 /* Importで弾いた理由（対応が変わるので、表示では区別して出す） */
 const SKIP_WHY = { enum:"prefSkipWhyId", type:"prefSkipWhyType", unknown:"prefSkipWhyUnknown", failed:"prefSkipWhyType" };
+/* trk247：設定JSONから「この版が知っているキー」だけを選び出す純関数。
+   ・1キーずつ型と列挙IDを見て、**合わなかったキーだけを返す**（他は捨てない）
+   ・`__proto__`／`constructor`／`prototype` は読む前に落とす（原型を汚さない）
+   ・`enumOk` が例外を投げたキーも「そのキーだけ」不適用にする（全体を失敗にしない）
+   返す `{ changes, rejected:[{ k, why }] }`。割り当てと保存は呼び出し側（runPrefsImport）。 */
+function pickImportedPrefs(data, base, enumOk, skip) {
+  const changes = {}, rejected = [];
+  if (!data || typeof data !== "object" || Array.isArray(data) || !base || typeof base !== "object") return { changes, rejected };
+  const reject = (k, why) => { rejected.push({ k, why }); };
+  for (const k of Object.keys(data)) {
+    if (UNSAFE_KEYS.has(k) || (skip && skip.includes(k))) continue;
+    if (!Object.prototype.hasOwnProperty.call(base, k)) { reject(k, "unknown"); continue; }
+    const current = base[k], incoming = data[k];
+    let sameShape = false;
+    try {
+      sameShape = Array.isArray(current) ? Array.isArray(incoming)
+        : current === null ? (incoming === null || typeof incoming === "string")
+        : current && typeof current === "object" ? !!incoming && typeof incoming === "object" && !Array.isArray(incoming)
+        : typeof incoming === typeof current && (typeof incoming !== "number" || Number.isFinite(incoming));
+    } catch (_) { sameShape = false; }
+    if (!sameShape) { reject(k, "type"); continue; }
+    if (SETTING_ENUM_KEYS.includes(k)) {
+      let ok = false;
+      try { ok = !!enumOk(k, incoming); } catch (_) { ok = false; }
+      if (!ok) { reject(k, "enum"); continue; }
+    }
+    changes[k] = incoming;
+  }
+  return { changes, rejected };
+}
 function validImportedSettingEnum(key, value) {
   if (typeof value !== "string") return false;
   const staticList = LITE_ENUM_VALUES[key] || TRK_ENUM_VALUES[key];
@@ -1405,6 +2630,98 @@ function renderStoragePersist(state) {
     setSt(() => "🛟 セーフモードにしました。映像OFF・ぼかし無し・TV初期化。ページを再読み込みします…（自動読み取り・プレビューなどは ?safe=1 のあいだだけ止めます）");
     setTimeout(()=> reloadInSafeMode(), 800);
   });
+  const applyFloatingSafeBtn = () => {
+    const fb = document.getElementById("floatingSafeBtn");
+    if (fb) fb.hidden = settings.showFloatingSafeBtn !== true;
+  };
+  applyFloatingSafeBtn();
+  const safeBtnChk = document.getElementById("showFloatingSafeBtn");
+  if (safeBtnChk) {
+    safeBtnChk.checked = settings.showFloatingSafeBtn === true;
+    safeBtnChk.addEventListener("change", () => {
+      settings.showFloatingSafeBtn = safeBtnChk.checked;
+      saveUserPrefs();
+      applyFloatingSafeBtn();
+    });
+  }
+
+  /* 🙈 設定を隠す（#hideSettingsPanel）：ユーザーが選んだ設定パネルを非表示にする */
+  const HIDE_EXEMPT = new Set(["hideSettingsPanel", "emergencyPanel"]);
+  const settingPanelKey = panel => {
+    if (!panel) return "";
+    if (panel.id) return panel.id;
+    const sum = [...panel.children].find(c => c.tagName === "SUMMARY");
+    const i18nKey = sum && (sum.dataset.i18n || (sum.querySelector("[data-i18n]") || {}).dataset?.i18n);
+    return i18nKey || (sum ? sum.textContent.trim().slice(0, 40) : "");
+  };
+  const settingPanelLabel = panel => {
+    const sum = [...panel.children].find(c => c.tagName === "SUMMARY");
+    return (sum ? sum.textContent.trim() : "") || panel.id || "";
+  };
+  const applyHiddenSettingPanels = () => {
+    const screen = document.getElementById("settingsScreen");
+    if (!screen) return;
+    const hiddenSet = new Set(Array.isArray(settings.hiddenSettingPanels) ? settings.hiddenSettingPanels : []);
+    for (const p of screen.querySelectorAll("details.panel")) {
+      const key = settingPanelKey(p);
+      p.classList.toggle("trk-user-hidden", !!key && !HIDE_EXEMPT.has(key) && hiddenSet.has(key));
+    }
+  };
+  const renderHideSettingsList = () => {
+    const screen = document.getElementById("settingsScreen");
+    const listEl = document.getElementById("hideSettingsList");
+    const statusEl = document.getElementById("hideSettingsStatus");
+    if (!screen || !listEl) return;
+    const hiddenSet = new Set(Array.isArray(settings.hiddenSettingPanels) ? settings.hiddenSettingPanels : []);
+    listEl.textContent = "";
+    const seen = new Set();
+    for (const p of screen.querySelectorAll("details.panel")) {
+      const key = settingPanelKey(p);
+      if (!key || HIDE_EXEMPT.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      const label = document.createElement("label");
+      label.className = "check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = hiddenSet.has(key);
+      cb.dataset.hidePanelKey = key;
+      cb.addEventListener("change", () => {
+        const next = new Set(Array.isArray(settings.hiddenSettingPanels) ? settings.hiddenSettingPanels : []);
+        if (cb.checked) next.add(key); else next.delete(key);
+        settings.hiddenSettingPanels = [...next];
+        saveUserPrefs();
+        applyHiddenSettingPanels();
+        if (statusEl) {
+          const n = settings.hiddenSettingPanels.length;
+          statusEl.textContent = n > 0 ? tr("hideSettingsCount", { n }) : tr("hideSettingsNone");
+        }
+      });
+      const span = document.createElement("span");
+      span.textContent = settingPanelLabel(p);
+      label.append(cb, span);
+      listEl.append(label);
+    }
+    if (statusEl) {
+      const n = settings.hiddenSettingPanels.length;
+      statusEl.textContent = n > 0 ? tr("hideSettingsCount", { n }) : tr("hideSettingsNone");
+    }
+  };
+  const hidePanel = document.getElementById("hideSettingsPanel");
+  const hideResetBtn = document.getElementById("hideSettingsResetBtn");
+  if (hideResetBtn) {
+    hideResetBtn.addEventListener("click", () => {
+      settings.hiddenSettingPanels = [];
+      saveUserPrefs();
+      applyHiddenSettingPanels();
+      renderHideSettingsList();
+    });
+  }
+  if (hidePanel) {
+    hidePanel.addEventListener("toggle", () => { if (hidePanel.open) renderHideSettingsList(); });
+  }
+  applyHiddenSettingPanels();
+  on("settings", () => { applyHiddenSettingPanels(); renderHideSettingsList(); });
+  on("language", () => { if (hidePanel && hidePanel.open) renderHideSettingsList(); });
   bind("emergencyTvResetBtn", () => {
     resetVideoPrefs(); saveUserPrefs();
     try { if (typeof view !== "undefined") view.style.filter = videoFilter(); } catch(_){}
@@ -1415,83 +2732,157 @@ function renderStoragePersist(state) {
     resetAudioPrefs(); saveUserPrefs();
     setSt(() => "🔊 音量・SE設定を初期化しました");
   });
-  bind("emergencyExportNotesBtn", () => { exportPrefs("notes"); setSt(() => "🎨 ノーツ設定を書き出しました"); });
-  bind("emergencyExportAllBtn", () => { exportPrefs("all"); setSt(() => "💾 全設定を書き出しました"); });
-  const imp = document.getElementById("emergencyImportFile");
+  bind("emergencyExportNotesBtn", () => runPrefsExport("notes", setSt));
+  bind("emergencyExportAllBtn", () => runPrefsExport("all", setSt));
+    /* trk247：読み込みの手続き本体は runPrefsImport（⚙ → 💾 端末の保存 と同じものを使う） */
+    const imp = document.getElementById("emergencyImportFile");
+    if (imp) {
+      imp.addEventListener("change", async () => {
+        const f = imp.files && imp.files[0]; if (!f) return;
+          try { await runPrefsImport(f, setSt); } finally { imp.value = ""; }
+      });
+    }
+})();
+
+/* ---------- 📤📥 trk247：設定の書き出し・読み込み（🛟 緊急復旧と ⚙ → 💾 端末の保存 が同じ手続きを使う） ----------
+   ・上限を読む前に見る（PREFS_IMPORT_MAX＝まるごとバックアップと同じ 20 MiB）
+   ・**1項目の失敗で全体を止めない**：壊れた項目だけ rejected に入れて、他は適用する
+     （trk246 まで：notes の検査が投げると外側の catch で終わり、読み込み失敗だけ残った）
+   ・報告 → 保存 → 再読み込み。未適用があるときだけ読む時間を取る */
+const PREFS_IMPORT_HANDLED = ["notes", "videoStyle", "tvDockSkin", "bgDim", "bgBlur", "tvParamFavs", "trkRemoved", "trkListed", "trkFixedNotice", "musicVolume", "musicVolumeRestore", "typography", "language", "remodernOptIn", "skinLegacy", "cliAdvance", "mediaGapless", "mediaCrossfade", "mediaQueueNext"];
+async function runPrefsImport(file, setSt) {
+  let applied = [], rejected = [];
+  try {
+    if (typeof file.size !== "number" || !Number.isFinite(file.size) || file.size < 0 || file.size > PREFS_IMPORT_MAX) {
+      setSt("prefImportTooBig", { mb: Math.round(PREFS_IMPORT_MAX / 1024 / 1024) });
+      return { applied, rejected };
+    }
+    const txt = await file.text();
+    let data = null;
+    try { data = JSON.parse(txt); } catch (_) { data = null; }
+    if (!data || typeof data !== "object" || Array.isArray(data)) { setSt("prefImportNotObject"); return { applied, rejected }; }
+    const hasImported = key => Object.prototype.hasOwnProperty.call(data, key);
+    /* 理由つきで記録する（「この端末に無いID」と「型が違う」では利用者の対応が変わる）。
+       ⚠ rejected に入るのは**表示用の文字列**なので、重複よけは別に生のキーで持つ。 */
+    const rejectedKeys = new Set();
+    const reject = (k, why) => {
+      if (rejectedKeys.has(k)) return;
+      rejectedKeys.add(k);
+      rejected.push(tr(SKIP_WHY[why] || SKIP_WHY.unknown, { k }));
+    };
+    /* 手書きの項目はここで1個ずつ試す。**ここで例外が出ても、その項目だけ捨てて次に進む** */
+    const attempt = (k, run) => {
+      try { if (run() !== false) applied.push(k); } catch (_) { reject(k, "failed"); }
+    };
+    attempt("notes", () => { if (!hasImported("notes")) return false; settings.notes = window.Trk.data.sanitizeNotes(data.notes); });
+    attempt("videoStyle", () => { const v = hasImported("videoStyle") ? pick(data.videoStyle, VIDEO_STYLE_IDS, "") : ""; if (!v) return false; settings.videoStyle = v; });
+    attempt("bgDim", () => { if (!(hasImported("bgDim") && typeof data.bgDim === "number")) return false; settings.bgDim = clampTvDim(data.bgDim); });
+    attempt("bgBlur", () => { if (!(hasImported("bgBlur") && typeof data.bgBlur === "number")) return false; settings.bgBlur = clampTvBlur(data.bgBlur); });
+    attempt("tvParamFavs", () => { if (!hasImported("tvParamFavs")) return false; settings.tvParamFavs = cleanTvParamFavorites(data.tvParamFavs); });
+    /* 🗑 trk の消した印・👁 曲画面の一覧は、要素（trk- で始まるID）まで検証してから代入する */
+    attempt("trkRemoved", () => { if (!(hasImported("trkRemoved") && Array.isArray(data.trkRemoved))) return false; settings.trkRemoved = cleanTrkRemoved(data.trkRemoved); });
+    attempt("trkListed", () => { if (!(hasImported("trkListed") && Array.isArray(data.trkListed))) return false; settings.trkListed = cleanTrkRemoved(data.trkListed); });
+    /* 📢 固定の案内を出した印も、1/0 だけ通す（これまで「読み込める項目」に入れていながら
+       毎度「未適用」に並んでいた。ここで扱うようにした） */
+    /* 🌗 言葉も、起動時と同じ4つだけ通す（違う値は「この端末に無いID」で報告する） */
+    attempt("language", () => {
+      if (!hasImported("language")) return false;
+      const v = pick(data.language, ["ja", "en", "zh", "ko"], "");
+      if (!v) { reject("language", "enum"); return false; }
+      settings.language = v;
+    });
+    attempt("trkFixedNotice", () => { if (!hasImported("trkFixedNotice")) return false; settings.trkFixedNotice = data.trkFixedNotice === 1 ? 1 : 0; });
+    /* 🔤 trk246：書体の組み合わせも同じ流儀（知らない組名は null＝使わない） */
+    attempt("typography", () => { if (!hasImported("typography")) return false; const t = window.Trk.typography ? window.Trk.typography.sanitize(data.typography) : null; if (t) settings.typography = t; if (window.Trk.typography) window.Trk.typography.apply(settings.typography); });
+    /* 🔤 trk326（R-REM-3）：書斎・基地のオプトイン（真偽だけを読む） */
+    /* 📚 trk326（R-SKIN-1）：旧配色を使うスキン（知っている ID だけ・最大 300） */
+    /* 📚 trk326（R-WIZ-1）：Advance Wizard 設定（禁止文字を含む語は捨てる。道具は js/cli.js と同じ判断） */
+    attempt("cliAdvance", () => {
+      if (!hasImported("cliAdvance") || !data.cliAdvance || typeof data.cliAdvance !== "object") return false;
+      const CLI = window.Trk && window.Trk.cli;
+      if (!CLI || typeof CLI.importAdvancePrefs !== "function") return false;
+      const r = CLI.importAdvancePrefs(data.cliAdvance);
+      if (!r.ok) return false;
+    });
+    /* 🎧 trk327：曲間のつなぎと手動キュー（知っている形だけ・勝手にオンにしない） */
+    attempt("mediaGapless", () => { if (!hasImported("mediaGapless")) return false; settings.mediaGapless = data.mediaGapless === true; });
+    attempt("mediaCrossfade", () => { if (!hasImported("mediaCrossfade")) return false; settings.mediaCrossfade = clampCrossfade(data.mediaCrossfade); });
+    attempt("mediaQueueNext", () => { if (!hasImported("mediaQueueNext")) return false; settings.mediaQueueNext = cleanMediaQueue(data.mediaQueueNext); });
+    attempt("skinLegacy", () => { if (!hasImported("skinLegacy")) return false; settings.skinLegacy = cleanSkinIdList(data.skinLegacy, 300); applySkin(settings.skin, false); });
+    attempt("remodernOptIn", () => { if (!hasImported("remodernOptIn")) return false; settings.remodernOptIn = window.TrkReModernRegions ? window.TrkReModernRegions.normalizeOptIn(data.remodernOptIn) : { study: false, base: false }; });
+    attempt("tvDockSkin", () => {
+      const ok = hasImported("tvDockSkin") && typeof data.tvDockSkin === "string" && window.TrkTV && typeof window.TrkTV.skins === "function" &&
+        window.TrkTV.skins().some(item => item && item.id === data.tvDockSkin);
+      if (!ok) return false;
+      settings.tvDockSkin = data.tvDockSkin;
+    });
+    attempt("musicVolume", () => { if (!(hasImported("musicVolume") && typeof data.musicVolume === "number")) return false;
+      settings.musicVolume = num(data.musicVolume, 0, 1, settings.musicVolume);
+      if (settings.musicVolume > 0) rememberMusicVolume(settings.musicVolume);
+    });
+    attempt("musicVolumeRestore", () => { if (!(hasImported("musicVolumeRestore") && typeof data.musicVolumeRestore === "number")) return false; settings.musicVolumeRestore = num(data.musicVolumeRestore, .01, 1, settings.musicVolumeRestore); });
+    /* 既知キー（型・列挙IDを通過したもの）をまとめて当てる。1キーの代入失敗もここで止める */
+    const picked = pickImportedPrefs(data, settings, validImportedSettingEnum, PREFS_IMPORT_HANDLED);
+    for (const k of Object.keys(picked.changes)) {
+      try { settings[k] = picked.changes[k]; applied.push(k); } catch (_) { reject(k, "failed"); }
+    }
+    /* 純関数が弾いた項目は、理由つきで報告へ（黙って捨てない） */
+    for (const item of picked.rejected) {
+      if (PREFS_IMPORT_HANDLED.includes(item.k) || ["videoStyle", "tvDockSkin"].includes(item.k)) continue;
+      reject(item.k, item.why);
+    }
+    /* 上の個別処理で黙って落としたキーも同じように報告する。
+       理由は落とし方ごとに決まる：videoStyle／tvDockSkin は許可リスト不一致、
+       それ以外（bgDim／bgBlur／musicVolume など）は型が合わなかったときだけ残る。 */
+    for (const k of Object.keys(data)) {
+      if (applied.includes(k) || rejectedKeys.has(k) || UNSAFE_KEYS.has(k)) continue;
+      reject(k, ["videoStyle", "tvDockSkin"].includes(k) ? "enum" : "type");
+    }
+    const keyList = keys => keys.slice(0, 12).join(", ") + (keys.length > 12 ? ` …+${keys.length - 12}` : "");
+    if (!saveUserPrefs()) {
+      /* 読み込みは通ったが、この端末に書き込めなかった（容量がいっぱい）。
+         再読み込みすると消えるので、**ここで止めて**言葉を返す（黙って元に戻さない） */
+      setSt("prefImportUnsaved", { list: keyList(applied) });
+      return { applied, rejected, saved: false };
+    }
+    try { applyNoteVars(); if (typeof view !== "undefined") view.style.filter = videoFilter(); } catch (_) {}
+  } catch (e) {
+    console.error(e);
+    setSt(() => "読み込み失敗: " + (e.message || e));
+    return { applied, rejected };
+  }
+  /* 長くなりすぎないよう先頭12件まで表示し、残りは件数だけ添える（表示は言語を選ばない記号のみ） */
+  if (rejected.length) setSt("prefImportedPartial", { list:keyList(applied), skipped:keyList(rejected) });
+  else setSt("prefImported", { list:keyList(applied) });
+  /* 未適用の告知は読む時間が要るので、そのときだけ再読み込みを遅らせる */
+  setTimeout(()=> location.reload(), rejected.length ? 2600 : 900);
+  return { applied, rejected, saved: true };
+}
+
+/* 設定を書き出す（ファイル名の日付は UTC）。保存状況の欄にバイト数を残すので、
+   「自分の書き出しが読み込めない」をその場で気付ける。 */
+function runPrefsExport(kind, setSt) {
+  const payload = prefsExportPayload(kind);
+  let bytes = 0;
+  try { bytes = new Blob([JSON.stringify(payload, null, 2)]).size; } catch (_) {}
+  try { downloadJSON(payload, `trk-${kind || "all"}-` + new Date().toISOString().slice(0,10) + ".json"); } catch (e) { console.error(e); }
+  const vars = { kb: Math.max(1, Math.round(bytes / 1024)), n: Object.keys(payload).length, mb: Math.round(PREFS_IMPORT_MAX / 1048576) };
+  setSt(kind === "notes" ? "prefExportedNotes" : kind === "core" ? "prefExportedCore" : "prefExportedAll", vars);
+}
+
+(function setupPrefsTransfer(){
+  const panel = document.getElementById("storagePanel");
+  if (!panel) return;
+  const status = (key, vars) => setStatus("storageTransferState", key, vars);
+  const bind = (id, fn) => { const n = document.getElementById(id); if (n) n.addEventListener("click", fn); };
+  bind("storageExportAllBtn", () => runPrefsExport("all", status));
+  bind("storageExportCoreBtn", () => runPrefsExport("core", status));
+  bind("storageExportNotesBtn", () => runPrefsExport("notes", status));
+  const imp = document.getElementById("storageImportFile");
   if (imp) {
     imp.addEventListener("change", async () => {
       const f = imp.files && imp.files[0]; if (!f) return;
-      try {
-        if (typeof f.size !== "number" || !Number.isFinite(f.size) || f.size < 0 || f.size > PREFS_IMPORT_MAX) {
-          throw new Error("設定ファイルは2 MiBまでです");
-        }
-        const txt = await f.text(); const data = JSON.parse(txt);
-        if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("設定JSONはオブジェクト形式にしてください");
-        let applied = [], rejected = [];
-        const hasImported = key => Object.prototype.hasOwnProperty.call(data, key);
-        if (hasImported("notes")) { settings.notes = window.Trk.data.sanitizeNotes(data.notes); applied.push("notes"); }
-        const importedVideoStyle = hasImported("videoStyle") ? pick(data.videoStyle, VIDEO_STYLE_IDS, "") : "";
-        if (importedVideoStyle) { settings.videoStyle = importedVideoStyle; applied.push("videoStyle"); }
-        if (hasImported("bgDim") && typeof data.bgDim === "number") { settings.bgDim = clampTvDim(data.bgDim); applied.push("bgDim"); }
-        if (hasImported("bgBlur") && typeof data.bgBlur === "number") { settings.bgBlur = clampTvBlur(data.bgBlur); applied.push("bgBlur"); }
-        if (hasImported("tvParamFavs")) { settings.tvParamFavs = cleanTvParamFavorites(data.tvParamFavs); applied.push("tvParamFavs"); }
-        /* 🗑 trk の消した印は、要素（trk- で始まるID）まで検証してから代入する */
-        if (hasImported("trkRemoved") && Array.isArray(data.trkRemoved)) { settings.trkRemoved = cleanTrkRemoved(data.trkRemoved); applied.push("trkRemoved"); }
-        /* 👁 trk218：曲画面の一覧に出す trk のリストも、ID を検証してから代入する */
-        if (hasImported("trkListed") && Array.isArray(data.trkListed)) { settings.trkListed = cleanTrkRemoved(data.trkListed); applied.push("trkListed"); }
-        const importedTvDockSkin = hasImported("tvDockSkin") && typeof data.tvDockSkin === "string" && window.TrkTV && typeof window.TrkTV.skins === "function" &&
-          window.TrkTV.skins().some(item => item && item.id === data.tvDockSkin) ? data.tvDockSkin : "";
-        if (importedTvDockSkin) { settings.tvDockSkin = importedTvDockSkin; applied.push("tvDockSkin"); }
-        if (hasImported("musicVolume") && typeof data.musicVolume === "number") {
-          settings.musicVolume = num(data.musicVolume, 0, 1, settings.musicVolume);
-          if (settings.musicVolume > 0) rememberMusicVolume(settings.musicVolume);
-          applied.push("musicVolume");
-        }
-        if (hasImported("musicVolumeRestore") && typeof data.musicVolumeRestore === "number") {
-          settings.musicVolumeRestore = num(data.musicVolumeRestore, .01, 1, settings.musicVolumeRestore);
-          applied.push("musicVolumeRestore");
-        }
-        /* 理由つきで記録する（「この端末に無いID」と「型が違う」では利用者の対応が変わる）。
-           ⚠ rejected に入るのは**表示用の文字列**なので、重複よけは別に生のキーで持つ。 */
-        const rejectedKeys = new Set();
-        const reject = (k, why) => {
-          if (rejectedKeys.has(k)) return;
-          rejectedKeys.add(k);
-          rejected.push(tr(SKIP_WHY[why] || SKIP_WHY.unknown, { k }));
-        };
-        // 既知キーだけを取り込み、型と列挙IDは代入前に検証する。
-        // ⚠ 弾いたキーは黙って捨てない（「読み込みました」なのに反映されない事故を防ぐ）。最後にまとめて報告する。
-        for (const k of Object.keys(data)) {
-          if (UNSAFE_KEYS.has(k) || ["notes", "videoStyle", "tvDockSkin", "bgDim", "bgBlur", "tvParamFavs", "trkRemoved", "trkListed", "trkFixedNotice", "musicVolume", "musicVolumeRestore"].includes(k) || applied.includes(k)) continue;
-          if (!Object.prototype.hasOwnProperty.call(settings, k)) { reject(k, "unknown"); continue; }
-          const current = settings[k], incoming = data[k];
-          const sameShape = Array.isArray(current) ? Array.isArray(incoming)
-            : current === null ? (incoming === null || typeof incoming === "string")
-            : current && typeof current === "object" ? !!incoming && typeof incoming === "object" && !Array.isArray(incoming)
-            : typeof incoming === typeof current && (typeof incoming !== "number" || Number.isFinite(incoming));
-          if (!sameShape) { reject(k, "type"); continue; }
-          if (SETTING_ENUM_KEYS.includes(k) && !validImportedSettingEnum(k, incoming)) { reject(k, "enum"); continue; }
-          try { settings[k] = incoming; applied.push(k); } catch(_){ reject(k, "failed"); }
-        }
-        /* 上の個別処理で黙って落としたキーも同じように報告する。
-           理由は落とし方ごとに決まる：videoStyle／tvDockSkin は許可リスト不一致、
-           それ以外（bgDim／bgBlur／musicVolume など）は型が合わなかったときだけ残る。 */
-        for (const k of Object.keys(data)) {
-          if (applied.includes(k) || rejectedKeys.has(k) || UNSAFE_KEYS.has(k)) continue;
-          reject(k, ["videoStyle", "tvDockSkin"].includes(k) ? "enum" : "type");
-        }
-        saveUserPrefs();
-        try { applyNoteVars(); if (typeof view !== "undefined") view.style.filter = videoFilter(); } catch(_){}
-        /* 長くなりすぎないよう先頭12件まで表示し、残りは件数だけ添える（表示は言語を選ばない記号のみ） */
-        const keyList = keys => keys.slice(0, 12).join(", ") + (keys.length > 12 ? ` …+${keys.length - 12}` : "");
-        if (rejected.length) setSt("prefImportedPartial", { list:keyList(applied), skipped:keyList(rejected) });
-        else setSt("prefImported", { list:keyList(applied) });
-        /* 未適用の告知は読む時間が要るので、そのときだけ再読み込みを遅らせる */
-        setTimeout(()=> location.reload(), rejected.length ? 2600 : 900);
-      } catch(e) {
-        console.error(e);
-        setSt(() => "読み込み失敗: " + (e.message || e));
-      } finally { imp.value = ""; }
+      try { await runPrefsImport(f, status); } finally { imp.value = ""; }
     });
   }
 })();
@@ -1633,7 +3024,7 @@ window.view = view;
 window.windows = windows;
 /* 領域（window.Trk.core）：コア状態の正規の場所。window直下の旧互換名は frozen js/fx.js が読む5件だけ。 */
 window.Trk = window.Trk || {};
-window.Trk.core = Object.assign(window.Trk.core || {}, { $, renderStoragePersist, storageLimitsIgnored, requestStoragePersist, storagePersistState, BEST_KEY, CAPTION_MS, CUSTOM_SKIN_MAX, KEY_PRESETS, PAD_DEFAULTS, SKIN_FORMAT, TRK_ENUM_VALUES, TV_PARAM_FAV_MAX, VIDEO_KEY_DEFAULTS, activeMascot, applyLanguage, applyNoteVars, baseName, buildSkinGrid, buildSkinNow, chartSummary, clampTvBlur, clampTvDim, cleanTvParamFavorites, closeSettings, ctx, customSkinDefs, downloadBlob, downloadJSON, el, emit, esc, extOf, fmtDate, fmtTime, fontFamily, formatKey, formatPadBind, fx, gameplayFxMultiplier, gameplayFxPower, hashString, idbStore, isPclMascot, keyCodeOf, keysLabel, laneCol, laneColor, laneName, modsUnranked, mulberry32, noteShape, num, on, openSettings, pick, prefsForSave, refreshSeedSecrets, rememberMusicVolume, renderAllStatuses, renderStatus, safeHttpUrl, safeLink, safeModeHref, safeName, saveCustomSkins, saveUserPrefs, savedSkinAtBoot, setPhase, setStatus, settings, showScreen, skin, slotLane, slotOfKey, stage, syncPickers, takeAmpReset, travelMs, updateChartButtons, updateKeyUI, updateTouchKeys, validCode, validPadBind, vctx, video, view, windows });
+window.Trk.core = Object.assign(window.Trk.core || {}, { cleanMediaQueue, clampCrossfade, $, applyUiScale, fitStage, uiScaleValue, UI_SCALES, UI_DENSITIES, UI_DENSITY_CHOICES, DENSITY_BY_SCALE, DENSITY_WINDOW_STEPS, densityFromScale, densityFromWindow, libListHeight, applyDensityClasses, uiDensityValue, uiDensityAuto, uiScaleCompactOn, uiScaleShrinks, renderStoragePersist, storageLimitsIgnored, requestStoragePersist, storagePersistState, BEST_KEY, CAPTION_MS, CUSTOM_SKIN_MAX, KEY_PRESETS, PAD_DEFAULTS, SKIN_FORMAT, TRK_ENUM_VALUES, TV_PARAM_FAV_MAX, VIDEO_KEY_DEFAULTS, activeMascot, applyLanguage, applyNoteVars, baseName, buildSkinGrid, buildSkinNow, chartSummary, clampTvBlur, clampTvDim, cleanTvParamFavorites, closeSettings, ctx, customSkinDefs, downloadBlob, downloadJSON, el, emit, esc, extOf, fmtDate, fmtTime, fontFamily, formatKey, formatPadBind, fx, gameplayFxMultiplier, gameplayFxPower, hashString, idbStore, isPclMascot, keyCodeOf, keysLabel, laneCol, laneColor, laneName, modsUnranked, mulberry32, noteShape, num, on, openSettings, pick, prefsForSave, refreshSeedSecrets, rememberMusicVolume, renderAllStatuses, renderStatus, safeHttpUrl, safeLink, safeModeHref, safeName, saveCustomSkins, saveUserPrefs, savedSkinAtBoot, setPhase, setStatus, settings, showScreen, skin, slotLane, slotOfKey, stage, syncPickers, takeAmpReset, travelMs, updateChartButtons, updateKeyUI, updateTouchKeys, validCode, validPadBind, vctx, video, view, windows });
 /* catch.js／stage.js はこの正規アクセサを差し替える（旧window.activeMods別名はtrk90で廃止）。 */
 Object.defineProperty(window.Trk.core, "activeMods", { configurable:true, get:() => activeMods, set:v => { activeMods = v; } });
 Object.defineProperty(window.Trk.core, "analysis", { configurable:true, get:() => analysis, set:v => { analysis = v; } });
@@ -1670,4 +3061,8 @@ Object.defineProperty(window.Trk.core, "seekDragging", { configurable:true, get:
 Object.defineProperty(window.Trk.core, "stats", { configurable:true, get:() => stats, set:v => { stats = v; } });
 Object.defineProperty(window.Trk.core, "videoFilter", { configurable:true, get:() => videoFilter, set:v => { videoFilter = v; } });
 Object.defineProperty(window.Trk.core, "videoReady", { configurable:true, get:() => videoReady, set:v => { videoReady = v; } });
+
+/* 🖥 ここまでで const・関数がすべて定義済み。最初の寸法合わせを 1 回だけ実行する
+   （先頭で呼ぶと TDZ で core.js が途中で止まる。上の addEventListener の直後の注記を参照）。 */
+fitStage();
 })();

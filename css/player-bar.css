@@ -1,0 +1,201 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+   画面の下に出す「再生バー」（js/player-bar.js）。
+
+   Clementine や VLC の下部プレイヤーのように、いまの曲名・再生／一時停止・曲送り・
+   再生位置・音量を、どの画面からでも1か所で扱えるようにします。
+
+   色はスキンが書き換える CSS変数（--ui-panel / --ui-accent / --ui-text …）だけを使うので、
+   スキンを変えるとバーも同じ色になります（バー専用の色は持ちません）。
+
+   body.trk-playerbar … js/player-bar.js が、バーを出しているあいだだけ付けます。
+   body.trk-playerbar-at-bottom … バーを画面のいちばん下に置いているあいだ（trk225）。
+   --trk-playerbar-h        … バーの高さ（実ピクセル。JS が測って入れます）
+   --trk-playerbar-offset   … バーの下の余白（スマホのシェルでは下部ナビのぶん）
+   --trk-playerbar-stage-h  … 高さをステージ座標（1920×1080 の縮小前）に直したもの
+   ========================================================================== */
+
+/* 🧱 trk255：表示の密度（trk244・trk245）を、下の再生バーにも効かせる。
+   余白・間隔・高さの床だけを詰め、**文字の大きさ（font-size）は変えない**（trk244 の約束）。
+   密度のクラスは js/core.js の applyUiScale() が body に1つだけ付けます。 */
+:root { --trk-pb-dens-pad: 1; --trk-pb-dens-gap: 1; --trk-pb-dens-h: 1; }
+body.trk-density-roomy { --trk-pb-dens-pad: 1.15; --trk-pb-dens-gap: 1.12; --trk-pb-dens-h: 1.08; }
+body.trk-density-compact { --trk-pb-dens-pad: .7; --trk-pb-dens-gap: .8; --trk-pb-dens-h: .92; }
+body.trk-density-dense { --trk-pb-dens-pad: .5; --trk-pb-dens-gap: .65; --trk-pb-dens-h: .84; }
+
+.trk-playerbar {
+  position: fixed; left: 0; right: 0; bottom: var(--trk-playerbar-offset, 0px);
+  z-index: 1100; display: flex; align-items: center; gap: calc(12px * var(--trk-pb-dens-gap, 1));
+  min-height: calc(60px * var(--trk-pb-dens-h, 1));
+  padding: calc(9px * var(--trk-pb-dens-pad, 1)) max(14px, env(safe-area-inset-right)) calc(9px * var(--trk-pb-dens-pad, 1)) max(14px, env(safe-area-inset-left));
+  background: var(--ui-panel); color: var(--ui-text);
+  border-top: 1px solid var(--ui-border);
+  box-shadow: 0 -8px 26px rgba(0, 0, 0, .35);
+  font-size: 13px;
+}
+.trk-playerbar[hidden] { display: none !important; }
+
+/* ---------- 再生位置（バーの上端に重ねる細い線） ---------- */
+.trk-pb-seek {
+  position: absolute; left: 0; right: 0; top: -2px; width: 100%; height: 12px;
+  margin: 0; padding: 0; appearance: none; -webkit-appearance: none;
+  background: transparent; cursor: pointer; z-index: 2;
+}
+.trk-pb-seek:disabled { cursor: default; }
+.trk-pb-seek::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--ui-accent) 0 var(--p, 0%), var(--ui-border) var(--p, 0%) 100%);
+}
+.trk-pb-seek::-moz-range-track {
+  height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--ui-accent) 0 var(--p, 0%), var(--ui-border) var(--p, 0%) 100%);
+}
+.trk-pb-seek::-webkit-slider-thumb {
+  appearance: none; -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4.5px;
+  border: 0; border-radius: 50%; background: var(--ui-accent);
+  opacity: 0; transition: opacity .15s;
+}
+.trk-pb-seek::-moz-range-thumb {
+  width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--ui-accent);
+  opacity: 0; transition: opacity .15s;
+}
+/* 🎵 trk226：触れる・なぞれることを、指の形と、太さで示す（PC でもライブラリの画面で動かせる） */
+.trk-pb-seek:not(:disabled) { cursor: pointer; }
+.trk-pb-seek:not(:disabled):hover::-webkit-slider-runnable-track { height: 5px; }
+.trk-pb-seek:not(:disabled):hover::-moz-range-track { height: 5px; }
+/* ❓謎設定「バーに触れても位置を移動しない」のときは、触れないことが分かる見た目に */
+.trk-pb-seek.is-locked { cursor: default; }
+.trk-pb-seek:hover::-webkit-slider-thumb, .trk-pb-seek:focus-visible::-webkit-slider-thumb { opacity: 1; }
+.trk-pb-seek:hover::-moz-range-thumb, .trk-pb-seek:focus-visible::-moz-range-thumb { opacity: 1; }
+
+/* ---------- ジャケット ---------- */
+.trk-pb-art {
+  position: relative; flex: 0 0 auto; width: 44px; height: 44px; overflow: hidden;
+  display: grid; place-items: center;
+  border: 1px solid var(--ui-border); border-radius: 10px;
+  background: var(--ui-soft); color: var(--ui-muted); font-size: 20px;
+}
+.trk-pb-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.trk-pb-art img[hidden] { display: none; }
+
+/* ---------- 曲名 ---------- */
+.trk-pb-meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trk-pb-title {
+  font-size: 14px; font-weight: 800; line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.trk-pb-artist {
+  font-size: 12px; color: var(--ui-muted); line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.trk-pb-artist:empty { display: none; }
+
+/* ---------- 再生・曲送り ---------- */
+.trk-pb-transport { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+.trk-pb-transport button, .trk-pb-actions button {
+  min-width: 36px; min-height: 36px; display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: 10px;
+  background: transparent; color: var(--ui-text); font-size: 16px; cursor: pointer;
+  touch-action: manipulation;
+}
+.trk-pb-transport button:hover, .trk-pb-actions button:hover { background: var(--ui-button-hover); }
+.trk-pb-transport button:disabled, .trk-pb-actions button:disabled { opacity: .38; cursor: default; background: transparent; }
+/* 🎵 trk225：`display: grid` が `[hidden]`（ブラウザ既定の display:none）に勝ってしまうので、
+   「隠さない」設定で ✕ を出さないときは、こちらで確実に消す */
+.trk-pb-actions button[hidden] { display: none !important; }
+.trk-pb-play {
+  min-width: 42px !important; min-height: 42px !important; font-size: 18px !important;
+  border-color: var(--ui-border) !important; background: var(--ui-soft) !important;
+}
+.trk-pb-play:hover { background: var(--ui-button-hover) !important; }
+
+/* ---------- 🎲 シャッフル・🔁 リピート（trk226） ----------
+   オンかどうかは「色」と「枠」で示します（絵文字の向きだけに頼らない）。
+   読み上げには aria-pressed を渡します（js/player-bar.js）。 */
+.trk-pb-shuffle, .trk-pb-repeat { color: var(--ui-muted); }
+.trk-pb-shuffle.is-on, .trk-pb-repeat.is-on {
+  color: var(--ui-accent);
+  border-color: var(--ui-accent) !important;
+  background: var(--ui-soft) !important;
+}
+
+/* ---------- 時間 ---------- */
+.trk-pb-time { flex: 0 0 auto; color: var(--ui-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.trk-pb-time .trk-pb-total::before { content: " / "; }
+
+/* ---------- 音量・開く・閉じる ---------- */
+.trk-pb-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+.trk-pb-vol { display: flex; align-items: center; gap: 6px; padding: 0 4px; color: var(--ui-muted); }
+.trk-pb-vol span { font-size: 15px; }
+.trk-pb-vol input { width: 92px; accent-color: var(--ui-accent); }
+
+/* ---------- 幅の狭いとき（スマホ・縦型のスタンド） ---------- */
+@media (max-width: 760px) {
+  .trk-playerbar { gap: 8px; min-height: 56px; padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left)); }
+  .trk-pb-art { width: 40px; height: 40px; border-radius: 9px; }
+  .trk-pb-time, .trk-pb-vol { display: none; }
+  .trk-pb-title { font-size: 13px; }
+  .trk-pb-artist { font-size: 11px; }
+}
+@media (max-width: 520px) {
+  /* 🎵 trk226：🎲🔁⧉ が増えたぶん、狭い画面では詰める（曲名は省略記号で残す） */
+  .trk-pb-transport { gap: 2px; }
+  .trk-pb-actions { gap: 2px; }
+  .trk-pb-transport button, .trk-pb-actions button { min-width: 32px; }
+}
+@media (max-width: 430px) {
+  /* いちばん狭いところでは、飾りのジャケットを譲って操作ボタンを残す（曲名は必ず出す） */
+  .trk-pb-art { display: none; }
+}
+@media (max-width: 400px) {
+  .trk-pb-transport button { min-width: 30px; }
+  .trk-pb-play { min-width: 40px !important; min-height: 40px !important; }
+}
+
+/* ==========================================================================
+   ほかの部品と重ならないようにする（バーを出しているあいだだけ）
+   ========================================================================== */
+
+/* PC型：画面の下に余白を作り、カードの下端がバーに隠れないようにする。
+   ステージは 1920×1080 を縮小して見せているので、縮小率を打ち消した高さを使う。
+   🖥 trk223（2026-10-31 レビュー②）：ここは `1020px`（1080−余白30×2）を決め打ちしていたため、
+   拡大率 125%（設計の高さ 864px）でも 1020px を基準にしてしまい、カードの下端がバーの裏へ入っていた。
+   `.screen` の padding-bottom で下が空いているので、カードはその内容領域（＝ステージの高さ−余白−バー）に
+   収めればよい。100% のときは 1020px−バー と同じ値になる。 */
+body.trk-playerbar:not(.trk-mobile) #stage .screen { padding-bottom: calc(30px + var(--trk-playerbar-stage-h, 64px)); }
+body.trk-playerbar:not(.trk-mobile) #stage .card { max-height: 100%; }
+
+/* 🎵 trk225：バーを「画面のいちばん下」に置くとき（既定）は、下部ナビをバーの高さぶん上へ動かす。
+   こうすると「操作パネルが上・曲のバーが下」になり、バーが画面の途中に浮いているように見えません。
+   ナビは position: fixed; bottom: 0 なので、その bottom だけを差し替えます（高さ・並びはそのまま）。 */
+body.trk-playerbar.trk-playerbar-at-bottom .trk-playerbar {
+  /* バーがいちばん下に来るので、iPhone のホームバー（safe-area）のぶんを自分で空ける */
+  padding-bottom: calc(9px + env(safe-area-inset-bottom, 0px));
+}
+body.trk-playerbar.trk-playerbar-at-bottom .trk-mobile-nav {
+  /* --trk-playerbar-h は safe-area を含めた実寸（getBoundingClientRect）なので、足し直さない */
+  bottom: var(--trk-playerbar-h, 56px);
+  /* ナビはもう画面の下端ではないので、そのための safe-area の余白は残さない（すき間になるため） */
+  padding-bottom: 5px;
+}
+/* スマホ型：カードの下余白に、バーの高さを足す（下部ナビの 100px はそのまま） */
+body.trk-playerbar.trk-mobile #stage[data-phase="title"] .card {
+  padding-bottom: calc(100px + var(--trk-playerbar-h, 56px) + env(safe-area-inset-bottom));
+}
+
+/* 🛟 セーフモードの浮きボタンは、バーの上へ逃がす（緊急の逃げ道は常に押せる） */
+body.trk-playerbar #floatingSafeBtn { bottom: calc(12px + var(--trk-playerbar-h, 60px)) !important; }
+body.trk-playerbar.trk-mobile #floatingSafeBtn { bottom: calc(80px + var(--trk-playerbar-h, 56px) + env(safe-area-inset-bottom)) !important; }
+body.trk-playerbar #trkPlayerBar ~ #floatingSafeBtn { right: 12px; }
+
+/* ↕ 通知（トースト）もバーに隠れないようにする */
+body.trk-playerbar .plToast { bottom: calc(6% + var(--trk-playerbar-h, 60px)); }
+
+/* 動きを減らす設定の方針に合わせる */
+@media (prefers-reduced-motion: reduce) {
+  .trk-pb-seek::-webkit-slider-thumb, .trk-pb-seek::-moz-range-thumb { transition: none; }
+}
+
+/* ---------- 🖥 trk222：拡大率（50／75／100／125%）は、再生バーにも効く ----------
+   バーの中の文字・アイコン・つまみが同じ比率で大きくなります（スキンの色はそのまま）。
+   `zoom` は Chrome／Safari／Firefox 126+ が対応。古いブラウザでは 100% のままです。 */
+body.trk-zoom .trk-playerbar { zoom: var(--trk-ui-zoom, 1); }
