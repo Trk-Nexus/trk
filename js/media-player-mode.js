@@ -23,6 +23,7 @@ Object.assign(TEXT.ja, {
   mediaQueue:"再生キュー", mediaQueueHint:"曲を選ぶと、この画面を閉じずに再生します。曲リストに追加した音源・共有フォルダ・曲パックをまとめて扱えます。",
   mediaSearch:"キューを検索…", mediaNoSongs:"まだ曲がありません。選曲画面から音源を追加してください。", mediaNoMatch:"一致する曲がありません。",
   mediaSleepSet:"{n}分後に再生を止めます。", mediaSleepDone:"スリープタイマーで停止しました。", mediaLoaded:"読み込み中…", mediaLoadFailed:"この曲を読み込めませんでした。",
+  mediaSkippedUnplayable:"⏭ 再生できない曲を飛ばしました（{n}曲・最初は「{name}」）。",
   mediaKeyboard:"Space：再生／一時停止　←→：10秒　N：次の曲　P：前の曲　Esc：閉じる　逆再生・区間ループ・壁紙は設定で割り当て",
   mediaVideoKeysTitle:"🎬 動画プレーヤーのキー", mediaWallKey:"壁紙／スクリーンセーバー", mediaReverse:"逆再生", mediaReverseStart:"逆再生を開始", mediaForward:"順再生に戻す", mediaReverseLoading:"逆再生を準備中…", mediaReverseUnavailable:"この曲の逆再生用音声を準備できませんでした。映像のみで試します。", mediaReverseDone:"曲の先頭まで逆再生しました。",
   mediaLoop:"区間ループ", mediaLoopSetA:"A点を設定", mediaLoopSetB:"B点を設定", mediaLoopClear:"解除", mediaLoopMode:"区間ループの操作", mediaLoopToggle:"トグル", mediaLoopHold:"長押し中だけ", mediaLoopHint:"A点・B点を設定すると、範囲をくり返します。割り当てキーはA点 → B点／開始 → 解除を順に操作できます。", mediaLoopNone:"区間ループ：なし", mediaLoopOnlyA:"A点 {a} — B点を設定してください", mediaLoopRange:"{a} – {b} をくり返し中", mediaLoopNeedRange:"先にA点とB点を設定してください。", mediaLoopLabTitle:"🎛 ループ・ラボ", mediaLoopQuickHint:"5秒・10秒・20秒の区間をすぐ作れます。保存した区間は曲ごとに端末内へ記録します。", mediaLoopQuick5:"5秒", mediaLoopQuick10:"10秒", mediaLoopQuick20:"20秒", mediaLoopRandom:"🎲 ランダム区間", mediaLoopSave:"この区間を保存", mediaLoopPresets:"保存した区間", mediaLoopNoPresets:"保存した区間はまだありません。", mediaLoopDelete:"この区間を削除", mediaLoopClearPresets:"保存を消去", mediaLoopSaved:"区間を保存しました",
@@ -67,6 +68,7 @@ Object.assign(TEXT.en, {
   mediaQueue:"Queue", mediaQueueHint:"Choose a track to play it without closing this screen. Added files, shared folders, and song packs appear together.",
   mediaSearch:"Search queue…", mediaNoSongs:"No songs yet. Add audio from song select.", mediaNoMatch:"No matching songs.",
   mediaSleepSet:"Playback will stop in {n} minutes.", mediaSleepDone:"Sleep timer stopped playback.", mediaLoaded:"Loading…", mediaLoadFailed:"This track could not be loaded.",
+  mediaSkippedUnplayable:"⏭ Skipped {n} song(s) that can't be played (first: \"{name}\").",
   mediaKeyboard:"Space: play/pause   ←→: 10 seconds   N: next   P: previous   Esc: close   Assign reverse / A-B loop / wallpaper in Settings",
   mediaVideoKeysTitle:"🎬 Video player keys", mediaWallKey:"Wallpaper / screen saver", mediaReverse:"Reverse", mediaReverseStart:"Start reverse", mediaForward:"Return to forward", mediaReverseLoading:"Preparing reverse playback…", mediaReverseUnavailable:"Could not prepare reverse audio for this track. Trying video frames only.", mediaReverseDone:"Reverse playback reached the beginning.",
   mediaLoop:"A-B loop", mediaLoopSetA:"Set A", mediaLoopSetB:"Set B", mediaLoopClear:"Clear", mediaLoopMode:"A-B loop control", mediaLoopToggle:"Toggle", mediaLoopHold:"While held", mediaLoopHint:"Set A and B to repeat a range. The assigned key cycles A → B / start → clear.", mediaLoopNone:"A-B loop: off", mediaLoopOnlyA:"A at {a} — set B", mediaLoopRange:"Repeating {a} – {b}", mediaLoopNeedRange:"Set both A and B first.", mediaLoopLabTitle:"🎛 Loop lab", mediaLoopQuickHint:"Make a 5, 10, or 20 second loop instantly. Saved ranges stay on this device per song.", mediaLoopQuick5:"5 sec", mediaLoopQuick10:"10 sec", mediaLoopQuick20:"20 sec", mediaLoopRandom:"🎲 Random range", mediaLoopSave:"Save this range", mediaLoopPresets:"Saved ranges", mediaLoopNoPresets:"No saved ranges yet.", mediaLoopDelete:"Delete this range", mediaLoopClearPresets:"Clear saved", mediaLoopSaved:"Range saved",
@@ -109,6 +111,7 @@ Object.assign(TEXT.zh, {
   mediaQueue:"播放队列", mediaQueueHint:"选择歌曲后会在此画面中播放。添加的文件、共享文件夹和歌曲包会合并显示。",
   mediaSearch:"搜索队列…", mediaNoSongs:"还没有歌曲。请先在选曲画面添加音频。", mediaNoMatch:"没有匹配的歌曲。",
   mediaSleepSet:"将在{n}分钟后停止播放。", mediaSleepDone:"睡眠定时器已停止播放。", mediaLoaded:"正在读取…", mediaLoadFailed:"无法读取这首歌。",
+  mediaSkippedUnplayable:"⏭ 已跳过无法播放的歌曲（{n}首，第一首是「{name}」）。",
   mediaKeyboard:"空格：播放／暂停　←→：10秒　N：下一首　P：上一首　Esc：关闭　倒放／区间循环／壁纸可在设置中分配",
   mediaVideoKeysTitle:"🎬 视频播放器按键", mediaWallKey:"壁纸／屏幕保护", mediaReverse:"倒放", mediaReverseStart:"开始倒放", mediaForward:"恢复正放", mediaReverseLoading:"正在准备倒放…", mediaReverseUnavailable:"无法准备这首歌的倒放音频，将尝试仅倒放画面。", mediaReverseDone:"倒放已到达开头。",
   mediaLoop:"区间循环", mediaLoopSetA:"设为A点", mediaLoopSetB:"设为B点", mediaLoopClear:"解除", mediaLoopMode:"区间循环操作", mediaLoopToggle:"切换", mediaLoopHold:"按住时循环", mediaLoopHint:"设置A点和B点后重复区间。分配的按键会依次执行A点 → B点／开始 → 解除。", mediaLoopNone:"区间循环：关闭", mediaLoopOnlyA:"A点 {a} — 请设置B点", mediaLoopRange:"重复 {a} – {b}", mediaLoopNeedRange:"请先设置A点和B点。", mediaLoopLabTitle:"🎛 循环实验室", mediaLoopQuickHint:"可立即创建5秒、10秒或20秒区间。保存的区间会按歌曲保存在设备中。", mediaLoopQuick5:"5秒", mediaLoopQuick10:"10秒", mediaLoopQuick20:"20秒", mediaLoopRandom:"🎲 随机区间", mediaLoopSave:"保存此区间", mediaLoopPresets:"已保存区间", mediaLoopNoPresets:"还没有保存的区间。", mediaLoopDelete:"删除此区间", mediaLoopClearPresets:"清除保存", mediaLoopSaved:"区间已保存",
@@ -151,6 +154,7 @@ Object.assign(TEXT.ko, {
   mediaQueue:"재생 큐", mediaQueueHint:"곡을 고르면 이 화면을 닫지 않고 재생합니다. 추가한 파일·공유 폴더·곡 팩을 함께 표시합니다.",
   mediaSearch:"큐 검색…", mediaNoSongs:"아직 곡이 없습니다. 곡 선택 화면에서 음원을 추가하세요.", mediaNoMatch:"일치하는 곡이 없습니다.",
   mediaSleepSet:"{n}분 후 재생을 멈춥니다.", mediaSleepDone:"취침 타이머로 재생을 멈췄습니다.", mediaLoaded:"불러오는 중…", mediaLoadFailed:"이 곡을 불러오지 못했습니다.",
+  mediaSkippedUnplayable:"⏭ 재생할 수 없는 곡을 건너뛰었습니다({n}곡, 첫 곡은 「{name}」).",
   mediaKeyboard:"Space: 재생／일시정지   ←→: 10초   N: 다음   P: 이전   Esc: 닫기   역재생／구간 반복／배경은 설정에서 지정",
   mediaVideoKeysTitle:"🎬 동영상 플레이어 키", mediaWallKey:"배경／스크린세이버", mediaReverse:"역재생", mediaReverseStart:"역재생 시작", mediaForward:"정재생으로", mediaReverseLoading:"역재생 준비 중…", mediaReverseUnavailable:"이 곡의 역재생 오디오를 준비하지 못했습니다. 영상 프레임만 시도합니다.", mediaReverseDone:"역재생이 처음에 도달했습니다.",
   mediaLoop:"구간 반복", mediaLoopSetA:"A점 설정", mediaLoopSetB:"B점 설정", mediaLoopClear:"해제", mediaLoopMode:"구간 반복 조작", mediaLoopToggle:"토글", mediaLoopHold:"누르는 동안", mediaLoopHint:"A점과 B점을 설정하면 구간을 반복합니다. 지정한 키는 A점 → B점／시작 → 해제를 차례로 실행합니다.", mediaLoopNone:"구간 반복: 없음", mediaLoopOnlyA:"A점 {a} — B점을 정해 주세요", mediaLoopRange:"{a} – {b} 반복 중", mediaLoopNeedRange:"먼저 A점과 B점을 설정하세요.", mediaLoopLabTitle:"🎛 반복 실험실", mediaLoopQuickHint:"5초·10초·20초 구간을 바로 만들 수 있습니다. 저장한 구간은 곡별로 이 기기에 기록됩니다.", mediaLoopQuick5:"5초", mediaLoopQuick10:"10초", mediaLoopQuick20:"20초", mediaLoopRandom:"🎲 랜덤 구간", mediaLoopSave:"이 구간 저장", mediaLoopPresets:"저장한 구간", mediaLoopNoPresets:"저장한 구간이 없습니다.", mediaLoopDelete:"이 구간 삭제", mediaLoopClearPresets:"저장 지우기", mediaLoopSaved:"구간을 저장했습니다",
@@ -1111,10 +1115,23 @@ function playPause() {
   } else core.video.pause();
   renderMedia();
 }
+/* ⏭ 次へ／前へ・曲の終わりの自動送りで、読み込めない曲（形式が合わない・壊れている・届かない）に当たったら、
+   そこで止めずに次の曲へ進む（最大 SKIP_UNPLAYABLE_MAX 曲まで）。飛ばしたことと件数はその場で言う。
+   キューの曲を直接タップしたときは今までどおり止まって理由を出す（飛ばさない）。 */
+const SKIP_UNPLAYABLE_MAX = 10;
 async function stepMedia(dir) {
-  const it = nextMediaSong(dir);
-  if (it) await playSong(it, true);
-  else showMediaStatus("mediaNoSongs");
+  const skipped = [];
+  const tries = Math.min(SKIP_UNPLAYABLE_MAX, Math.max(1, mediaCandidates().length));
+  for (let i = 0; i < tries; i++) {
+    const it = nextMediaSong(dir);
+    if (!it) { showMediaStatus("mediaNoSongs"); return; }
+    await playSong(it, true);
+    if (!mediaActive()) return;
+    if (core.currentSong !== it || core.videoReady) break;   /* 鳴った、または途中で別の曲が選ばれた */
+    skipped.push(it.title || it.base || "");
+    if (i === tries - 1) { showMediaStatus("mediaLoadFailed"); return; }
+  }
+  if (skipped.length) showMediaStatus("mediaSkippedUnplayable", { n: skipped.length, name: skipped[0] });
 }
 function seekBy(delta) {
   if (!core.videoReady || !Number.isFinite(core.video.duration)) return;
