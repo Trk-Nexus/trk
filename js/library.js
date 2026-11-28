@@ -4940,8 +4940,14 @@ async function scanHandle(h, onProgress) {
     for await (const e of dir.values()) {
       if (e.kind === "file") {
         const n = e.name.toLowerCase();
+        /* 「.」で始まるファイル（macOS の ._曲名.mp3＝AppleDouble、.nomedia など）は曲ではない。
+           拡張子が .mp3 でも中身は数KBの付属情報なので、入れると「再生できない曲」になる */
+        if (n.startsWith(".") || !n.includes(".")) { skipped++; continue; }   /* 拡張子の無いファイル（名前が「mp3」だけ等）も対象外 */
         if (MEDIA_EXT.includes(core.extOf(n)) || n.endsWith(CHART_SUFFIX) || n.endsWith(".lrc") || n.endsWith(".srt") || n.endsWith(".vtt")) {
-          files.push({ file:await e.getFile(), rel:`${path}/${e.name}` });   /* 🎤 .lrc・💬 .srt/.vtt も集める（trk166/169） */
+          /* 1つのファイルが読めなくても（権限切れ・端末側のエラー）、フォルダー全体の走査は止めない */
+          let file = null;
+          try { file = await e.getFile(); } catch (_) { skipped++; continue; }
+          files.push({ file, rel:`${path}/${e.name}` });   /* 🎤 .lrc・💬 .srt/.vtt も集める（trk166/169） */
           if (onProgress && !(files.length % 25)) onProgress(files.length);
         } else skipped++;                       /* 曲でも譜面でもないファイル（写真・テキストなど） */
       } else if (e.kind === "directory" && !e.name.startsWith(".")) await walk(e, `${path}/${e.name}`, depth + 1);
